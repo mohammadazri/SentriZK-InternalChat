@@ -16,8 +16,8 @@ app.use(bodyParser.json());
 
 // --- Paths ---
 const DB_PATH = path.resolve(__dirname, "db.json");
-const REG_VK_PATH = path.resolve(__dirname, "../circuits/registration/registration_verification_key.json");
-const LOGIN_VK_PATH = path.resolve(__dirname, "../circuits/login/login_verification_key.json");
+const REG_VK_PATH = path.resolve(__dirname, "../Backend/circuits/key_generation/registration_verification_key.json");
+const LOGIN_VK_PATH = path.resolve(__dirname, "../Backend/circuits/key_generation/login_verification_key.json");
 
 // ---------------------
 // Centralized logger
