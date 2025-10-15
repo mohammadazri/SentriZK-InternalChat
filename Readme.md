@@ -94,6 +94,10 @@
 </div>
 
 ---
+<h2>Architecture Diagram</h2>
+  <img src="Doc\Images\architecture.svg" alt="SentriZK Architecture Diagram"/>
+
+---
 
 <div align="center">
   <h2>📈 GitHub Stats</h2>
