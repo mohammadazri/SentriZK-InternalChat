@@ -1,6 +1,13 @@
 <div align="center">
   <h1>SentriZK</h1>
   <p><b>Secure Internal Messaging with Zero-Knowledge Authentication & AI Anomaly Detection</b></p>
+    <p>
+    <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white"/>
+    <img src="https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white"/>
+    <img src="https://img.shields.io/badge/TensorFlow Lite-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white"/>
+    <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white"/>
+    <img src="https://img.shields.io/badge/ZKP-6F42C1?style=for-the-badge&logo=blockchain&logoColor=white"/>
+  </p>
   <img src="Doc\Images\logo.png" width="800"/>
 </div>
 
@@ -32,20 +39,7 @@
 
 ---
 
-<div align="center">
-  <h2>🛠️ Technologies & Tools</h2>
-  <p>
-    <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white"/>
-    <img src="https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white"/>
-    <img src="https://img.shields.io/badge/TensorFlow Lite-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white"/>
-    <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white"/>
-    <img src="https://img.shields.io/badge/ZKP-6F42C1?style=for-the-badge&logo=blockchain&logoColor=white"/>
-  </p>
-</div>
-
----
-
-<div align="center">
+<div align="left">
   <h2>📂 Project Structure</h2>
   <p><i>A clean overview of the main folders and files in SentriZK</i></p>
   
@@ -103,7 +97,7 @@
 
 <div align="center">
   <h2>📈 GitHub Stats</h2>
-  <img src="https://github-readme-stats.vercel.app/api/pin/?username=mohamedazri&repo=REPO_NAME&theme=radical" />
+  <img src="https://github-readme-stats.vercel.app/api/pin/?username=mohammadazri&repo=SentriZK-InternalChat&theme=radical" />
 </div>
 
 ---
@@ -120,7 +114,7 @@ If you have any questions, feedback, or inquiries regarding **SentriZK**, feel f
 
 ---
 
-<div align="center">
+<div align="left">
   <h2>📄 License</h2>
   This project is licensed under the <b>MIT License</b>. See <a href="LICENSE">LICENSE</a> for details.
 </div>
