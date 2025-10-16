@@ -1,3 +1,12 @@
+// Chnages needed before production deployment:
+// Goal: Make sure backend is 100% production-ready.
+// Sub-tasks:
+// 🔒 Add minimal JWT or token-based auth for /protected routes later (for the chat system).
+// 💾 Confirm database persistence (make sure db.json handles multiple users without corruption).
+// 📜 Add rate limiting or nonce expiry (optional, for better security).
+
+
+
 // server/index.js
 const express = require("express");
 const bodyParser = require("body-parser");
