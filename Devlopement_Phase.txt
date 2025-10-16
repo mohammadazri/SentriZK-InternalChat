@@ -1,0 +1,133 @@
+🧩 Phase 1 — Backend Finalization (ZKP Core ✅ almost done)
+
+Goal: Make sure backend is 100% production-ready.
+Sub-tasks:
+
+✅ Verify all endpoints (/register, /login, /commitment) work using Postman or curl.
+
+🔒 Add minimal JWT or token-based auth for /protected routes later (for the chat system).
+
+💾 Confirm database persistence (make sure db.json handles multiple users without corruption).
+
+📜 Add rate limiting or nonce expiry (optional, for better security).
+
+➡️ Output: “Backend Ready” milestone — API stable and documented.
+
+🧠 Phase 2 — Frontend Authentication (ZKP Integration)
+
+Goal: Create a simple working frontend that can register & login via proofs.
+
+Sub-tasks:
+
+🧮 Integrate snarkjs and .wasm circuits in the frontend.
+
+🎯 Implement:
+
+generateZKP(secret) → for /register
+
+generateLoginZKP(secret, nonce) → for /login
+
+🧰 Use your frontend dev guide doc to build the actual call flow.
+
+🧪 Test with backend — confirm end-to-end registration/login works.
+
+➡️ Output: Functional ZKP-based auth (passwordless, replay-proof).
+
+💬 Phase 3 — Internal Messaging System
+
+Goal: Build the secure chat system after authentication works.
+
+Sub-tasks:
+
+🌐 Backend: Add Socket.IO or WebSocket layer for real-time chat.
+
+🧾 Messages stored encrypted in MongoDB.
+
+🔑 Only users with valid session tokens can send messages.
+
+📱 Frontend: Flutter app with chat UI, using your ZKP session to join.
+
+➡️ Output: Secure internal messaging app with basic chat.
+
+🤖 Phase 4 — AI Anomaly Detection (TensorFlow Lite)
+
+Goal: Integrate lightweight on-device AI model (e.g., message sentiment or anomaly detection).
+
+Sub-tasks:
+
+Train/convert TensorFlow model → .tflite
+
+Embed in Flutter app for local inference.
+
+Detect spam/suspicious activity → alert user or admin.
+
+➡️ Output: Chat app with intelligent threat detection.
+
+🧱 Phase 5 — Documentation & Polishing
+
+Goal: Finalize everything for presentation/demo.
+
+Sub-tasks:
+
+📘 Finalize README (include API + flow + architecture).
+
+🎥 Record workflow GIF or demo.
+
+🧾 Write technical documentation (for report / supervisor).
+
+🧪 Deploy backend (Render, Railway, or VPS).
+
+➡️ Output: Complete project ready for submission & GitHub showcase.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+2. Define App Structure
+
+Your app will likely have these main screens:
+
+Splash / Welcome Page
+
+Registration Page (ZKP-based)
+
+Login Page
+
+Chat Dashboard
+
+Chat Room
+
+Settings / Profile
