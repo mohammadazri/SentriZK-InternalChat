@@ -2,17 +2,36 @@
 
 import { useState } from "react";
 import { generateProof } from "../../lib/zkp";
-import { generateRecoveryPhrase, recoverSaltFromMnemonic, encryptEnvelope, walletSecretFromAddress } from "../../lib/secureCrypto";
+import {
+  generateRecoveryPhrase,
+  recoverSaltFromMnemonic,
+  encryptEnvelope,
+  walletSecretFromAddress,
+} from "../../lib/secureCrypto";
 import { checkUsername, registerUser } from "../../lib/api";
 import { keccak256 } from "js-sha3";
 
+// Generate random 20-byte wallet address
+function randomWalletAddress() {
+  const arr = new Uint8Array(20);
+  crypto.getRandomValues(arr);
+  return "0x" + Array.from(arr).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 export default function Register() {
   const [username, setUsername] = useState("");
+  const [walletAddr, setWalletAddr] = useState("");
+  const [password, setPassword] = useState("");
   const [mnemonic, setMnemonic] = useState("");
   const [status, setStatus] = useState("");
 
   async function handleRegister() {
     try {
+      if (!password) {
+        setStatus("Please enter a password to encrypt your envelope");
+        return;
+      }
+
       setStatus("Checking username...");
       if (!(await checkUsername(username))) {
         setStatus("Username already taken");
@@ -21,10 +40,14 @@ export default function Register() {
 
       setStatus("Generating mnemonic...");
       const phrase = generateRecoveryPhrase();
-      const saltHex = await recoverSaltFromMnemonic(phrase); // 16-byte hex
+      const saltHex = await recoverSaltFromMnemonic(phrase);
+
+      const addr = walletAddr || randomWalletAddress();
+      setWalletAddr(addr);
+      const secretHex = walletSecretFromAddress(addr);
 
       setStatus("Encrypting JSON envelope...");
-      const envelope = await encryptEnvelope(saltHex, "user-password"); // TODO: replace with actual user password
+      const envelope = await encryptEnvelope(saltHex, password); // encrypt using user password
 
       // Trigger download so user can save JSON file
       const blob = new Blob([envelope], { type: "application/json" });
@@ -35,12 +58,9 @@ export default function Register() {
       a.click();
       URL.revokeObjectURL(url);
 
-      // Only show mnemonic after download
       setMnemonic(phrase);
 
       setStatus("Generating registration proof...");
-      const secretHex = walletSecretFromAddress("0xYourWalletAddress"); // TODO: replace with actual wallet address
-
       const inputSignals = {
         secret: BigInt("0x" + secretHex).toString(),
         salt: BigInt("0x" + saltHex).toString(),
@@ -54,7 +74,7 @@ export default function Register() {
         username,
         proof,
         publicSignals,
-        uniqProof: proof,       // placeholder for uniqueness circuit
+        uniqProof: proof,
         uniqSignals: publicSignals,
       });
 
@@ -69,12 +89,35 @@ export default function Register() {
   return (
     <div style={{ maxWidth: 600, margin: "auto" }}>
       <h1>Register</h1>
+
       <input
         placeholder="Username"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
+        style={{ width: "100%", marginBottom: "8px", padding: "8px" }}
+      />
+
+      <input
+        placeholder="Wallet Address (optional)"
+        value={walletAddr}
+        onChange={(e) => setWalletAddr(e.target.value)}
+        style={{ width: "100%", marginBottom: "8px", padding: "8px" }}
+      />
+      <button
+        onClick={() => setWalletAddr(randomWalletAddress())}
+        style={{ marginBottom: "10px" }}
+      >
+        Generate Random Wallet
+      </button>
+
+      <input
+        type="password"
+        placeholder="Password for envelope encryption"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
         style={{ width: "100%", marginBottom: "10px", padding: "8px" }}
       />
+
       <button onClick={handleRegister} style={{ padding: "8px 16px" }}>
         Register
       </button>
