@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "snarkjs": "^0.7.5"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.11"
+  }
+}
