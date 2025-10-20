@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🔐 ZKP Authentication Flow
 
-## Getting Started
+## 1️⃣ Registration Flow
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```mermaid
+flowchart TD
+    A[User enters desired username] --> B[Frontend checks availability via GET /check-username/:username]
+    B --> |Available| C[Generate 24-word recovery mnemonic]
+    C --> D[Derive salt deterministically from mnemonic using recoverSaltFromMnemonic]
+    D --> E[Encrypt salt → JSON envelope via encryptEnvelope(secret, salt, password)]
+    E --> F[User downloads encrypted JSON file]
+    F --> G[Display mnemonic to user]
+    G --> H[Compute username hash unameHash = keccak256(username)]
+    H --> I[Generate zk-SNARK registration proof with input: { secret, salt, unameHash }]
+    I --> J[Submit proofs + publicSignals → backend POST /register]
+    J --> K[Backend verifies proofs and stores { username, commitment, identityCommitment }]
+    K --> L[Registration complete ✅]
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Steps:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Choose Username**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   * User types a desired username.
+   * Frontend verifies availability via `GET /check-username/:username`.
 
-## Learn More
+2. **Generate Recovery Mnemonic**
 
-To learn more about Next.js, take a look at the following resources:
+   * Create a **24-word BIP-39 mnemonic** first.
+   * Deterministically derive **salt** from mnemonic using `recoverSaltFromMnemonic`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. **Encrypt Salt → JSON File**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   * Use `encryptEnvelope(secret, salt, password)` to generate **encrypted JSON envelope**.
+   * **User must download the JSON file** before proceeding.
 
-## Deploy on Vercel
+4. **Display Recovery Mnemonic**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   * After JSON download, show the **mnemonic**.
+   * Instruct user to store it **securely**.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+5. **Generate Registration Proof**
+
+   * Compute `unameHash = keccak256(username)`.
+   * Input signals: `{ secret, salt, unameHash }`.
+   * Generate zk-SNARK registration proof.
+
+6. **Submit Proofs**
+
+   * Send `{ username, proof, publicSignals, uniqProof, uniqSignals }` → backend `/register`.
+   * Backend verifies proofs and stores `{ username, commitment, identityCommitment }`.
+
+---
+
+## 2️⃣ Login Flow
+
+```mermaid
+flowchart TD
+    A[User selects downloaded JSON file] --> B[Input password to decrypt → retrieve salt]
+    B --> C[User enters username]
+    C --> D[Frontend fetches nonce via GET /commitment/:username]
+    D --> E[Compute unameHash = keccak256(username)]
+    E --> F[Generate zk-SNARK login proof with input: { secret, salt, unameHash, nonce }]
+    F --> G[Submit proof + publicSignals → backend POST /login]
+    G --> H[Backend verifies proof and session → login successful ✅]
+```
+
+### Steps:
+
+1. **Select Encrypted JSON File**
+
+   * User selects previously downloaded JSON envelope.
+   * Enter **password** to decrypt and retrieve **salt**.
+
+2. **Get Username & Nonce**
+
+   * User types username.
+   * Frontend requests **nonce** from server: `GET /commitment/:username`.
+
+3. **Generate Login Proof**
+
+   * Compute `unameHash = keccak256(username)`.
+   * Input signals: `{ secret, salt, unameHash, nonce }`.
+   * Generate zk-SNARK login proof.
+
+4. **Submit Proof**
+
+   * Send `{ username, proof, publicSignals }` → backend `/login`.
+   * Backend verifies proof and session.
+   * Login successful if valid.
+
+---
+
+### ✅ Notes
+
+* **JSON envelope** stores only the salt, never the wallet secret.
+* **Mnemonic** is the master recovery key; losing it means losing the ability to recover the account.
+* **Nonce** is server-generated per login to prevent replay attacks.
+* ZKP ensures that the **server never sees the secret or salt** in plaintext.
+
+---

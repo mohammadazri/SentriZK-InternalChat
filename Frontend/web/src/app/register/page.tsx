@@ -1,31 +1,92 @@
 "use client";
 
 import { useState } from "react";
-import { register } from "../../services/auth";
+import { generateProof } from "../../lib/zkp";
+import { generateRecoveryPhrase, recoverSaltFromMnemonic, encryptEnvelope, walletSecretFromAddress } from "../../lib/secureCrypto";
+import { checkUsername, registerUser } from "../../lib/api";
+import { keccak256 } from "js-sha3";
 
-export default function RegisterPage() {
-  const [username, setUsername] = useState<string>("");
-  const [secret, setSecret] = useState<string>("");
-  const [salt, setSalt] = useState<string>("");
-  const [status, setStatus] = useState<string>("");
+export default function Register() {
+  const [username, setUsername] = useState("");
+  const [mnemonic, setMnemonic] = useState("");
+  const [status, setStatus] = useState("");
 
-  const handleRegister = async () => {
+  async function handleRegister() {
     try {
-      const result = await register({ username, secret, salt });
-      setStatus(`✅ Registered! Commitment: ${result.commitment}`);
+      setStatus("Checking username...");
+      if (!(await checkUsername(username))) {
+        setStatus("Username already taken");
+        return;
+      }
+
+      setStatus("Generating mnemonic...");
+      const phrase = generateRecoveryPhrase();
+      const saltHex = await recoverSaltFromMnemonic(phrase); // 16-byte hex
+
+      setStatus("Encrypting JSON envelope...");
+      const envelope = await encryptEnvelope(saltHex, "user-password"); // TODO: replace with actual user password
+
+      // Trigger download so user can save JSON file
+      const blob = new Blob([envelope], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${username}_envelope.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      // Only show mnemonic after download
+      setMnemonic(phrase);
+
+      setStatus("Generating registration proof...");
+      const secretHex = walletSecretFromAddress("0xYourWalletAddress"); // TODO: replace with actual wallet address
+
+      const inputSignals = {
+        secret: BigInt("0x" + secretHex).toString(),
+        salt: BigInt("0x" + saltHex).toString(),
+        unameHash: BigInt("0x" + keccak256(username)).toString(),
+      };
+
+      const { proof, publicSignals } = await generateProof(inputSignals, "registration");
+
+      setStatus("Submitting registration...");
+      const resp = await registerUser({
+        username,
+        proof,
+        publicSignals,
+        uniqProof: proof,       // placeholder for uniqueness circuit
+        uniqSignals: publicSignals,
+      });
+
+      setStatus("Registration complete ✅");
+      console.log(resp);
     } catch (err: any) {
-      setStatus(`❌ Error: ${err.response?.data?.error || err.message}`);
+      console.error(err);
+      setStatus("Error: " + err.message);
     }
-  };
+  }
 
   return (
-    <div style={{ padding: 40 }}>
-      <h1>Registration</h1>
-      <input placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
-      <input placeholder="Secret" value={secret} onChange={e => setSecret(e.target.value)} />
-      <input placeholder="Salt" value={salt} onChange={e => setSalt(e.target.value)} />
-      <button onClick={handleRegister}>Register</button>
-      <p>{status}</p>
+    <div style={{ maxWidth: 600, margin: "auto" }}>
+      <h1>Register</h1>
+      <input
+        placeholder="Username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        style={{ width: "100%", marginBottom: "10px", padding: "8px" }}
+      />
+      <button onClick={handleRegister} style={{ padding: "8px 16px" }}>
+        Register
+      </button>
+
+      {mnemonic && (
+        <>
+          <h3>Recovery Mnemonic</h3>
+          <p>{mnemonic}</p>
+        </>
+      )}
+
+      {status && <p><strong>Status:</strong> {status}</p>}
     </div>
   );
 }
