@@ -1,17 +1,8 @@
 "use client";
 
-// ---------------------------------------------
-// File: src/app/auth/page.tsx
-// A minimal Next.js page (React) implementing the registration UI.
-// The UI:
-//  - collects username, wallet address (text input for demo), password
-//  - calls prepareRegistration()
-//  - shows mnemonic & a "I saved it" checkbox
-//  - lets user download envelope (.json)
-//  - on user confirmation, calls submitRegistration()
-
 import React, { useState } from "react";
 import { prepareRegistration, submitRegistration } from "@/auth/registerLogic";
+import type { ProofBundle } from "@/lib/zkp";
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
@@ -20,50 +11,41 @@ export default function RegisterPage() {
 
   const [busy, setBusy] = useState(false);
   const [mnemonic, setMnemonic] = useState<string | null>(null);
-  const [envelopeJson, setEnvelopeJson] = useState<string | null>(null);
-  const [proofBundle, setProofBundle] = useState<any | null>(null);
+  const [proofBundle, setProofBundle] = useState<ProofBundle | null>(null);
   const [savedConfirmed, setSavedConfirmed] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
 
   async function onPrepare(e: React.FormEvent) {
     e.preventDefault();
     setMessage(null);
     setBusy(true);
+
     try {
       const prep = await prepareRegistration(username, wallet, password);
       setMnemonic(prep.mnemonic);
-      setEnvelopeJson(prep.envelopeJson);
-      setProofBundle(prep.proofBundle);
+      setProofBundle(prep.proofBundle); // typed properly
       setMessage(`Prepared registration — commitment: ${prep.commitment}`);
-    } catch (err: any) {
-      setMessage(`Error: ${String(err.message || err)}`);
+    } catch (err: unknown) {
+      setMessage(err instanceof Error ? `Error: ${err.message}` : `Error: ${String(err)}`);
     } finally {
       setBusy(false);
     }
   }
 
-  function downloadEnvelope() {
-    if (!envelopeJson) return;
-    const blob = new Blob([envelopeJson], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${username || "recovery"}_envelope.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
   async function onSubmitRegistration() {
     if (!proofBundle) return setMessage("No proof available");
-    if (!savedConfirmed) return setMessage("Please confirm you've saved the mnemonic before continuing");
+    if (!savedConfirmed) return setMessage("Please confirm you've saved the mnemonic");
 
     setBusy(true);
     setMessage(null);
+
     try {
       const resp = await submitRegistration(username, proofBundle);
-      setMessage(`Server response: ${JSON.stringify(resp)}`);
-    } catch (err: any) {
-      setMessage(`Registration failed: ${String(err.message || err)}`);
+      setToken(resp.token || null);
+      setMessage(`Registration successful! Mobile token: ${resp.token}`);
+    } catch (err: unknown) {
+      setMessage(err instanceof Error ? `Registration failed: ${err.message}` : `Registration failed: ${String(err)}`);
     } finally {
       setBusy(false);
     }
@@ -71,7 +53,7 @@ export default function RegisterPage() {
 
   return (
     <main style={{ padding: 20, maxWidth: 720 }}>
-      <h1>Register (ZKP demo)</h1>
+      <h1>Register (ZKP mobile-ready)</h1>
       <form onSubmit={onPrepare}>
         <div>
           <label>Username</label>
@@ -82,7 +64,7 @@ export default function RegisterPage() {
           <input value={wallet} onChange={(e) => setWallet(e.target.value)} />
         </div>
         <div>
-          <label>Password (encrypts recovery file)</label>
+          <label>Password (encrypts recovery)</label>
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
         <div style={{ marginTop: 12 }}>
@@ -92,14 +74,11 @@ export default function RegisterPage() {
 
       {mnemonic && (
         <section style={{ marginTop: 20, border: "1px solid #ddd", padding: 12 }}>
-          <h3>Recovery phrase (save this now)</h3>
+          <h3>Recovery phrase (save securely)</h3>
           <p style={{ whiteSpace: "pre-wrap" }}>{mnemonic}</p>
-          <div>
-            <button onClick={downloadEnvelope}>Download encrypted envelope (.json)</button>
-          </div>
           <div style={{ marginTop: 8 }}>
             <label>
-              <input type="checkbox" checked={savedConfirmed} onChange={(e) => setSavedConfirmed(e.target.checked)} /> I have saved the mnemonic and downloaded the envelope
+              <input type="checkbox" checked={savedConfirmed} onChange={(e) => setSavedConfirmed(e.target.checked)} /> I have saved the mnemonic
             </label>
           </div>
           <div style={{ marginTop: 8 }}>
@@ -108,11 +87,8 @@ export default function RegisterPage() {
         </section>
       )}
 
-      {message && (
-        <div style={{ marginTop: 12 }}>
-          <strong>{message}</strong>
-        </div>
-      )}
+      {message && <div style={{ marginTop: 12 }}><strong>{message}</strong></div>}
+      {token && <div style={{ marginTop: 12 }}><strong>Mobile token (store in secure storage): {token}</strong></div>}
     </main>
   );
 }

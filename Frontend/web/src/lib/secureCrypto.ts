@@ -260,10 +260,13 @@ export function walletSecretFromAddress(address: string): string {
 }
 
 /* ---------- Exports (facade) ---------- */
-export default {
+const SecureCrypto = {
   encryptEnvelope,
   decryptEnvelope,
   generateRecoveryPhrase,
   recoverSaltFromMnemonic,
   walletSecretFromAddress,
 };
+
+export default SecureCrypto;
+

@@ -1,4 +1,4 @@
-import { walletSecretFromAddress, decryptEnvelope } from "../lib/secureCrypto";
+import { walletSecretFromAddress } from "../lib/secureCrypto";
 import { generateProof } from "../lib/zkp";
 import { getCommitment } from "./api";
 import { sha3_256 } from "js-sha3";
@@ -13,45 +13,38 @@ function unameHashToDecimal(username: string): string {
   return BigInt("0x" + h).toString();
 }
 
+/**
+ * Mobile-ready login
+ * @param username 
+ * @param walletAddress 
+ * @param envelope Stored envelope object from secure storage { saltHex }
+ */
 export async function prepareLogin(
   username: string,
   walletAddress: string,
-  password: string,
-  envelopeFile: File
+  envelope: { saltHex: string }
 ) {
-  if (!envelopeFile) throw new Error("Envelope file required");
-  if (!password) throw new Error("Password required");
+  if (!envelope || !envelope.saltHex) throw new Error("Envelope required");
 
-  // --- Decrypt envelope ---
-  const envelopeStr = await envelopeFile.text();
-  const decrypted = await decryptEnvelope(envelopeStr, password);
+  // --- Convert salt to decimal
+  const saltDecimal = BigInt("0x" + envelope.saltHex).toString();
 
-  if (!decrypted.salt || !/^[0-9a-fA-F]+$/.test(decrypted.salt)) {
-    throw new Error("Decrypted salt is invalid hex");
-  }
-  const saltDecimal = BigInt("0x" + decrypted.salt).toString();
-
-  // --- Wallet secret ---
+  // --- Wallet secret
   const secretHex = walletSecretFromAddress(walletAddress.trim().toLowerCase());
   const secretDecimal = BigInt("0x" + secretHex).toString();
 
-  // --- Fetch commitment + nonce from server ---
+  // --- Fetch commitment + nonce
   const { commitment: storedCommitmentStr, nonce: nonceStr } = await getCommitment(username);
   if (!storedCommitmentStr || !nonceStr) throw new Error("Failed to fetch commitment or nonce");
 
   const storedCommitment = BigInt(storedCommitmentStr).toString();
   const nonce = BigInt(nonceStr).toString();
 
-  // --- Prepare circuit inputs ---
+  // --- Prepare circuit inputs
   const unameHashDecimal = unameHashToDecimal(username);
-  const input = {
-    secret: secretDecimal,
-    salt: saltDecimal,
-    unameHash: unameHashDecimal,
-    storedCommitment,
-    nonce,
-  };
+  const input = { secret: secretDecimal, salt: saltDecimal, unameHash: unameHashDecimal, storedCommitment, nonce };
 
   const proofBundle = await generateProof(input, "login");
+
   return { proofBundle, publicSignals: proofBundle.publicSignals, session: proofBundle.publicSignals[1] };
 }
