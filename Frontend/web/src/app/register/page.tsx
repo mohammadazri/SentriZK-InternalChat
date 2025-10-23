@@ -1,135 +1,118 @@
 "use client";
 
-import { useState } from "react";
-import { generateProof } from "../../lib/zkp";
-import {
-  generateRecoveryPhrase,
-  recoverSaltFromMnemonic,
-  encryptEnvelope,
-  walletSecretFromAddress,
-} from "../../lib/secureCrypto";
-import { checkUsername, registerUser } from "../../lib/api";
-import { keccak256 } from "js-sha3";
+// ---------------------------------------------
+// File: src/app/auth/page.tsx
+// A minimal Next.js page (React) implementing the registration UI.
+// The UI:
+//  - collects username, wallet address (text input for demo), password
+//  - calls prepareRegistration()
+//  - shows mnemonic & a "I saved it" checkbox
+//  - lets user download envelope (.json)
+//  - on user confirmation, calls submitRegistration()
 
-// Generate random 20-byte wallet address
-function randomWalletAddress() {
-  const arr = new Uint8Array(20);
-  crypto.getRandomValues(arr);
-  return "0x" + Array.from(arr).map((b) => b.toString(16).padStart(2, "0")).join("");
-}
+import React, { useState } from "react";
+import { prepareRegistration, submitRegistration } from "@/auth/registerLogic";
 
-export default function Register() {
+export default function RegisterPage() {
   const [username, setUsername] = useState("");
-  const [walletAddr, setWalletAddr] = useState("");
+  const [wallet, setWallet] = useState("");
   const [password, setPassword] = useState("");
-  const [mnemonic, setMnemonic] = useState("");
-  const [status, setStatus] = useState("");
 
-  async function handleRegister() {
+  const [busy, setBusy] = useState(false);
+  const [mnemonic, setMnemonic] = useState<string | null>(null);
+  const [envelopeJson, setEnvelopeJson] = useState<string | null>(null);
+  const [proofBundle, setProofBundle] = useState<any | null>(null);
+  const [savedConfirmed, setSavedConfirmed] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function onPrepare(e: React.FormEvent) {
+    e.preventDefault();
+    setMessage(null);
+    setBusy(true);
     try {
-      if (!password) {
-        setStatus("Please enter a password to encrypt your envelope");
-        return;
-      }
-
-      setStatus("Checking username...");
-      if (!(await checkUsername(username))) {
-        setStatus("Username already taken");
-        return;
-      }
-
-      setStatus("Generating mnemonic...");
-      const phrase = generateRecoveryPhrase();
-      const saltHex = await recoverSaltFromMnemonic(phrase);
-
-      const addr = walletAddr || randomWalletAddress();
-      setWalletAddr(addr);
-      const secretHex = walletSecretFromAddress(addr);
-
-      setStatus("Encrypting JSON envelope...");
-      const envelope = await encryptEnvelope(saltHex, password); // encrypt using user password
-
-      // Trigger download so user can save JSON file
-      const blob = new Blob([envelope], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${username}_envelope.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-
-      setMnemonic(phrase);
-
-      setStatus("Generating registration proof...");
-      const inputSignals = {
-        secret: BigInt("0x" + secretHex).toString(),
-        salt: BigInt("0x" + saltHex).toString(),
-        unameHash: BigInt("0x" + keccak256(username)).toString(),
-      };
-
-      const { proof, publicSignals } = await generateProof(inputSignals, "registration");
-
-      setStatus("Submitting registration...");
-      const resp = await registerUser({
-        username,
-        proof,
-        publicSignals,
-        uniqProof: proof,
-        uniqSignals: publicSignals,
-      });
-
-      setStatus("Registration complete ✅");
-      console.log(resp);
+      const prep = await prepareRegistration(username, wallet, password);
+      setMnemonic(prep.mnemonic);
+      setEnvelopeJson(prep.envelopeJson);
+      setProofBundle(prep.proofBundle);
+      setMessage(`Prepared registration — commitment: ${prep.commitment}`);
     } catch (err: any) {
-      console.error(err);
-      setStatus("Error: " + err.message);
+      setMessage(`Error: ${String(err.message || err)}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function downloadEnvelope() {
+    if (!envelopeJson) return;
+    const blob = new Blob([envelopeJson], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${username || "recovery"}_envelope.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function onSubmitRegistration() {
+    if (!proofBundle) return setMessage("No proof available");
+    if (!savedConfirmed) return setMessage("Please confirm you've saved the mnemonic before continuing");
+
+    setBusy(true);
+    setMessage(null);
+    try {
+      const resp = await submitRegistration(username, proofBundle);
+      setMessage(`Server response: ${JSON.stringify(resp)}`);
+    } catch (err: any) {
+      setMessage(`Registration failed: ${String(err.message || err)}`);
+    } finally {
+      setBusy(false);
     }
   }
 
   return (
-    <div style={{ maxWidth: 600, margin: "auto" }}>
-      <h1>Register</h1>
-
-      <input
-        placeholder="Username"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        style={{ width: "100%", marginBottom: "8px", padding: "8px" }}
-      />
-
-      <input
-        placeholder="Wallet Address (optional)"
-        value={walletAddr}
-        onChange={(e) => setWalletAddr(e.target.value)}
-        style={{ width: "100%", marginBottom: "8px", padding: "8px" }}
-      />
-      <button
-        onClick={() => setWalletAddr(randomWalletAddress())}
-        style={{ marginBottom: "10px" }}
-      >
-        Generate Random Wallet
-      </button>
-
-      <input
-        type="password"
-        placeholder="Password for envelope encryption"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        style={{ width: "100%", marginBottom: "10px", padding: "8px" }}
-      />
-
-      <button onClick={handleRegister} style={{ padding: "8px 16px" }}>
-        Register
-      </button>
+    <main style={{ padding: 20, maxWidth: 720 }}>
+      <h1>Register (ZKP demo)</h1>
+      <form onSubmit={onPrepare}>
+        <div>
+          <label>Username</label>
+          <input value={username} onChange={(e) => setUsername(e.target.value)} />
+        </div>
+        <div>
+          <label>Wallet address (demo)</label>
+          <input value={wallet} onChange={(e) => setWallet(e.target.value)} />
+        </div>
+        <div>
+          <label>Password (encrypts recovery file)</label>
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        </div>
+        <div style={{ marginTop: 12 }}>
+          <button type="submit" disabled={busy}>Prepare registration</button>
+        </div>
+      </form>
 
       {mnemonic && (
-        <>
-          <h3>Recovery Mnemonic</h3>
-          <p>{mnemonic}</p>
-        </>
+        <section style={{ marginTop: 20, border: "1px solid #ddd", padding: 12 }}>
+          <h3>Recovery phrase (save this now)</h3>
+          <p style={{ whiteSpace: "pre-wrap" }}>{mnemonic}</p>
+          <div>
+            <button onClick={downloadEnvelope}>Download encrypted envelope (.json)</button>
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <label>
+              <input type="checkbox" checked={savedConfirmed} onChange={(e) => setSavedConfirmed(e.target.checked)} /> I have saved the mnemonic and downloaded the envelope
+            </label>
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <button onClick={onSubmitRegistration} disabled={!savedConfirmed || busy}>Submit registration to server</button>
+          </div>
+        </section>
       )}
 
-      {status && <p><strong>Status:</strong> {status}</p>}
-    </div>
+      {message && (
+        <div style={{ marginTop: 12 }}>
+          <strong>{message}</strong>
+        </div>
+      )}
+    </main>
   );
 }

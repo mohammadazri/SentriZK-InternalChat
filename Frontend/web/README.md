@@ -1,3 +1,64 @@
+Core logic flow
+Registration
+
+User enters:
+
+username
+
+wallet address
+
+password (used to encrypt the salt)
+
+App:
+
+Generates mnemonic + salt
+
+Encrypts the salt using the user’s password → creates the envelope file
+
+Generates ZKP proof (secret = wallet secret, salt = from mnemonic)
+
+show mnemonic words and ask your to save it somewhere safely for recovery if they lost file 
+
+Sends proof + public signals + username to backend
+
+Allows user to download the encrypted file (for recovery)
+
+Login
+
+User enters:
+
+username
+
+wallet address
+
+password (to decrypt the file)
+
+App:
+
+Decrypts the encrypted salt file using password
+
+Recreates proof (same inputs)
+
+Sends proof + public signals to backend
+
+Backend verifies against stored commitment
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # 🔐 ZKP Authentication Flow
 
 ## 1️⃣ Registration Flow
@@ -99,3 +160,22 @@ flowchart TD
 * ZKP ensures that the **server never sees the secret or salt** in plaintext.
 
 ---
+
+
+sequenceDiagram
+    participant M as Mobile App
+    participant W as Web (Browser)
+    participant B as Backend
+
+    M->>B: Request one-time session token (POST /init-auth)
+    B-->>M: Return sessionToken + redirectURL (https://webapp.com/auth?token=XYZ)
+
+    M->>W: Open system browser → redirectURL
+    W->>B: Validate token (GET /validate?token=XYZ)
+    W->>W: User performs ZKP Registration/Login flow (same as your web flow)
+    W->>B: Submit proof to /register or /login
+    B->>W: Verify proof → success ✅
+    B->>M: Notify via redirect (deep link): myapp://auth-success?session=XYZ
+    W->>M: Browser redirects to deep link → returns control to app
+    M->>B: Exchange session=XYZ for JWT / user info
+    B-->>M: JWT returned → user logged in securely
