@@ -19,8 +19,6 @@ dependencies:
   app_links: ^6.4.1
   flutter_secure_storage: ^9.2.4
   encrypt: ^5.0.3
-  flutter_inappwebview: ^6.1.5
-  http: ^1.5.0
 
 dev_dependencies:
   flutter_test:

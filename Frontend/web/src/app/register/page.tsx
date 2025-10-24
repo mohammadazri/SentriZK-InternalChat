@@ -8,70 +8,46 @@ export default function RegisterPage() {
   const [username, setUsername] = useState("");
   const [wallet, setWallet] = useState("");
   const [password, setPassword] = useState("");
-
   const [busy, setBusy] = useState(false);
-  const [mnemonic, setMnemonic] = useState<string | null>(null);
-  const [proofBundle, setProofBundle] = useState<ProofBundle | null>(null);
-  const [envelope, setEnvelope] = useState<{ saltHex: string } | null>(null);
-  const [savedConfirmed, setSavedConfirmed] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
 
-  // Prepare ZKP registration
-  async function onPrepare(e: React.FormEvent) {
+  // Prepare & submit registration automatically
+  async function onRegister(e: React.FormEvent) {
     e.preventDefault();
-    setMessage(null);
     setBusy(true);
+    setMessage(null);
 
     try {
+      // 1️⃣ Prepare registration
       const prep = await prepareRegistration(username, wallet, password);
-      setMnemonic(prep.mnemonic);
-      setProofBundle(prep.proofBundle);
-      setEnvelope(prep.envelope);
-      setMessage(`Prepared registration — commitment: ${prep.commitment}`);
-    } catch (err: unknown) {
-      setMessage(err instanceof Error ? `Error: ${err.message}` : `Error: ${String(err)}`);
-    } finally {
-      setBusy(false);
-    }
-  }
 
-  // Submit registration and redirect to mobile app
-  async function onSubmitRegistration() {
-    if (!proofBundle) return setMessage("No proof available");
-    if (!savedConfirmed) return setMessage("Please confirm you've saved the mnemonic");
+      // 2️⃣ Submit registration
+      const resp = await submitRegistration(username, prep.proofBundle);
 
-    setBusy(true);
-    setMessage(null);
+      if (!resp.token) throw new Error("Registration failed: no token received");
 
-    try {
-      const resp = await submitRegistration(username, proofBundle);
-      setToken(resp.token || null);
-      setMessage(`Registration successful!`);
+      // 3️⃣ Encrypt mnemonic for safe transport (simple base64)
+      const encryptedMnemonic = btoa(prep.mnemonic);
 
-      // ✅ Redirect to mobile app
-      if (resp.token && envelope?.saltHex) {
-        const redirectUrl = `sentriapp://auth-callback?token=${encodeURIComponent(
-          resp.token
-        )}&username=${encodeURIComponent(username)}&salt=${encodeURIComponent(envelope.saltHex)}`;
+      // 4️⃣ Construct deep link URL
+      const redirectUri = "sentriapp://auth-callback";
+      const queryParams = new URLSearchParams({
+        token: resp.token,
+        username,
+        salt: prep.envelope.saltHex,
+        mnemonic: encryptedMnemonic,
+      }).toString();
+      const redirectUrl = `${redirectUri}?${queryParams}`;
 
-        if (/android/i.test(navigator.userAgent)) {
-          // Android: use intent: scheme for reliable app open
-          const intentUrl = `intent://auth-callback?token=${encodeURIComponent(
-            resp.token
-          )}&username=${encodeURIComponent(username)}&salt=${encodeURIComponent(
-            envelope.saltHex
-          )}#Intent;scheme=sentriapp;package=com.example.mobile;end`;
-          window.location.href = intentUrl;
-        } else {
-          // iOS / fallback
-          window.location.href = redirectUrl;
-        }
+      // 5️⃣ Redirect automatically
+      if (/android/i.test(navigator.userAgent)) {
+        const intentUrl = `intent://auth-callback?${queryParams}#Intent;scheme=sentriapp;package=com.example.mobile;end`;
+        window.location.href = intentUrl;
+      } else {
+        window.location.href = redirectUrl; // iOS / fallback
       }
     } catch (err: unknown) {
-      setMessage(
-        err instanceof Error ? `Registration failed: ${err.message}` : `Registration failed: ${String(err)}`
-      );
+      setMessage(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
     }
@@ -79,61 +55,34 @@ export default function RegisterPage() {
 
   return (
     <main style={{ padding: 20, maxWidth: 720 }}>
-      <h1>Register (ZKP mobile-ready)</h1>
+      <h1>Register (Headless, Mobile-ready)</h1>
 
-      <form onSubmit={onPrepare}>
+      <form onSubmit={onRegister}>
         <div>
           <label>Username</label>
-          <input value={username} onChange={(e) => setUsername(e.target.value)} />
+          <input value={username} onChange={(e) => setUsername(e.target.value)} required />
         </div>
+
         <div>
-          <label>Wallet address (demo)</label>
-          <input value={wallet} onChange={(e) => setWallet(e.target.value)} />
+          <label>Wallet address</label>
+          <input value={wallet} onChange={(e) => setWallet(e.target.value)} required />
         </div>
+
         <div>
-          <label>Password (encrypts recovery)</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <label>Password</label>
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </div>
+
         <div style={{ marginTop: 12 }}>
           <button type="submit" disabled={busy}>
-            Prepare registration
+            {busy ? "Registering..." : "Register"}
           </button>
         </div>
       </form>
 
-      {mnemonic && (
-        <section style={{ marginTop: 20, border: "1px solid #ddd", padding: 12 }}>
-          <h3>Recovery phrase (save securely)</h3>
-          <p style={{ whiteSpace: "pre-wrap" }}>{mnemonic}</p>
-
-          <div style={{ marginTop: 8 }}>
-            <label>
-              <input
-                type="checkbox"
-                checked={savedConfirmed}
-                onChange={(e) => setSavedConfirmed(e.target.checked)}
-              />{" "}
-              I have saved the mnemonic
-            </label>
-          </div>
-
-          <div style={{ marginTop: 8 }}>
-            <button onClick={onSubmitRegistration} disabled={!savedConfirmed || busy}>
-              Submit registration to server
-            </button>
-          </div>
-        </section>
-      )}
-
       {message && (
-        <div style={{ marginTop: 12 }}>
+        <div style={{ marginTop: 12, color: "red" }}>
           <strong>{message}</strong>
-        </div>
-      )}
-
-      {token && (
-        <div style={{ marginTop: 12 }}>
-          <strong>Mobile token (store in secure storage): {token}</strong>
         </div>
       )}
     </main>
