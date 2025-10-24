@@ -1,44 +1,75 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { prepareLogin } from "@/auth/loginLogic";
 import { loginUser } from "@/auth/api";
 
-export default function LoginPage({ storedEnvelope }: { storedEnvelope: { saltHex: string } | null }) {
+export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
+  const [saltHex, setSaltHex] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
+  // ✅ Auto-fill username & salt from mobile deep link
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const userParam = params.get("username");
+    const saltParam = params.get("salt");
+
+    if (userParam) setUsername(userParam);
+    if (saltParam) setSaltHex(saltParam);
+  }, []);
+
   const handleLogin = async () => {
     setMessage(null);
 
-    if (!username || !walletAddress || !storedEnvelope) {
-      setMessage("All fields are required and envelope must be loaded from secure storage!");
+    if (!saltHex) {
+      setMessage("❌ Missing salt — please open this page from the app!");
+      return;
+    }
+
+    if (!walletAddress) {
+      setMessage("Please enter your wallet address.");
       return;
     }
 
     setLoading(true);
     try {
-      // 1️⃣ Prepare login proof
-      const { proofBundle } = await prepareLogin(username, walletAddress, storedEnvelope);
+      // 1️⃣ Prepare login proof using username + salt from app
+      const { proofBundle } = await prepareLogin(username, walletAddress, { saltHex });
 
-      // 2️⃣ Call backend login
+      // 2️⃣ Send proof to backend
       const resp = await loginUser(username, proofBundle);
 
-      setToken(resp.token || null); // store token securely
-      setMessage(`✅ Login successful! Mobile token: ${resp.token}`);
-    }catch (err: unknown) {
-    console.error(err);
+      if (!resp.token) throw new Error("Login failed: no token received");
 
-    // Type guard to safely access error message
-    if (err instanceof Error) {
-      setMessage(`❌ Login failed: ${err.message}`);
-    } else {
-      setMessage(`❌ Login failed: ${String(err)}`);
-    }
-  }finally {
+      setToken(resp.token);
+      setMessage("✅ Login successful! Returning to the app...");
+
+      // 3️⃣ Construct query params
+      const queryParams = new URLSearchParams({
+        token: resp.token,
+        username,
+      }).toString();
+
+      // 4️⃣ Redirect back to mobile app
+      if (/android/i.test(navigator.userAgent)) {
+        // Android: use intent URL for reliable app launch
+        const intentUrl = `intent://login-success?${queryParams}#Intent;scheme=sentriapp;package=com.example.mobile;end`;
+        window.location.href = intentUrl;
+      } else {
+        // iOS / fallback
+        const redirectUrl = `sentriapp://login-success?${queryParams}`;
+        window.location.href = redirectUrl;
+      }
+
+    } catch (err: unknown) {
+      console.error(err);
+      if (err instanceof Error) setMessage(`❌ Login failed: ${err.message}`);
+      else setMessage(`❌ Login failed: ${String(err)}`);
+    } finally {
       setLoading(false);
     }
   };
@@ -48,17 +79,26 @@ export default function LoginPage({ storedEnvelope }: { storedEnvelope: { saltHe
       <h2 style={{ textAlign: "center" }}>ZKP Mobile Login</h2>
 
       <label>Username:</label>
-      <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} style={{ width: "100%", marginBottom: 10 }} />
+      <input type="text" value={username} disabled style={{ width: "100%", marginBottom: 10 }} />
+
+      <label>Salt (from app):</label>
+      <input type="text" value={saltHex} disabled style={{ width: "100%", marginBottom: 10 }} />
 
       <label>Wallet Address:</label>
-      <input type="text" value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} style={{ width: "100%", marginBottom: 10 }} />
+      <input
+        type="text"
+        value={walletAddress}
+        onChange={(e) => setWalletAddress(e.target.value)}
+        placeholder="Enter wallet address"
+        style={{ width: "100%", marginBottom: 10 }}
+      />
 
-      <button onClick={handleLogin} disabled={loading || !storedEnvelope} style={{ width: "100%", padding: 10 }}>
+      <button onClick={handleLogin} disabled={loading} style={{ width: "100%", padding: 10 }}>
         {loading ? "Logging in..." : "Login"}
       </button>
 
       {message && <p style={{ marginTop: 20, textAlign: "center" }}>{message}</p>}
-      {token && <p style={{ marginTop: 10, textAlign: "center" }}>Store this token in secure storage: {token}</p>}
+      {token && <p style={{ marginTop: 10, textAlign: "center" }}>Token: {token}</p>}
     </div>
   );
 }

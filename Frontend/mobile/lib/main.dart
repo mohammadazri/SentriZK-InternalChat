@@ -19,7 +19,7 @@ class _WebRedirectTestAppState extends State<WebRedirectTestApp> {
   final appLinks = AppLinks();
   final storage = const FlutterSecureStorage();
 
-  String status = "Ready to register...";
+  String status = "Ready to register or login...";
   String token = "";
   String username = "";
   String salt = "";
@@ -31,7 +31,7 @@ class _WebRedirectTestAppState extends State<WebRedirectTestApp> {
     _listenForRedirect();
   }
 
-  /// Listen for redirect from browser
+  /// Listen for redirect from browser (registration/login complete)
   void _listenForRedirect() {
     appLinks.uriLinkStream.listen((uri) async {
       if (uri == null || uri.scheme != 'sentriapp') return;
@@ -46,32 +46,55 @@ class _WebRedirectTestAppState extends State<WebRedirectTestApp> {
             : "";
 
         status =
-            "✅ Registration completed!\n\nToken: $token\nUsername: $username\nSalt: $salt\nMnemonic (24 words):\n$mnemonic";
+            "✅ Received redirect!\n\nToken: $token\nUsername: $username\nSalt: $salt\nMnemonic: $mnemonic";
       });
 
-      // Save to secure storage
+      // Save securely
       await storage.write(key: 'token', value: token);
       await storage.write(key: 'username', value: username);
       await storage.write(key: 'salt', value: salt);
       await storage.write(key: 'mnemonic', value: mnemonic);
-
-      debugPrint("✅ Saved to secure storage!");
     });
   }
 
   /// Open the web registration page
   Future<void> _openWebRegistration() async {
-    const url = "https://b243b7e3d485.ngrok-free.app/register"; // Your web registration page
-    final uri = Uri.parse(url);
+    const url = "https://b243b7e3d485.ngrok-free.app/register";
+    await _openUrl(url, "register");
+  }
 
+  /// Open the web login page, passing saved salt & username
+  Future<void> _openWebLogin() async {
+    final savedUsername = await storage.read(key: 'username');
+    final savedSalt = await storage.read(key: 'salt');
+
+    if (savedSalt == null) {
+      setState(() => status = "⚠️ No saved salt found. Please register first.");
+      return;
+    }
+
+    final queryParams = {
+      if (savedUsername != null) 'username': savedUsername,
+      'salt': savedSalt,
+    };
+    final loginUrl =
+        Uri.parse("https://b243b7e3d485.ngrok-free.app/login")
+            .replace(queryParameters: queryParams)
+            .toString();
+
+    await _openUrl(loginUrl, "login");
+  }
+
+  Future<void> _openUrl(String url, String type) async {
+    final uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      setState(() => status = "❌ Could not open browser.");
+      setState(() => status = "❌ Could not open $type page.");
     } else {
-      setState(() => status = "🌐 Browser opened. Complete registration there...");
+      setState(() => status = "🌐 Opened $type page in browser...");
     }
   }
 
-  /// Retrieve saved data (for testing)
+  /// Load saved secure data
   Future<void> _loadFromStorage() async {
     final savedToken = await storage.read(key: 'token');
     final savedUsername = await storage.read(key: 'username');
@@ -87,9 +110,9 @@ class _WebRedirectTestAppState extends State<WebRedirectTestApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: "SentriApp Registration",
+      title: "SentriApp",
       home: Scaffold(
-        appBar: AppBar(title: const Text("SentriApp Registration")),
+        appBar: AppBar(title: const Text("SentriApp Auth")),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -103,16 +126,21 @@ class _WebRedirectTestAppState extends State<WebRedirectTestApp> {
               ),
               const SizedBox(height: 10),
               ElevatedButton(
+                onPressed: _openWebLogin,
+                child: const Text("Open Web Login"),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
                 onPressed: _loadFromStorage,
                 child: const Text("Load Saved Data"),
               ),
               const SizedBox(height: 20),
               const Text(
                 "Flow:\n"
-                "1️⃣ Tap button to open browser\n"
-                "2️⃣ Complete registration on web\n"
-                "3️⃣ App auto-opens with token, salt & mnemonic ✅\n"
-                "4️⃣ Data saved securely 🔐",
+                "🔹 Register → App stores username, salt, mnemonic\n"
+                "🔹 Login → App passes username & salt to browser autofill\n"
+                "🔹 Browser only asks for wallet address\n"
+                "🔹 After success, redirects back to app ✅",
               ),
             ],
           ),
