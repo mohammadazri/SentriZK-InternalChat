@@ -299,5 +299,5 @@ app.get("/validate-token", (req, res) => {
 // =======================
 // --- Start Server ---
 // =======================
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 6000;
 app.listen(PORT, "0.0.0.0", () => console.log(`🚀 [server] running on all interfaces, port ${PORT}`));
