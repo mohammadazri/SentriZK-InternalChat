@@ -1,78 +1,74 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:app_links/app_links.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const WebRedirectTestApp());
 }
 
-class MyApp extends StatefulWidget {
+class WebRedirectTestApp extends StatefulWidget {
+  const WebRedirectTestApp({super.key});
+
   @override
-  State<MyApp> createState() => _MyAppState();
+  State<WebRedirectTestApp> createState() => _WebRedirectTestAppState();
 }
 
-class _MyAppState extends State<MyApp> {
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
-  String? _token;
-  late final AppLinks _appLinks;
+class _WebRedirectTestAppState extends State<WebRedirectTestApp> {
+  final appLinks = AppLinks();
+  String status = "Ready to register...";
 
   @override
   void initState() {
     super.initState();
-    _appLinks = AppLinks();
-    _initDeepLinkListener();
+    _listenForRedirect();
   }
 
-  void _initDeepLinkListener() async {
-    // Listen for app links (deep link)
-    _appLinks.uriLinkStream.listen((Uri? uri) async {
-      if (uri != null && uri.queryParameters.containsKey('token')) {
-        String token = uri.queryParameters['token']!;
-        await _storage.write(key: 'auth_token', value: token);
-        setState(() {
-          _token = token;
-        });
-      }
+  void _listenForRedirect() {
+    appLinks.uriLinkStream.listen((uri) {
+      if (uri == null || uri.scheme != 'sentriapp') return;
+
+      setState(() {
+        status =
+            "✅ Redirect received!\nScheme: ${uri.scheme}\nHost: ${uri.host}\nParameters: ${uri.queryParameters}";
+      });
     });
   }
 
   Future<void> _openWebRegistration() async {
-    const String url = 'https://029a2d30aa60.ngrok-free.app/register';
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-    } else {
-      print('Could not launch $url');
-    }
-  }
+    const url = "https://b243b7e3d485.ngrok-free.app/register"; // Your web registration page
+    final uri = Uri.parse(url);
 
-  Future<void> _readToken() async {
-    String? token = await _storage.read(key: 'auth_token');
-    setState(() {
-      _token = token;
-    });
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      setState(() => status = "❌ Could not open browser.");
+    } else {
+      setState(() => status = "🌐 Browser opened. Complete registration there...");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: "Web-to-App Test",
       home: Scaffold(
-        appBar: AppBar(title: const Text('ZKP Mobile Test')),
+        appBar: AppBar(title: const Text("Web Registration Test")),
         body: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(20),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text(status, style: const TextStyle(fontSize: 16)),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _openWebRegistration,
-                child: const Text('Open Web Registration'),
+                child: const Text("Open Web Registration"),
               ),
               const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _readToken,
-                child: const Text('Read Stored Token'),
+              const Text(
+                "Flow:\n"
+                "1️⃣ Tap button to open browser\n"
+                "2️⃣ Complete registration on web\n"
+                "3️⃣ App auto-opens via deep link ✅",
               ),
-              const SizedBox(height: 20),
-              if (_token != null) Text('Token: $_token'),
             ],
           ),
         ),
