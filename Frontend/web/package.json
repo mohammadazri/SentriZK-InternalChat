@@ -1,0 +1,39 @@
+{
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "axios": "^1.12.2",
+    "big-integer": "^1.6.52",
+    "bip39": "^3.1.0",
+    "buffer": "^6.0.3",
+    "circomlibjs": "^0.1.7",
+    "crypto-js": "^4.2.0",
+    "idb-keyval": "^6.2.2",
+    "js-sha3": "^0.9.3",
+    "next": "15.5.6",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "snarkjs": "^0.7.5"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/circomlibjs": "^0.1.6",
+    "@types/crypto-js": "^4.2.2",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/snarkjs": "^0.7.9",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.6",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
