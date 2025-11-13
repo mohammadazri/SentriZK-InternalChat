@@ -225,6 +225,17 @@ export default function LoginPage() {
               <li>Complete the login process</li>
             </ol>
           </div>
+          <div style={{marginTop:16,opacity:0.9}}>
+            <p>If you're trying to sign in from a different device without the mobile app:</p>
+            <ul style={{lineHeight:1.7}}>
+              <li>
+                Use <a href="/forgot-password" style={{color:'#93c5fd'}}>Forgot Password</a> to derive your salt from the recovery phrase
+              </li>
+              <li>
+                Then go to <a href="/signin" style={{color:'#93c5fd'}}>Sign In</a> to authenticate with your wallet
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     );
