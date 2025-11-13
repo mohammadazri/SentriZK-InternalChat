@@ -1,181 +1,144 @@
-Core logic flow
-Registration
+# 🌐 SentriZK Web Frontend
 
-User enters:
+Next.js web application for ZKP authentication with mobile app integration.
 
-username
+## 🚀 Quick Start
 
-wallet address
+```bash
+# Install dependencies
+npm install
 
-password (used to encrypt the salt)
+# Configure environment
+cp example.env.local .env.local
+# Edit .env.local with your backend URL
 
-App:
+# Run development server
+npm run dev
 
-Generates mnemonic + salt
-
-Encrypts the salt using the user’s password → creates the envelope file
-
-Generates ZKP proof (secret = wallet secret, salt = from mnemonic)
-
-show mnemonic words and ask your to save it somewhere safely for recovery if they lost file 
-
-Sends proof + public signals + username to backend
-
-Allows user to download the encrypted file (for recovery)
-
-Login
-
-User enters:
-
-username
-
-wallet address
-
-password (to decrypt the file)
-
-App:
-
-Decrypts the encrypted salt file using password
-
-Recreates proof (same inputs)
-
-Sends proof + public signals to backend
-
-Backend verifies against stored commitment
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# 🔐 ZKP Authentication Flow
-
-## 1️⃣ Registration Flow
-
-```mermaid
-flowchart TD
-    A[User enters desired username] --> B[Frontend checks availability via GET /check-username/:username]
-    B --> |Available| C[Generate 24-word recovery mnemonic]
-    C --> D[Derive salt deterministically from mnemonic using recoverSaltFromMnemonic]
-    D --> E[Encrypt salt → JSON envelope via encryptEnvelope(secret, salt, password)]
-    E --> F[User downloads encrypted JSON file]
-    F --> G[Display mnemonic to user]
-    G --> H[Compute username hash unameHash = keccak256(username)]
-    H --> I[Generate zk-SNARK registration proof with input: { secret, salt, unameHash }]
-    I --> J[Submit proofs + publicSignals → backend POST /register]
-    J --> K[Backend verifies proofs and stores { username, commitment, identityCommitment }]
-    K --> L[Registration complete ✅]
+# Build for production
+npm run build
+npm start
 ```
 
-### Steps:
+## 📦 Tech Stack
 
-1. **Choose Username**
+- **Framework**: Next.js 15.5.6 (App Router)
+- **Language**: TypeScript 5.x
+- **Styling**: Tailwind CSS 4.x
+- **ZKP**: snarkjs 0.7.5, circomlibjs 0.1.7
+- **HTTP**: axios 1.12.2
+- **Crypto**: bip39 3.1.0, crypto-js 4.2.0, js-sha3 0.9.3
 
-   * User types a desired username.
-   * Frontend verifies availability via `GET /check-username/:username`.
+## 🔑 Environment Variables
 
-2. **Generate Recovery Mnemonic**
-
-   * Create a **24-word BIP-39 mnemonic** first.
-   * Deterministically derive **salt** from mnemonic using `recoverSaltFromMnemonic`.
-
-3. **Encrypt Salt → JSON File**
-
-   * Use `encryptEnvelope(secret, salt, password)` to generate **encrypted JSON envelope**.
-   * **User must download the JSON file** before proceeding.
-
-4. **Display Recovery Mnemonic**
-
-   * After JSON download, show the **mnemonic**.
-   * Instruct user to store it **securely**.
-
-5. **Generate Registration Proof**
-
-   * Compute `unameHash = keccak256(username)`.
-   * Input signals: `{ secret, salt, unameHash }`.
-   * Generate zk-SNARK registration proof.
-
-6. **Submit Proofs**
-
-   * Send `{ username, proof, publicSignals, uniqProof, uniqSignals }` → backend `/register`.
-   * Backend verifies proofs and stores `{ username, commitment, identityCommitment }`.
-
----
-
-## 2️⃣ Login Flow
-
-```mermaid
-flowchart TD
-    A[User selects downloaded JSON file] --> B[Input password to decrypt → retrieve salt]
-    B --> C[User enters username]
-    C --> D[Frontend fetches nonce via GET /commitment/:username]
-    D --> E[Compute unameHash = keccak256(username)]
-    E --> F[Generate zk-SNARK login proof with input: { secret, salt, unameHash, nonce }]
-    F --> G[Submit proof + publicSignals → backend POST /login]
-    G --> H[Backend verifies proof and session → login successful ✅]
+```env
+NEXT_PUBLIC_BACKEND_URL=http://localhost:3000
 ```
 
-### Steps:
+## 📖 Documentation
 
-1. **Select Encrypted JSON File**
+For comprehensive documentation, see:
+- **Complete Guide**: [Doc/Frontend/web_documentation.md](../../Doc/Frontend/web_documentation.md)
+- **API Reference**: [Doc/Backend/api_reference.md](../../Doc/Backend/api_reference.md)
+- **Main README**: [../../README.md](../../README.md)
 
-   * User selects previously downloaded JSON envelope.
-   * Enter **password** to decrypt and retrieve **salt**.
+## 🔐 Authentication Flow
 
-2. **Get Username & Nonce**
+### Registration Flow
+1. User enters desired username
+2. Frontend checks availability via `GET /check-username/:username`
+3. Generate 24-word recovery mnemonic
+4. Derive salt deterministically from mnemonic
+5. Encrypt salt → JSON envelope via `encryptEnvelope(secret, salt, password)`
+6. User downloads encrypted JSON file
+7. Display mnemonic to user (save securely!)
+8. Generate zk-SNARK registration proof with input: `{ secret, salt, unameHash }`
+9. Submit proofs + publicSignals → backend `POST /register`
+10. Backend verifies proofs and stores `{ username, commitment, identityCommitment }`
 
-   * User types username.
-   * Frontend requests **nonce** from server: `GET /commitment/:username`.
+### Login Flow
+1. User selects downloaded JSON file
+2. Input password to decrypt → retrieve salt
+3. User enters username
+4. Frontend fetches nonce via `GET /commitment/:username`
+5. Generate zk-SNARK login proof with input: `{ secret, salt, unameHash, nonce }`
+6. Submit proof + publicSignals → backend `POST /login`
+7. Backend verifies proof and session → login successful ✅
 
-3. **Generate Login Proof**
+### Mobile Integration Flow
+1. Mobile app requests MAT from backend: `POST /generate-mobile-access-token`
+2. Backend returns `sessionToken + redirectURL`
+3. Mobile opens system browser → `https://webapp.com/register?mat=XYZ`
+4. Web validates MAT: `GET /validate-token?token=XYZ`
+5. User performs ZKP registration/login flow (same as above)
+6. Web submits proof to `/register` or `/login`
+7. Backend verifies proof → success ✅
+8. Browser redirects to deep link: `sentriapp://auth-callback?token=...`
+9. Mobile receives redirect → user logged in
 
-   * Compute `unameHash = keccak256(username)`.
-   * Input signals: `{ secret, salt, unameHash, nonce }`.
-   * Generate zk-SNARK login proof.
+## 📂 Project Structure
 
-4. **Submit Proof**
+```
+src/
+├── app/               # Next.js App Router pages
+│   ├── page.tsx      # Home page
+│   ├── register/     # Registration flow
+│   └── login/        # Login flow
+├── auth/             # ZKP authentication logic
+│   ├── crypto.ts     # Encryption utilities
+│   ├── mnemonic.ts   # BIP-39 mnemonic
+│   ├── registration.ts  # Registration proof
+│   └── login.ts      # Login proof
+├── components/       # React components
+├── lib/              # Utility functions
+└── utils/            # Helper functions
+```
 
-   * Send `{ username, proof, publicSignals }` → backend `/login`.
-   * Backend verifies proof and session.
-   * Login successful if valid.
+## 🛠️ Development
 
----
+```bash
+# Install dependencies
+npm install
 
-### ✅ Notes
+# Run development server
+npm run dev
 
-* **JSON envelope** stores only the salt, never the wallet secret.
-* **Mnemonic** is the master recovery key; losing it means losing the ability to recover the account.
-* **Nonce** is server-generated per login to prevent replay attacks.
-* ZKP ensures that the **server never sees the secret or salt** in plaintext.
+# Type checking
+npm run type-check
 
----
+# Linting
+npm run lint
 
+# Build production
+npm run build
 
-sequenceDiagram
-    participant M as Mobile App
-    participant W as Web (Browser)
-    participant B as Backend
+# Start production server
+npm start
+```
 
-    M->>B: Request one-time session token (POST /init-auth)
-    B-->>M: Return sessionToken + redirectURL (https://webapp.com/auth?token=XYZ)
+## 🚀 Deployment
 
-    M->>W: Open system browser → redirectURL
-    W->>B: Validate token (GET /validate?token=XYZ)
-    W->>W: User performs ZKP Registration/Login flow (same as your web flow)
-    W->>B: Submit proof to /register or /login
-    B->>W: Verify proof → success ✅
-    B->>M: Notify via redirect (deep link): myapp://auth-success?session=XYZ
-    W->>M: Browser redirects to deep link → returns control to app
-    M->>B: Exchange session=XYZ for JWT / user info
-    B-->>M: JWT returned → user logged in securely
+### Vercel (Recommended)
+```bash
+npm install -g vercel
+vercel
+```
+
+### Static Export
+```bash
+npm run build
+# Output: out/
+```
+
+## 🔒 Security Features
+
+- **ZKP Authentication**: No password sent to server
+- **MAT Protection**: One-time use tokens with 5-minute expiry
+- **Session Management**: 30-minute session with refresh
+- **Rate Limiting**: 10 requests/minute on critical endpoints
+- **CORS Protection**: Restricted origins
+- **Encrypted Storage**: Secure salt encryption
+
+## 📝 License
+
+MIT License - See [LICENSE](../../LICENSE) for details

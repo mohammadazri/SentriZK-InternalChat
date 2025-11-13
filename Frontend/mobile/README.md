@@ -1,16 +1,47 @@
-# mobile
+# 📱 SentriZK Mobile App
 
-A new Flutter project.
+Flutter mobile application with ZKP authentication and deep linking.
 
-## Getting Started
+## 🚀 Quick Start
 
-This project is a starting point for a Flutter application.
+```bash
+# Install Flutter SDK (3.8.1+)
+# https://docs.flutter.dev/get-started/install
 
-A few resources to get you started if this is your first Flutter project:
+# Install dependencies
+flutter pub get
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+# Configure backend URL
+# Edit lib/config/app_config.dart
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+# Run on device/emulator
+flutter run
+
+# Build release APK (Android)
+flutter build apk --release
+```
+
+## 📦 Tech Stack
+
+- **Framework**: Flutter 3.8.1+
+- **Language**: Dart 3.8.1+
+- **Secure Storage**: flutter_secure_storage 9.2.4
+- **Deep Linking**: app_links 6.4.1
+- **HTTP Client**: http 1.2.2
+
+## ⚙️ Configuration
+
+Edit `lib/config/app_config.dart`:
+
+```dart
+static const String baseUrl = 'http://your-backend-url:3000';
+static const String webBaseUrl = 'http://localhost:3001';
+static const String deepLinkScheme = 'sentriapp';
+```
+
+## 📖 Documentation
+
+For comprehensive documentation, see:
+- **Complete Guide**: [Doc/Frontend/mobile_documentation.md](../../Doc/Frontend/mobile_documentation.md)
+- **API Reference**: [Doc/Backend/api_reference.md](../../Doc/Backend/api_reference.md)
+- **Main README**: [../../README.md](../../README.md)
