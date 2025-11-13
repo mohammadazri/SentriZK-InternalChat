@@ -1,11 +1,13 @@
 import { generateRecoveryPhrase, recoverSaltFromMnemonic, walletSecretFromAddress } from "../lib/secureCrypto";
+import { encryptSaltHex } from "../lib/saltEncryption";
 import { generateProof, ProofBundle } from "../lib/zkp";
 import { registerUser } from "./api";
 import { sha3_256 } from "js-sha3";
 
 export interface PreparedRegistration {
-  mnemonic: string;          // 24 words
-  envelope: { saltHex: string }; // store securely in mobile storage
+  mnemonic: string;                 // 24 words (shown once)
+  encryptedSalt: string;            // encrypted saltHex (with password)
+  envelopePlain: { saltHex: string }; // legacy plain envelope (not sent to mobile anymore)
   proofBundle: ProofBundle;
   commitment: string;
   publicSignals: string[];
@@ -35,8 +37,10 @@ export async function prepareRegistration(username: string, walletAddress: strin
   const secretHex = walletSecretFromAddress(walletAddress);
   const secretDecimal = BigInt('0x' + secretHex).toString();
 
-  // 4) Envelope (store securely on mobile)
-  const envelope = { saltHex }; 
+  // 4) Encrypt salt with user password (store encrypted on mobile)
+  const encryptedSalt = await encryptSaltHex(saltHex, password);
+  // Keep plain envelope internally if needed
+  const envelopePlain = { saltHex };
 
   // 5) Public input
   const unameHashDecimal = unameHashToDecimal(username);
@@ -48,7 +52,7 @@ export async function prepareRegistration(username: string, walletAddress: strin
   // 7) Commitment
   const commitment = String(proofBundle.publicSignals[0]);
 
-  return { mnemonic, envelope, proofBundle, publicSignals: proofBundle.publicSignals, commitment };
+  return { mnemonic, encryptedSalt, envelopePlain, proofBundle, publicSignals: proofBundle.publicSignals, commitment };
 }
 
 /**

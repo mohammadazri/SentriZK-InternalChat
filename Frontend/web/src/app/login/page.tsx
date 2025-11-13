@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { prepareLogin } from "@/auth/loginLogic";
+import { decryptSaltHex } from "@/lib/saltEncryption";
 import { loginUser } from "@/auth/api";
 import WalletConnector from "@/components/WalletConnector";
 import styles from "./login.module.css";
@@ -10,7 +11,8 @@ export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
-  const [saltHex, setSaltHex] = useState("");
+  const [encryptedSalt, setEncryptedSalt] = useState("");
+  const [decryptedSaltHex, setDecryptedSaltHex] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export default function LoginPage() {
       const params = new URLSearchParams(window.location.search);
       const mat = params.get("mat");
       const userParam = params.get("username");
-      const saltParam = params.get("salt");
+      const saltParam = params.get("encryptedSalt");
 
       if (!mat) {
         setIsAuthorized(false);
@@ -40,7 +42,7 @@ export default function LoginPage() {
 
       // Pre-fill username and salt from mobile
       if (userParam) setUsername(userParam);
-      if (saltParam) setSaltHex(saltParam);
+      if (saltParam) setEncryptedSalt(saltParam);
 
       // Set timeout to redirect after 5 minutes
       const timeout = setTimeout(() => {
@@ -64,8 +66,8 @@ export default function LoginPage() {
   };
 
   const validateForm = (): boolean => {
-    if (!saltHex) {
-      setError("Missing salt. Please open this page from the mobile app.");
+    if (!encryptedSalt) {
+      setError("Missing encrypted salt. Please open this page from the mobile app.");
       return false;
     }
 
@@ -96,7 +98,13 @@ export default function LoginPage() {
     try {
       // 1️⃣ Prepare login proof
       setMessage("🔐 Generating zero-knowledge proof...");
-      const { proofBundle } = await prepareLogin(username, walletAddress, { saltHex });
+      // Decrypt salt with password first time (cache in state)
+      if (!decryptedSaltHex) {
+        setMessage("🔐 Decrypting salt with password...");
+        const saltHex = await decryptSaltHex(encryptedSalt, password);
+        setDecryptedSaltHex(saltHex);
+      }
+      const { proofBundle } = await prepareLogin(username, walletAddress, { saltHex: decryptedSaltHex! });
 
       // 2️⃣ Send proof to backend
       setMessage("📡 Authenticating with server...");
@@ -168,150 +176,42 @@ export default function LoginPage() {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.loginCard}>
-        {/* Header */}
-        <div className={styles.header}>
-          <div className={styles.logo}>
-            <div className={styles.logoIcon}>🔓</div>
-            <h1>SentriZK</h1>
-          </div>
-          <p className={styles.subtitle}>Secure Login with Zero-Knowledge Proof</p>
-        </div>
-
-        {/* Progress Steps */}
-        <div className={styles.progressSteps}>
-          <div className={`${styles.step} ${currentStep >= 1 ? styles.active : ""}`}>
-            <div className={styles.stepNumber}>1</div>
-            <span>Connect Wallet</span>
-          </div>
-          <div className={styles.stepLine}></div>
-          <div className={`${styles.step} ${currentStep >= 2 ? styles.active : ""}`}>
-            <div className={styles.stepNumber}>2</div>
-            <span>Enter Password</span>
-          </div>
-          <div className={styles.stepLine}></div>
-          <div className={`${styles.step} ${currentStep >= 3 ? styles.active : ""}`}>
-            <div className={styles.stepNumber}>3</div>
-            <span>Complete</span>
-          </div>
-        </div>
-
-        {/* User Info */}
-        <div className={styles.userInfo}>
-          <div className={styles.userInfoItem}>
-            <span className={styles.userInfoLabel}>Username:</span>
-            <span className={styles.userInfoValue}>{username || "Not provided"}</span>
-          </div>
-        </div>
-
-        {/* Step 1: Wallet Connection */}
-        {currentStep === 1 && (
-          <div className={styles.stepContent}>
-            <h2>Connect Your Wallet</h2>
-            <p className={styles.stepDescription}>
-              Connect the same wallet you used during registration to verify your identity.
-            </p>
-            <WalletConnector onWalletConnected={handleWalletConnected} />
-          </div>
-        )}
-
-        {/* Step 2: Password Entry */}
-        {currentStep === 2 && (
-          <div className={styles.stepContent}>
-            <h2>Enter Your Password</h2>
-            <p className={styles.stepDescription}>
-              Enter your password to decrypt your credentials and complete the login.
-            </p>
-
-            <form onSubmit={handleLogin} className={styles.form}>
-              <div className={styles.walletInfo}>
-                <span>🔗 Connected Wallet:</span>
-                <code>{walletAddress.slice(0, 10)}...{walletAddress.slice(-8)}</code>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label htmlFor="password">Password</label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className={styles.input}
-                  required
-                  disabled={loading}
-                  autoFocus
-                />
-                <span className={styles.inputHint}>Enter the password you created during registration</span>
-              </div>
-
-              {error && (
-                <div className={styles.error}>
-                  <span>⚠️</span> {error}
-                </div>
-              )}
-
-              <button 
-                type="submit" 
-                disabled={loading}
-                className={styles.submitButton}
-              >
-                {loading ? (
-                  <>
-                    <span className={styles.buttonSpinner}></span>
-                    Authenticating...
-                  </>
-                ) : (
-                  "Login"
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setCurrentStep(1)}
-                disabled={loading}
-                className={styles.backButton}
-              >
-                ← Change Wallet
-              </button>
-            </form>
-          </div>
-        )}
-
-        {/* Step 3: Processing */}
-        {currentStep === 3 && (
-          <div className={styles.stepContent}>
-            <div className={styles.processing}>
-              <div className={styles.processingSpinner}></div>
-              <h2>Logging You In</h2>
-              {message && <p className={styles.processingMessage}>{message}</p>}
-              <div className={styles.securityBadges}>
-                <div className={styles.badge}>
-                  <span>🔒</span>
-                  <span>Secure Authentication</span>
-                </div>
-                <div className={styles.badge}>
-                  <span>🛡️</span>
-                  <span>Zero-Knowledge Proof</span>
-                </div>
-                <div className={styles.badge}>
-                  <span>⏰</span>
-                  <span>30-Minute Session</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className={styles.footer}>
-          <p>🔒 Your credentials are secured with zero-knowledge proofs</p>
-          <p className={styles.securityNote}>
-            This page is only accessible from the mobile app and will timeout after 5 minutes
-          </p>
-        </div>
-      </div>
+    <div className={styles.minContainer}>
+      <header className={styles.minHeader}>SentriZK • Login</header>
+      <div className={styles.minInfo}>User: {username || '—'}</div>
+      {currentStep === 1 && (
+        <section className={styles.minSection}>
+          <p>Step 1: Connect wallet.</p>
+          <WalletConnector onWalletConnected={handleWalletConnected} />
+        </section>
+      )}
+      {currentStep === 2 && (
+        <section className={styles.minSection}>
+          <p>Step 2: Decrypt & login.</p>
+          <form onSubmit={handleLogin} className={styles.minForm}>
+            <small>Wallet: {walletAddress.slice(0,6)}...{walletAddress.slice(-4)}</small>
+            <small>Salt: {decryptedSaltHex ? 'decrypted' : encryptedSalt ? 'encrypted' : 'missing'}</small>
+            <input
+              placeholder="Password"
+              type="password"
+              value={password}
+              onChange={e=>setPassword(e.target.value)}
+              disabled={loading}
+              required
+              autoFocus
+            />
+            {error && <div className={styles.errorPlain}>{error}</div>}
+            <button disabled={loading}>{loading? 'Authenticating...' : 'Login'}</button>
+            <button type="button" onClick={()=>setCurrentStep(1)} disabled={loading}>Change Wallet</button>
+          </form>
+        </section>
+      )}
+      {currentStep === 3 && (
+        <section className={styles.minSection}>
+          <p>{message || 'Completing login...'}</p>
+        </section>
+      )}
+      <footer className={styles.minFooter}>ZKP • Encrypted • Mobile-bound</footer>
     </div>
   );
 }

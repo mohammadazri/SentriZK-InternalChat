@@ -200,102 +200,69 @@ Response: {
    - User enters username and password (with validation)
    - ZKP proof is generated
    - Registration submitted to backend
-   - Mnemonic words encrypted and included in redirect
+  SentriZK provides a zero-knowledge proof (ZKP) based authentication system restricted to mobile-originated access. Recent refactors have intentionally simplified the web UI for registration and login to a minimalist flow (header + step content) and replaced the prior multi-step wizard / gradient cards. Wallets are now deterministic and device-bound (derived from a hashed deviceId) instead of selectable demo wallets with an unlock password. The password now exclusively derives encryption keys (PBKDF2 + AES-GCM) for the registration salt; no wallet unlocking logic remains.
 
+  ### Recent Minimalization & Security Refactor
+  | Aspect | Previous | Current |
+  |--------|----------|---------|
+  | Web UI | 3-step wizard cards, gradients, badges | Minimal header + step text + native inputs |
+  | Wallet | Simulated multi-wallet selection + password unlock | Deterministic device-bound address via `sha3_256(deviceId)` |
+  | Salt Handling | Plain `salt` passed to mobile | `encryptedSalt` (AES-GCM 256) only; decrypted client-side on login |
+  | Password Use | UI unlock + form validation | Solely for KDF (PBKDF2 100k rounds) and salt decryption |
+  | Deep Link Params | `token, username, salt` | `token, username, encryptedSalt, device` |
+  | Device Binding | MAT only | MAT + explicit `device` query param for wallet derivation |
+  | UI Security Messaging | Badges and animations | Concise footer line |
 3. **Mobile App (Return)**:
-   - Receives deep link with token, username, salt, and mnemonic
-   - Stores salt securely in secure storage
-   - Stores username in shared preferences
-   - Displays mnemonic words to user (to save safely)
-   - Shows success message
-
-### Login Flow
-1. **Mobile App**:
-   - User taps "Open Web Login"
-   - App generates MAT from backend
    - App retrieves stored username and salt
-   - App opens web browser with URL + MAT + username + salt parameters
+  ### Registration Page (Minimal)
+  Single-column lightweight layout:
+  - Step 1: Deterministic wallet connect (auto-derived address)
+  - Step 2: Username & password inputs + confirm
+  - Step 3: Status message while proof & submission complete
+  Removed: gradients, badges, animated progress bar, multi-wallet selection.
 
-2. **Web Page**:
-   - Verifies MAT (access denied if invalid/missing)
-   - Pre-fills username and salt
-   - Shows wallet connection step
-   - User connects same wallet used in registration
-   - User enters password to decrypt credentials
-   - ZKP proof is generated
-   - Login submitted to backend
-   - Backend generates session ID
-
-3. **Mobile App (Return)**:
    - Receives deep link with token, username, and session ID
-   - Stores session ID securely
+  ### Login Page (Minimal)
+  Flow:
+  - Step 1: Wallet connect (device-bound address)
+  - Step 2: Password entry triggers client-side salt decryption
+  - Step 3: Proof generation + redirect
+  Displays compact status lines (username, wallet preview, salt state). Removed prior visual deck & gradients.
    - Updates token
-   - Shows success with session timeout info
+  ### Wallet Connector Component (Refactored)
+  New Behavior:
+  - Deterministic address: `0x` + first 40 hex of `sha3_256(deviceId)`
+  - No password unlock, no multi-wallet selection
+  - Minimal connect button + connected summary
+  - Device ID appended to web URL by mobile app for stable derivation
 
-### Session Management
-- **Check Session**: Validates if current session is still active
-- **Refresh Session**: Extends session by another 30 minutes
-- **Logout**: Clears session from backend and local storage
-
----
-
-## 🛡️ Security Benefits
-
-1. **Zero-Knowledge Proofs**: Server never sees user passwords or wallet secrets
-2. **Mobile-Only Access**: Web pages cannot be accessed directly from browsers
-3. **Time-Limited Tokens**: All tokens expire quickly
-4. **Single-Use Tokens**: Prevent replay attacks
-5. **Session Timeout**: Automatic logout after 30 minutes of inactivity
-6. **Secure Storage**: Sensitive data encrypted in mobile secure storage
-7. **Device Binding**: MAT tied to specific device ID
-8. **Nonce Protection**: Fresh nonce for each login prevents replay
-9. **Rate Limiting**: Prevents brute force attacks
-
----
-
-## 📋 Configuration Details
-
-### Backend Constants
-```javascript
-NONCE_TTL = 60 * 1000                    // 1 minute
+  ### Registration Flow (Updated)
+  1. Mobile App: Generates MAT (includes deviceId), opens web with `mat` & `device` params.
+  2. Web: Verifies MAT, derives deterministic wallet address from `device`, user enters username/password, salt recovered & encrypted (PBKDF2 + AES-GCM) → server registration + redirect.
+  3. Mobile: Receives `encryptedSalt`, decrypt mnemonic locally for display, stores `encryptedSalt` & username.
 TOKEN_TTL = 60 * 1000                    // 1 minute
-SESSION_TTL = 30 * 60 * 1000             // 30 minutes
-MOBILE_ACCESS_TOKEN_TTL = 5 * 60 * 1000  // 5 minutes
-RATE_LIMIT_WINDOW = 60 * 1000            // 1 minute
-RATE_LIMIT_MAX = 10                       // requests per IP
-```
-
-### Mobile App API URL
-Update in `auth_service.dart`:
-```dart
-static const String _apiUrl = "YOUR_NGROK_OR_SERVER_URL";
-```
-
-### Demo Wallet Password
-Default password for wallet simulator: `demo123`
-
----
-
-## 🚀 How to Run
-
+  ### Login Flow (Updated)
+  1. Mobile App: Opens web with MAT, deviceId, username, encryptedSalt.
+  2. Web: Verifies MAT, derives wallet, user enters password → decrypts salt → generates proof → authenticates.
+  3. Mobile: Receives token + sessionId → stores session metadata.
 ### 1. Backend
-```powershell
-cd Backend
-npm install
-node server.js
-```
-
+  ### ✅ User Experience (Current Minimal Set)
+  - Fast minimal pages (low visual overhead)
+  - Deterministic wallet connect (no selection friction)
+  - Password strictly for cryptography
+  - Clear status messages / fewer animations
 ### 2. Web Frontend
-```powershell
-cd Frontend/web
-npm install
-npm run dev
-```
+  ### ✅ Mobile App
+  - Session management features
+  - Deterministic deviceId reused for wallet derivation
+  - MAT integration (now also passes `device`)
+  - Secure storage for encrypted salt/token
 
-### 3. Mobile App
-```powershell
-cd Frontend/mobile
-flutter pub get
+  ### Issue: Wallet connector doesn't work
+  **Solution**:
+  - Ensure `device` param is present (check URL)
+  - Verify web page opened via mobile (MAT valid)
+  - Clear browser cache / reload
 flutter run
 ```
 

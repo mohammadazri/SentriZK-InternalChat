@@ -50,7 +50,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
       final token = uri.queryParameters['token'] ?? "";
       final username = uri.queryParameters['username'] ?? "";
-      final salt = uri.queryParameters['salt'] ?? "";
+      final encryptedSalt = uri.queryParameters['encryptedSalt'] ?? "";
       final encodedMnemonic = uri.queryParameters['mnemonic'] ?? "";
 
       print('📱 Host: $host');
@@ -58,7 +58,7 @@ class _AuthScreenState extends State<AuthScreen> {
       print('📱 Callback Type: $callbackType');
       print('📱 Token: ${token.isNotEmpty ? "✓" : "✗"}');
       print('📱 Username: ${username.isNotEmpty ? "✓" : "✗"}');
-      print('📱 Salt: ${salt.isNotEmpty ? "✓" : "✗"}');
+      print('📱 EncryptedSalt: ${encryptedSalt.isNotEmpty ? "✓" : "✗"}');
       print('📱 Mnemonic: ${encodedMnemonic.isNotEmpty ? "✓" : "✗"}');
 
       // Handle different redirect types
@@ -68,7 +68,7 @@ class _AuthScreenState extends State<AuthScreen> {
         final result = await _authService.saveRedirectData(
           token: token,
           username: username,
-          salt: salt,
+          encryptedSalt: encryptedSalt,
           encodedMnemonic: encodedMnemonic,
         );
 
@@ -189,11 +189,13 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _openWebLogin() async {
     final loginData = await _authService.loadLoginData();
-    final salt = loginData['salt'];
+    final encryptedSalt = loginData['encryptedSalt'];
     final username = loginData['username'];
 
-    if (salt == null) {
-      setState(() => status = "⚠️ No saved salt. Please register first.");
+    if (encryptedSalt == null) {
+      setState(
+        () => status = "⚠️ No saved encrypted salt. Please register first.",
+      );
       return;
     }
 
@@ -203,7 +205,7 @@ class _AuthScreenState extends State<AuthScreen> {
         .replace(
           queryParameters: {
             if (username != null) 'username': username,
-            'salt': salt,
+            'encryptedSalt': encryptedSalt,
           },
         )
         .toString();

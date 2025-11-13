@@ -107,45 +107,22 @@ flutter devices
 
 ## Testing the Complete Flow
 
-### Test 1: Registration
+### Test 1: Registration (Minimal Flow)
 
 1. **Mobile App**:
-   - Tap "🔐 Open Web Registration"
-   - Wait for browser to open (MAT is generated)
-
+   - Tap "🔐 Open Web Registration" (MAT + deviceId generated)
 2. **Web Browser**:
-   - Should see "Connect Your Wallet" screen
-   - Enter password: `demo123`
-   - Select any demo wallet
-   - Enter username (min 3 characters)
-   - Enter password (min 8 characters)
-   - Confirm password
-   - Tap "Create Account"
-   - Wait for ZKP proof generation
-   - Browser will redirect back to app
-
+   - Minimal page: Step 1 wallet connect button → deterministic device-bound address
+   - Step 2 shows username, password, confirm inputs
+   - Submit to generate proof (salt encrypted with password) and register
 3. **Mobile App (Callback)**:
-   - Should show success message
-   - Mnemonic words displayed (SAVE THESE!)
-   - Credentials stored securely
+   - Receives token, encryptedSalt, mnemonic; displays mnemonic and stores encryptedSalt
 
-### Test 2: Login
+### Test 2: Login (Minimal Flow)
 
-1. **Mobile App**:
-   - Tap "🔓 Open Web Login"
-   - Wait for browser to open
-
-2. **Web Browser**:
-   - Should see username pre-filled
-   - Connect same wallet used in registration
-   - Enter password
-   - Tap "Login"
-   - Wait for authentication
-   - Browser will redirect back to app
-
-3. **Mobile App (Callback)**:
-   - Should show success with session info
-   - Session active for 30 minutes
+1. **Mobile App**: Tap "🔓 Open Web Login" (MAT + deviceId + encryptedSalt + username passed)
+2. **Web Browser**: Step 1 connect deterministic wallet; Step 2 enter password (decrypts salt client-side) and submit → proof sent
+3. **Mobile App (Callback)**: Receives token + sessionId, updates session state
 
 ### Test 3: Session Management
 
@@ -201,11 +178,11 @@ flutter devices
 - Verify URL scheme is `sentriapp://`
 - Test deep links: `adb shell am start -a android.intent.action.VIEW -d "sentriapp://test"`
 
-### Issue: Wallet connector doesn't work
+### Issue: Wallet connector deterministic address missing
 **Solution**:
-- Try password: `demo123`
-- Clear browser cache
-- Check browser console for errors
+- Confirm `device` param present in URL
+- Ensure page opened via mobile (MAT not expired)
+- Reload browser / clear cache
 
 ### Issue: ZKP proof generation fails
 **Solution**:

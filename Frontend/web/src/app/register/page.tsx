@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { prepareRegistration, submitRegistration } from "@/auth/registerLogic";
 import WalletConnector from "@/components/WalletConnector";
 import styles from "./register.module.css";
-import type { ProofBundle } from "@/lib/zkp";
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
@@ -113,7 +112,7 @@ export default function RegisterPage() {
       const queryParams = new URLSearchParams({
         token: resp.token,
         username,
-        salt: prep.envelope.saltHex,
+        encryptedSalt: prep.encryptedSalt, // encrypted salt instead of plain
         mnemonic: encryptedMnemonic,
       }).toString();
 
@@ -170,170 +169,54 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.registerCard}>
-        {/* Header */}
-        <div className={styles.header}>
-          <div className={styles.logo}>
-            <div className={styles.logoIcon}>🔐</div>
-            <h1>SentriZK</h1>
-          </div>
-          <p className={styles.subtitle}>Zero-Knowledge Proof Authentication</p>
-        </div>
-
-        {/* Progress Steps */}
-        <div className={styles.progressSteps}>
-          <div className={`${styles.step} ${currentStep >= 1 ? styles.active : ""}`}>
-            <div className={styles.stepNumber}>1</div>
-            <span>Connect Wallet</span>
-          </div>
-          <div className={styles.stepLine}></div>
-          <div className={`${styles.step} ${currentStep >= 2 ? styles.active : ""}`}>
-            <div className={styles.stepNumber}>2</div>
-            <span>Create Account</span>
-          </div>
-          <div className={styles.stepLine}></div>
-          <div className={`${styles.step} ${currentStep >= 3 ? styles.active : ""}`}>
-            <div className={styles.stepNumber}>3</div>
-            <span>Complete</span>
-          </div>
-        </div>
-
-        {/* Step 1: Wallet Connection */}
-        {currentStep === 1 && (
-          <div className={styles.stepContent}>
-            <h2>Connect Your Wallet</h2>
-            <p className={styles.stepDescription}>
-              Connect your wallet to begin the registration process. This simulates a MetaMask-like wallet connection.
-            </p>
-            <WalletConnector onWalletConnected={handleWalletConnected} />
-          </div>
-        )}
-
-        {/* Step 2: Registration Form */}
-        {currentStep === 2 && (
-          <div className={styles.stepContent}>
-            <h2>Create Your Account</h2>
-            <p className={styles.stepDescription}>
-              Choose a username and password. Your credentials will be encrypted and secured.
-            </p>
-
-            <form onSubmit={onRegister} className={styles.form}>
-              <div className={styles.formGroup}>
-                <label htmlFor="username">Username</label>
-                <input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter username"
-                  className={styles.input}
-                  required
-                  disabled={busy}
-                />
-                <span className={styles.inputHint}>Minimum 3 characters</span>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label htmlFor="password">Password</label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password"
-                  className={styles.input}
-                  required
-                  disabled={busy}
-                />
-                <span className={styles.inputHint}>Minimum 8 characters</span>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label htmlFor="confirmPassword">Confirm Password</label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter password"
-                  className={styles.input}
-                  required
-                  disabled={busy}
-                />
-              </div>
-
-              <div className={styles.walletInfo}>
-                <span>🔗 Connected Wallet:</span>
-                <code>{walletAddress.slice(0, 10)}...{walletAddress.slice(-8)}</code>
-              </div>
-
-              {error && (
-                <div className={styles.error}>
-                  <span>⚠️</span> {error}
-                </div>
-              )}
-
-              <button 
-                type="submit" 
-                disabled={busy}
-                className={styles.submitButton}
-              >
-                {busy ? (
-                  <>
-                    <span className={styles.buttonSpinner}></span>
-                    Processing...
-                  </>
-                ) : (
-                  "Create Account"
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setCurrentStep(1)}
-                disabled={busy}
-                className={styles.backButton}
-              >
-                ← Change Wallet
-              </button>
-            </form>
-          </div>
-        )}
-
-        {/* Step 3: Processing */}
-        {currentStep === 3 && (
-          <div className={styles.stepContent}>
-            <div className={styles.processing}>
-              <div className={styles.processingSpinner}></div>
-              <h2>Creating Your Account</h2>
-              {message && <p className={styles.processingMessage}>{message}</p>}
-              <div className={styles.securityBadges}>
-                <div className={styles.badge}>
-                  <span>🔒</span>
-                  <span>End-to-End Encrypted</span>
-                </div>
-                <div className={styles.badge}>
-                  <span>🛡️</span>
-                  <span>Zero-Knowledge Proof</span>
-                </div>
-                <div className={styles.badge}>
-                  <span>🔐</span>
-                  <span>Secure Wallet Integration</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className={styles.footer}>
-          <p>🔒 Your data is encrypted and secured with zero-knowledge proofs</p>
-          <p className={styles.securityNote}>
-            This page is only accessible from the mobile app and will timeout after 5 minutes
-          </p>
-        </div>
-      </div>
+    <div className={styles.minContainer}>
+      <header className={styles.minHeader}>SentriZK • Registration</header>
+      {currentStep === 1 && (
+        <section className={styles.minSection}>
+          <p>Step 1: Connect deterministic wallet.</p>
+          <WalletConnector onWalletConnected={handleWalletConnected} />
+        </section>
+      )}
+      {currentStep === 2 && (
+        <section className={styles.minSection}>
+          <p>Step 2: Create account.</p>
+          <form onSubmit={onRegister} className={styles.minForm}>
+            <input
+              placeholder="Username"
+              value={username}
+              onChange={e=>setUsername(e.target.value)}
+              disabled={busy}
+              required
+            />
+            <input
+              placeholder="Password"
+              type="password"
+              value={password}
+              onChange={e=>setPassword(e.target.value)}
+              disabled={busy}
+              required
+            />
+            <input
+              placeholder="Confirm Password"
+              type="password"
+              value={confirmPassword}
+              onChange={e=>setConfirmPassword(e.target.value)}
+              disabled={busy}
+              required
+            />
+            <small>Wallet: {walletAddress.slice(0,6)}...{walletAddress.slice(-4)}</small>
+            {error && <div className={styles.errorPlain}>{error}</div>}
+            <button disabled={busy}>{busy? 'Processing...' : 'Register'}</button>
+            <button type="button" onClick={()=>setCurrentStep(1)} disabled={busy}>Change Wallet</button>
+          </form>
+        </section>
+      )}
+      {currentStep === 3 && (
+        <section className={styles.minSection}>
+          <p>{message || 'Completing registration...'}</p>
+        </section>
+      )}
+      <footer className={styles.minFooter}>Encrypted • ZKP • Mobile-bound</footer>
     </div>
   );
 }

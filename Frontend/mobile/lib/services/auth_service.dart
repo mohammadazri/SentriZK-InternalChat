@@ -76,18 +76,18 @@ class AuthService {
     }
   }
 
-  /// Save salt (secure), username (normal), mnemonic only displayed
+  /// Save encrypted salt (secure), username (normal), mnemonic only displayed
   /// Used for registration - requires all fields
   Future<SaveResult> saveRedirectData({
     required String token,
     required String username,
-    required String salt,
+    required String encryptedSalt,
     required String encodedMnemonic,
   }) async {
     // Validate required fields for registration
-    if (token.isEmpty || username.isEmpty || salt.isEmpty) {
+    if (token.isEmpty || username.isEmpty || encryptedSalt.isEmpty) {
       return SaveResult(
-        "⚠️ Invalid registration data. Missing: ${token.isEmpty ? 'token ' : ''}${username.isEmpty ? 'username ' : ''}${salt.isEmpty ? 'salt' : ''}",
+        "⚠️ Invalid registration data. Missing: ${token.isEmpty ? 'token ' : ''}${username.isEmpty ? 'username ' : ''}${encryptedSalt.isEmpty ? 'encryptedSalt' : ''}",
         "",
       );
     }
@@ -101,8 +101,8 @@ class AuthService {
       }
     }
 
-    // Save data
-    await _secureStorage.write(key: 'salt', value: salt);
+    // Save data (encrypted salt)
+    await _secureStorage.write(key: 'encrypted_salt', value: encryptedSalt);
     await _secureStorage.write(key: 'token', value: token);
 
     final prefs = await SharedPreferences.getInstance();
@@ -216,15 +216,15 @@ class AuthService {
   Future<Map<String, String?>> loadLoginData() async {
     final prefs = await SharedPreferences.getInstance();
     final username = prefs.getString('username');
-    final salt = await _secureStorage.read(key: 'salt');
-    return {'username': username, 'salt': salt};
+    final encryptedSalt = await _secureStorage.read(key: 'encrypted_salt');
+    return {'username': username, 'encryptedSalt': encryptedSalt};
   }
 
   /// Load all stored data for debug/view
   Future<Map<String, String?>> loadAllData() async {
     final prefs = await SharedPreferences.getInstance();
     final username = prefs.getString('username');
-    final salt = await _secureStorage.read(key: 'salt');
+    final encryptedSalt = await _secureStorage.read(key: 'encrypted_salt');
     final token = await _secureStorage.read(key: 'token');
     final sessionId = await _secureStorage.read(key: 'session_id');
     final sessionValid = await isSessionValid();
@@ -233,7 +233,7 @@ class AuthService {
         "🔐 Saved Data:\n"
         "Username: $username\n"
         "Token: ${token?.substring(0, 8)}...\n"
-        "Salt: ${salt?.substring(0, 8)}...\n"
+        "EncryptedSalt: ${encryptedSalt != null ? encryptedSalt.substring(0, 12) + '...' : 'None'}\n"
         "Session: ${sessionId != null ? '✓ Active' : '✗ None'}\n"
         "Valid: ${sessionValid ? '✓ Yes' : '✗ No'}";
     return {'status': status};
@@ -245,7 +245,7 @@ class AuthService {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('username');
-    await _secureStorage.delete(key: 'salt');
+    await _secureStorage.delete(key: 'encrypted_salt');
     await _secureStorage.delete(key: 'token');
   }
 
@@ -259,6 +259,7 @@ class AuthService {
       // Generate MAT
       final matData = await generateMobileAccessToken(action);
       final mat = matData['mobileAccessToken'];
+      final deviceId = await _getDeviceId();
 
       if (mat == null || mat.isEmpty) {
         print('❌ MAT is empty!');
@@ -268,7 +269,11 @@ class AuthService {
       // Append MAT to URL
       final uri = Uri.parse(baseUrl);
       final urlWithMAT = uri.replace(
-        queryParameters: {...uri.queryParameters, 'mat': mat},
+        queryParameters: {
+          ...uri.queryParameters,
+          'mat': mat,
+          'device': deviceId,
+        },
       );
 
       print('🔗 Final URL: $urlWithMAT');
