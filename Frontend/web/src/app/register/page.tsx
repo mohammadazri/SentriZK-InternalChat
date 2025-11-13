@@ -92,6 +92,18 @@ export default function RegisterPage() {
     setCurrentStep(3);
 
     try {
+      // 0️⃣ Check username availability first
+      setMessage("🔍 Checking username availability...");
+      const { checkUsername } = await import('@/auth/api');
+      const available = await checkUsername(username);
+      
+      if (!available) {
+        setError(`Username "${username}" is already taken. Please choose another.`);
+        setBusy(false);
+        setCurrentStep(2);
+        return;
+      }
+
       // 1️⃣ Prepare registration
       setMessage("🔐 Generating zero-knowledge proof...");
       const prep = await prepareRegistration(username, walletAddress, password);

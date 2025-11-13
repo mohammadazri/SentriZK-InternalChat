@@ -88,23 +88,39 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) return;
-
     setLoading(true);
     setMessage(null);
     setError(null);
-    setCurrentStep(3);
 
     try {
-      // 1️⃣ Prepare login proof
-      setMessage("🔐 Generating zero-knowledge proof...");
-      // Decrypt salt with password first time (cache in state)
-      if (!decryptedSaltHex) {
-        setMessage("🔐 Decrypting salt with password...");
-        const saltHex = await decryptSaltHex(encryptedSalt, password);
-        setDecryptedSaltHex(saltHex);
+      // Pre-validation: ensure we have encrypted salt
+      if (!encryptedSalt) {
+        setError("Missing encrypted salt. Please open this page from the mobile app.");
+        setLoading(false);
+        return;
       }
-      const { proofBundle } = await prepareLogin(username, walletAddress, { saltHex: decryptedSaltHex! });
+
+      if (!walletAddress) {
+        setError("Please connect your wallet first");
+        setLoading(false);
+        return;
+      }
+
+      if (!password || password.length < 8) {
+        setError("Password must be at least 8 characters");
+        setLoading(false);
+        return;
+      }
+
+      setCurrentStep(3);
+
+      // 1️⃣ Prepare login proof
+      setMessage("🔐 Decrypting salt and generating proof...");
+      // Always decrypt fresh to avoid stale state
+      const saltHex = await decryptSaltHex(encryptedSalt, password);
+      setDecryptedSaltHex(saltHex);
+      
+      const { proofBundle } = await prepareLogin(username, walletAddress, { saltHex });
 
       // 2️⃣ Send proof to backend
       setMessage("📡 Authenticating with server...");
