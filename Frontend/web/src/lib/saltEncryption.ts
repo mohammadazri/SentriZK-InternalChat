@@ -1,13 +1,15 @@
 // Utility for encrypting/decrypting registration salt with user password
 // Uses PBKDF2 + AES-GCM. Output is a base64-encoded JSON bundle.
 
-function toBase64(buf: ArrayBuffer): string {
-  return btoa(String.fromCharCode(...new Uint8Array(buf)));
+function toBase64(buf: ArrayBuffer | Uint8Array): string {
+  const uint8Array = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  return btoa(String.fromCharCode(...uint8Array));
 }
 
 function fromBase64(b64: string): Uint8Array {
   const bin = atob(b64);
-  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+  const arr = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+  return new Uint8Array(arr.buffer.slice(0));
 }
 
 async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
@@ -22,7 +24,7 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey>
   return crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
-      salt,
+      salt: salt,
       iterations: 100000,
       hash: "SHA-256",
     },

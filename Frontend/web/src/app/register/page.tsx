@@ -169,54 +169,206 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className={styles.minContainer}>
-      <header className={styles.minHeader}>SentriZK • Registration</header>
-      {currentStep === 1 && (
-        <section className={styles.minSection}>
-          <p>Step 1: Connect deterministic wallet.</p>
-          <WalletConnector onWalletConnected={handleWalletConnected} />
-        </section>
-      )}
-      {currentStep === 2 && (
-        <section className={styles.minSection}>
-          <p>Step 2: Create account.</p>
-          <form onSubmit={onRegister} className={styles.minForm}>
-            <input
-              placeholder="Username"
-              value={username}
-              onChange={e=>setUsername(e.target.value)}
-              disabled={busy}
-              required
-            />
-            <input
-              placeholder="Password"
-              type="password"
-              value={password}
-              onChange={e=>setPassword(e.target.value)}
-              disabled={busy}
-              required
-            />
-            <input
-              placeholder="Confirm Password"
-              type="password"
-              value={confirmPassword}
-              onChange={e=>setConfirmPassword(e.target.value)}
-              disabled={busy}
-              required
-            />
-            <small>Wallet: {walletAddress.slice(0,6)}...{walletAddress.slice(-4)}</small>
-            {error && <div className={styles.errorPlain}>{error}</div>}
-            <button disabled={busy}>{busy? 'Processing...' : 'Register'}</button>
-            <button type="button" onClick={()=>setCurrentStep(1)} disabled={busy}>Change Wallet</button>
-          </form>
-        </section>
-      )}
-      {currentStep === 3 && (
-        <section className={styles.minSection}>
-          <p>{message || 'Completing registration...'}</p>
-        </section>
-      )}
-      <footer className={styles.minFooter}>Encrypted • ZKP • Mobile-bound</footer>
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <div className={styles.header}>
+          <div className={styles.brandLogo}>
+            <div className={styles.logoGradient}>
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                <path d="M24 4L42 14V34L24 44L6 34V14L24 4Z" fill="url(#grad1)" stroke="white" strokeWidth="2"/>
+                <circle cx="24" cy="24" r="8" fill="white"/>
+                <defs>
+                  <linearGradient id="grad1" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#6366f1"/>
+                    <stop offset="1" stopColor="#8b5cf6"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <div>
+              <h1 className={styles.brandName}>SentriZK</h1>
+              <p className={styles.brandTagline}>Zero-Knowledge Authentication</p>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.progress}>
+          <div className={styles.progressBar}>
+            <div className={styles.progressFill} style={{width: `${(currentStep/3)*100}%`}}></div>
+          </div>
+          <div className={styles.progressSteps}>
+            <div className={`${styles.progressStep} ${currentStep >= 1 ? styles.active : ''} ${currentStep > 1 ? styles.complete : ''}`}>
+              <div className={styles.stepCircle}>
+                {currentStep > 1 ? '✓' : '1'}
+              </div>
+              <span>Connect</span>
+            </div>
+            <div className={`${styles.progressStep} ${currentStep >= 2 ? styles.active : ''} ${currentStep > 2 ? styles.complete : ''}`}>
+              <div className={styles.stepCircle}>
+                {currentStep > 2 ? '✓' : '2'}
+              </div>
+              <span>Register</span>
+            </div>
+            <div className={`${styles.progressStep} ${currentStep >= 3 ? styles.active : ''}`}>
+              <div className={styles.stepCircle}>3</div>
+              <span>Complete</span>
+            </div>
+          </div>
+        </div>
+
+        {currentStep === 1 && (
+          <div className={styles.content}>
+            <div className={styles.stepTitle}>
+              <h2>Connect Your Wallet</h2>
+              <p>Your device will generate a unique deterministic wallet address</p>
+            </div>
+            <WalletConnector onWalletConnected={handleWalletConnected} />
+          </div>
+        )}
+
+        {currentStep === 2 && (
+          <div className={styles.content}>
+            <div className={styles.stepTitle}>
+              <h2>Create Your Account</h2>
+              <p>Secure your identity with zero-knowledge proof encryption</p>
+            </div>
+            
+            <div className={styles.walletBadge}>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <rect width="20" height="20" rx="4" fill="#10b981"/>
+                <path d="M14 10C14 9.44772 13.5523 9 13 9H7C6.44772 9 6 9.44772 6 10V13C6 13.5523 6.44772 14 7 14H13C13.5523 14 14 13.5523 14 13V10Z" fill="white"/>
+              </svg>
+              <span>Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
+            </div>
+
+            <form onSubmit={onRegister} className={styles.form}>
+              <div className={styles.inputGroup}>
+                <label htmlFor="username">Username</label>
+                <input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter your username"
+                  className={styles.input}
+                  disabled={busy}
+                  required
+                  minLength={3}
+                />
+                <span className={styles.hint}>Minimum 3 characters</span>
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label htmlFor="password">Password</label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Create a strong password"
+                  className={styles.input}
+                  disabled={busy}
+                  required
+                  minLength={8}
+                />
+                <span className={styles.hint}>Minimum 8 characters</span>
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label htmlFor="confirmPassword">Confirm Password</label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter your password"
+                  className={styles.input}
+                  disabled={busy}
+                  required
+                />
+              </div>
+
+              {error && (
+                <div className={styles.error}>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M10 6V11M10 14V14.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                  {error}
+                </div>
+              )}
+
+              <div className={styles.actions}>
+                <button type="submit" disabled={busy} className={styles.primaryBtn}>
+                  {busy ? (
+                    <>
+                      <span className={styles.spinner}></span>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      Create Account
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M7 10H13M13 10L10 7M13 10L10 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </>
+                  )}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setCurrentStep(1)} 
+                  disabled={busy}
+                  className={styles.secondaryBtn}
+                >
+                  ← Change Wallet
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {currentStep === 3 && (
+          <div className={styles.content}>
+            <div className={styles.processing}>
+              <div className={styles.processingIcon}>
+                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                  <circle cx="32" cy="32" r="30" stroke="url(#grad2)" strokeWidth="4" strokeDasharray="188" strokeDashoffset="0" className={styles.processingCircle}/>
+                  <defs>
+                    <linearGradient id="grad2" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#6366f1"/>
+                      <stop offset="1" stopColor="#8b5cf6"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+              <h2>Creating Your Account</h2>
+              <p className={styles.processingMessage}>{message || 'Processing...'}</p>
+              <div className={styles.securityIndicators}>
+                <div className={styles.indicator}>
+                  <div className={styles.indicatorIcon}>🔐</div>
+                  <span>Generating ZK Proof</span>
+                </div>
+                <div className={styles.indicator}>
+                  <div className={styles.indicatorIcon}>🔒</div>
+                  <span>Encrypting Credentials</span>
+                </div>
+                <div className={styles.indicator}>
+                  <div className={styles.indicatorIcon}>✨</div>
+                  <span>Finalizing Registration</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className={styles.footer}>
+          <div className={styles.securityBadges}>
+            <span>🔒 End-to-End Encrypted</span>
+            <span>🛡️ Zero-Knowledge</span>
+            <span>📱 Mobile Protected</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

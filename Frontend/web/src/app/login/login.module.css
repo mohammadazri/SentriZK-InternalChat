@@ -1,4 +1,4 @@
-/* Registration Page Styles - Modern & Secure */
+/* Modern Login Page - Industry Standard Design */
 
 .container {
   min-height: 100vh;
@@ -6,7 +6,7 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
   position: relative;
   overflow: hidden;
 }
@@ -14,40 +14,52 @@
 .container::before {
   content: '';
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-  background-size: 50px 50px;
-  animation: grid-move 20s linear infinite;
-  z-index: 0;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.3) 0%, transparent 50%);
+  animation: gradientMove 15s ease infinite;
 }
 
-@keyframes grid-move {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(50px, 50px); }
+@keyframes gradientMove {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
 }
 
-/* Auth Check Screens */
+/* Auth Check & Access Denied */
 .authCheck,
 .accessDenied {
   position: relative;
-  z-index: 1;
-  background: white;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
   border-radius: 24px;
   padding: 48px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
   text-align: center;
   max-width: 500px;
   width: 100%;
+  animation: fadeInScale 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid rgba(102, 126, 234, 0.2);
-  border-top-color: #667eea;
+  border: 4px solid rgba(16, 185, 129, 0.2);
+  border-top-color: #10b981;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   margin: 0 auto 24px;
@@ -59,206 +71,274 @@
 
 .authCheck p {
   font-size: 16px;
-  color: #666;
+  color: #64748b;
   margin: 0;
+  font-weight: 500;
 }
 
 .lockIcon {
-  font-size: 64px;
+  font-size: 72px;
   margin-bottom: 24px;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
 }
 
 .accessDenied h1 {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
-  color: #1a1a1a;
+  background: linear-gradient(135deg, #1e293b 0%, #64748b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0 0 16px 0;
 }
 
 .accessDenied > p {
   font-size: 16px;
-  color: #666;
+  color: #64748b;
   margin: 0 0 32px 0;
   line-height: 1.6;
 }
 
 .instructions {
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 16px;
+  padding: 28px;
   text-align: left;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .instructions h3 {
   font-size: 18px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #1e293b;
   margin: 0 0 16px 0;
 }
 
 .instructions ol {
   margin: 0;
-  padding-left: 20px;
-  color: #666;
+  padding-left: 24px;
+  color: #64748b;
+  line-height: 1.8;
 }
 
 .instructions li {
-  margin: 8px 0;
-  line-height: 1.5;
+  margin: 12px 0;
 }
 
-/* Login Card */
-.loginCard {
+/* Main Card */
+.card {
   position: relative;
-  z-index: 1;
-  background: white;
-  border-radius: 24px;
-  padding: 40px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border-radius: 28px;
+  padding: 48px;
+  box-shadow: 
+    0 24px 64px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
   max-width: 600px;
   width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
+  animation: fadeInScale 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Header */
 .header {
-  text-align: center;
   margin-bottom: 32px;
 }
 
-.logo {
+.brandLogo {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.logoGradient {
+  flex-shrink: 0;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.brandName {
+  font-size: 40px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 4px 0;
+  letter-spacing: -1px;
+}
+
+.brandTagline {
+  font-size: 15px;
+  color: #64748b;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* User Card */
+.userCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border-radius: 18px;
+  border: 2px solid #10b981;
+  margin-bottom: 32px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+}
+
+.userAvatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.logoIcon {
-  font-size: 40px;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-
-.logo h1 {
-  font-size: 36px;
-  font-weight: 800;
-  color: #11998e;
-  margin: 0;
-  letter-spacing: -0.5px;
-}
-
-/* User Info Section */
-.userInfo {
-  background: linear-gradient(135deg, #E8F5E9 0%, #ffffff 100%);
-  border: 2px solid #11998e;
-  border-radius: 16px;
-  padding: 20px;
-  margin-bottom: 32px;
-}
-
-.userInfoItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-}
-
-.userInfoLabel {
-  font-size: 14px;
-  font-weight: 600;
-  color: #0d7567;
-}
-
-.userInfoValue {
-  font-size: 16px;
+  font-size: 24px;
   font-weight: 700;
-  color: #11998e;
-  font-family: 'Courier New', monospace;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
-.subtitle {
-  font-size: 15px;
-  color: #666;
-  margin: 0;
-  font-weight: 500;
+.userInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-/* Progress Steps */
+.userLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #047857;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.userName {
+  font-size: 20px;
+  font-weight: 700;
+  color: #065f46;
+}
+
+/* Progress Bar */
+.progress {
+  margin-bottom: 40px;
+}
+
+.progressBar {
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981 0%, #06b6d4 100%);
+  border-radius: 999px;
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.progressFill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 .progressSteps {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 40px;
-  padding: 0 20px;
+  gap: 8px;
 }
 
-.step {
+.progressStep {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   opacity: 0.4;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.step.active {
+.progressStep.active {
   opacity: 1;
 }
 
-.stepNumber {
-  width: 40px;
-  height: 40px;
+.progressStep.complete {
+  opacity: 0.7;
+}
+
+.stepCircle {
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: #e0e0e0;
-  color: #666;
+  background: #e2e8f0;
+  color: #94a3b8;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
   font-size: 18px;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 3px solid transparent;
 }
 
-.step.active .stepNumber {
-  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+.progressStep.active .stepCircle {
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
   color: white;
-  box-shadow: 0 4px 12px rgba(17, 153, 142, 0.4);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+  transform: scale(1.1);
 }
 
-.step span {
-  font-size: 12px;
+.progressStep.complete .stepCircle {
+  background: #10b981;
+  color: white;
+}
+
+.progressStep span {
+  font-size: 14px;
   font-weight: 600;
-  color: #666;
-  text-align: center;
+  color: #64748b;
 }
 
-.step.active span {
-  color: #11998e;
+.progressStep.active span {
+  color: #10b981;
 }
 
-.stepLine {
-  flex: 1;
-  height: 2px;
-  background: #e0e0e0;
-  margin: 0 16px;
-  position: relative;
-  top: -12px;
-}
-
-/* Step Content */
-.stepContent {
-  animation: fadeIn 0.4s ease;
+/* Content */
+.content {
+  animation: fadeIn 0.5s ease;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -266,167 +346,222 @@
   }
 }
 
-.stepContent h2 {
-  font-size: 24px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin: 0 0 12px 0;
+.stepTitle {
+  margin-bottom: 32px;
 }
 
-.stepDescription {
+.stepTitle h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+}
+
+.stepTitle p {
   font-size: 15px;
-  color: #666;
+  color: #64748b;
+  margin: 0;
   line-height: 1.6;
-  margin: 0 0 28px 0;
+}
+
+/* Status Cards */
+.statusCards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.statusCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+}
+
+.statusCard div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.statusLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statusValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Form */
 .form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
-.formGroup {
+.inputGroup {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
-.formGroup label {
+.inputGroup label {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: #334155;
+  letter-spacing: 0.01em;
 }
 
 .input {
   width: 100%;
-  padding: 14px 16px;
-  font-size: 15px;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
+  padding: 16px 20px;
+  font-size: 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
   background: white;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   outline: none;
   box-sizing: border-box;
+  font-family: inherit;
 }
 
-.input:focus:not(:disabled) {
-  border-color: #11998e;
-  box-shadow: 0 0 0 4px rgba(17, 153, 142, 0.1);
+.input::placeholder {
+  color: #94a3b8;
+}
+
+.input:focus {
+  border-color: #10b981;
+  box-shadow: 
+    0 0 0 4px rgba(16, 185, 129, 0.1),
+    0 4px 12px rgba(16, 185, 129, 0.15);
+  transform: translateY(-1px);
 }
 
 .input:disabled {
-  background: #f5f5f5;
+  background: #f1f5f9;
   cursor: not-allowed;
+  opacity: 0.7;
 }
 
-.inputHint {
-  font-size: 12px;
-  color: #999;
-}
-
-.walletInfo {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  background: linear-gradient(135deg, #E8F5E9 0%, #ffffff 100%);
-  border: 2px solid #4CAF50;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #2e7d32;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.walletInfo code {
-  background: white;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-family: 'Courier New', monospace;
+.hint {
   font-size: 13px;
-  border: 1px solid #4CAF50;
+  color: #94a3b8;
+  font-weight: 500;
 }
 
 .error {
-  background: #ffebee;
-  color: #c62828;
-  padding: 14px 16px;
-  border-radius: 12px;
-  font-size: 14px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  border: 2px solid #ffcdd2;
-  animation: shake 0.4s ease;
+  gap: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 2px solid #fca5a5;
+  border-radius: 14px;
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 500;
+  animation: slideInShake 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-10px); }
-  75% { transform: translateX(10px); }
+@keyframes slideInShake {
+  0% {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-/* Buttons */
-.submitButton,
-.backButton {
+/* Actions */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.primaryBtn,
+.secondaryBtn {
   width: 100%;
-  padding: 16px;
+  padding: 16px 24px;
   font-size: 16px;
   font-weight: 600;
+  border-radius: 14px;
   border: none;
-  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
+  font-family: inherit;
 }
 
-.submitButton {
-  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+.primaryBtn {
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
   color: white;
-  box-shadow: 0 4px 12px rgba(17, 153, 142, 0.3);
+  box-shadow: 
+    0 4px 16px rgba(16, 185, 129, 0.3),
+    0 0 0 0 rgba(16, 185, 129, 0.5);
 }
 
-.submitButton:hover:not(:disabled) {
+.primaryBtn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(17, 153, 142, 0.4);
+  box-shadow: 
+    0 8px 24px rgba(16, 185, 129, 0.4),
+    0 0 0 0 rgba(16, 185, 129, 0.5);
 }
 
-.submitButton:active:not(:disabled) {
+.primaryBtn:active:not(:disabled) {
   transform: translateY(0);
 }
 
-.submitButton:disabled {
+.primaryBtn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.backButton {
-  background: transparent;
-  color: #666;
-  border: 2px solid #e0e0e0;
-  margin-top: 8px;
+.secondaryBtn {
+  background: white;
+  color: #64748b;
+  border: 2px solid #e2e8f0;
 }
 
-.backButton:hover:not(:disabled) {
-  border-color: #999;
-  color: #333;
+.secondaryBtn:hover:not(:disabled) {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
 }
 
-.backButton:disabled {
+.secondaryBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.buttonSpinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
@@ -435,75 +570,96 @@
 /* Processing State */
 .processing {
   text-align: center;
-  padding: 40px 20px;
+  padding: 48px 24px;
 }
 
-.processingSpinner {
-  width: 60px;
-  height: 60px;
-  border: 4px solid rgba(17, 153, 142, 0.2);
-  border-top-color: #11998e;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin: 0 auto 24px;
+.processingIcon {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 32px;
+}
+
+.processingCircle {
+  animation: rotate 2s linear infinite;
+  transform-origin: center;
+}
+
+@keyframes rotate {
+  to { transform: rotate(360deg); }
 }
 
 .processing h2 {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 700;
-  color: #1a1a1a;
-  margin: 0 0 16px 0;
+  color: #1e293b;
+  margin: 0 0 12px 0;
 }
 
 .processingMessage {
   font-size: 16px;
-  color: #11998e;
+  color: #10b981;
   font-weight: 500;
-  margin: 0 0 32px 0;
+  margin: 0 0 40px 0;
 }
 
-.securityBadges {
+.securityIndicators {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   max-width: 400px;
   margin: 0 auto;
 }
 
-.badge {
+.indicator {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 18px;
-  background: #f8f9fa;
-  border-radius: 12px;
-  font-size: 14px;
-  color: #666;
-  border: 2px solid #e0e0e0;
+  gap: 16px;
+  padding: 18px 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
 }
 
-.badge span:first-child {
-  font-size: 20px;
+.indicator:hover {
+  transform: translateX(4px);
+  border-color: #cbd5e1;
+}
+
+.indicatorIcon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.indicator span {
+  font-size: 15px;
+  font-weight: 500;
+  color: #475569;
 }
 
 /* Footer */
 .footer {
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 2px solid #f0f0f0;
-  text-align: center;
+  margin-top: 40px;
+  padding-top: 32px;
+  border-top: 1px solid #e2e8f0;
 }
 
-.footer p {
+.securityBadges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+}
+
+.securityBadges span {
   font-size: 13px;
-  color: #666;
-  margin: 8px 0;
-  line-height: 1.5;
-}
-
-.securityNote {
-  font-weight: 600;
-  color: #11998e;
+  font-weight: 500;
+  color: #64748b;
+  padding: 8px 16px;
+  background: #f8fafc;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
 }
 
 /* Responsive */
@@ -512,44 +668,45 @@
     padding: 16px;
   }
 
-  .registerCard,
+  .card,
   .authCheck,
   .accessDenied {
-    padding: 28px 20px;
+    padding: 32px 24px;
+    border-radius: 24px;
   }
 
-  .logo h1 {
-    font-size: 28px;
+  .brandName {
+    font-size: 32px;
   }
 
-  .progressSteps {
-    padding: 0 8px;
+  .stepCircle {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
   }
 
-  .step span {
-    font-size: 10px;
+  .progressStep span {
+    font-size: 12px;
   }
 
-  .stepNumber {
-    width: 32px;
-    height: 32px;
-    font-size: 14px;
+  .stepTitle h2 {
+    font-size: 24px;
   }
 
-  .stepLine {
-    margin: 0 8px;
+  .input {
+    font-size: 16px;
   }
 
-  .stepContent h2 {
-    font-size: 20px;
+  .statusCards {
+    grid-template-columns: 1fr;
   }
 
-  .walletInfo {
+  .securityBadges {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .walletInfo code {
+  .securityBadges span {
     text-align: center;
   }
 }

@@ -176,42 +176,205 @@ export default function LoginPage() {
   }
 
   return (
-    <div className={styles.minContainer}>
-      <header className={styles.minHeader}>SentriZK • Login</header>
-      <div className={styles.minInfo}>User: {username || '—'}</div>
-      {currentStep === 1 && (
-        <section className={styles.minSection}>
-          <p>Step 1: Connect wallet.</p>
-          <WalletConnector onWalletConnected={handleWalletConnected} />
-        </section>
-      )}
-      {currentStep === 2 && (
-        <section className={styles.minSection}>
-          <p>Step 2: Decrypt & login.</p>
-          <form onSubmit={handleLogin} className={styles.minForm}>
-            <small>Wallet: {walletAddress.slice(0,6)}...{walletAddress.slice(-4)}</small>
-            <small>Salt: {decryptedSaltHex ? 'decrypted' : encryptedSalt ? 'encrypted' : 'missing'}</small>
-            <input
-              placeholder="Password"
-              type="password"
-              value={password}
-              onChange={e=>setPassword(e.target.value)}
-              disabled={loading}
-              required
-              autoFocus
-            />
-            {error && <div className={styles.errorPlain}>{error}</div>}
-            <button disabled={loading}>{loading? 'Authenticating...' : 'Login'}</button>
-            <button type="button" onClick={()=>setCurrentStep(1)} disabled={loading}>Change Wallet</button>
-          </form>
-        </section>
-      )}
-      {currentStep === 3 && (
-        <section className={styles.minSection}>
-          <p>{message || 'Completing login...'}</p>
-        </section>
-      )}
-      <footer className={styles.minFooter}>ZKP • Encrypted • Mobile-bound</footer>
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <div className={styles.header}>
+          <div className={styles.brandLogo}>
+            <div className={styles.logoGradient}>
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                <path d="M24 4L42 14V34L24 44L6 34V14L24 4Z" fill="url(#grad1)" stroke="white" strokeWidth="2"/>
+                <circle cx="24" cy="24" r="8" fill="white"/>
+                <defs>
+                  <linearGradient id="grad1" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#10b981"/>
+                    <stop offset="1" stopColor="#06b6d4"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <div>
+              <h1 className={styles.brandName}>SentriZK</h1>
+              <p className={styles.brandTagline}>Secure Login Portal</p>
+            </div>
+          </div>
+        </div>
+
+        {username && (
+          <div className={styles.userCard}>
+            <div className={styles.userAvatar}>
+              {username.charAt(0).toUpperCase()}
+            </div>
+            <div className={styles.userInfo}>
+              <span className={styles.userLabel}>Logging in as</span>
+              <span className={styles.userName}>{username}</span>
+            </div>
+          </div>
+        )}
+
+        <div className={styles.progress}>
+          <div className={styles.progressBar}>
+            <div className={styles.progressFill} style={{width: `${(currentStep/3)*100}%`}}></div>
+          </div>
+          <div className={styles.progressSteps}>
+            <div className={`${styles.progressStep} ${currentStep >= 1 ? styles.active : ''} ${currentStep > 1 ? styles.complete : ''}`}>
+              <div className={styles.stepCircle}>
+                {currentStep > 1 ? '✓' : '1'}
+              </div>
+              <span>Connect</span>
+            </div>
+            <div className={`${styles.progressStep} ${currentStep >= 2 ? styles.active : ''} ${currentStep > 2 ? styles.complete : ''}`}>
+              <div className={styles.stepCircle}>
+                {currentStep > 2 ? '✓' : '2'}
+              </div>
+              <span>Authenticate</span>
+            </div>
+            <div className={`${styles.progressStep} ${currentStep >= 3 ? styles.active : ''}`}>
+              <div className={styles.stepCircle}>3</div>
+              <span>Complete</span>
+            </div>
+          </div>
+        </div>
+
+        {currentStep === 1 && (
+          <div className={styles.content}>
+            <div className={styles.stepTitle}>
+              <h2>Connect Your Wallet</h2>
+              <p>Use the same device wallet you registered with</p>
+            </div>
+            <WalletConnector onWalletConnected={handleWalletConnected} />
+          </div>
+        )}
+
+        {currentStep === 2 && (
+          <div className={styles.content}>
+            <div className={styles.stepTitle}>
+              <h2>Enter Your Password</h2>
+              <p>Decrypt your credentials to complete authentication</p>
+            </div>
+
+            <div className={styles.statusCards}>
+              <div className={styles.statusCard}>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <rect width="20" height="20" rx="4" fill="#10b981"/>
+                  <path d="M14 10C14 9.44772 13.5523 9 13 9H7C6.44772 9 6 9.44772 6 10V13C6 13.5523 6.44772 14 7 14H13C13.5523 14 14 13.5523 14 13V10Z" fill="white"/>
+                </svg>
+                <div>
+                  <span className={styles.statusLabel}>Wallet</span>
+                  <span className={styles.statusValue}>{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
+                </div>
+              </div>
+              <div className={styles.statusCard}>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <rect width="20" height="20" rx="4" fill="#f59e0b"/>
+                  <path d="M10 7V10M10 13H10.01M18 10C18 14.4183 14.4183 18 10 18C5.58172 18 2 14.4183 2 10C2 5.58172 5.58172 2 10 2C14.4183 2 18 5.58172 18 10Z" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                <div>
+                  <span className={styles.statusLabel}>Salt Status</span>
+                  <span className={styles.statusValue}>
+                    {decryptedSaltHex ? '🔓 Decrypted' : encryptedSalt ? '🔒 Encrypted' : '❌ Missing'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleLogin} className={styles.form}>
+              <div className={styles.inputGroup}>
+                <label htmlFor="password">Password</label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className={styles.input}
+                  disabled={loading}
+                  required
+                  autoFocus
+                />
+                <span className={styles.hint}>Used to decrypt your salt locally</span>
+              </div>
+
+              {error && (
+                <div className={styles.error}>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M10 6V11M10 14V14.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                  {error}
+                </div>
+              )}
+
+              <div className={styles.actions}>
+                <button type="submit" disabled={loading} className={styles.primaryBtn}>
+                  {loading ? (
+                    <>
+                      <span className={styles.spinner}></span>
+                      Authenticating...
+                    </>
+                  ) : (
+                    <>
+                      Login Securely
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M7 10H13M13 10L10 7M13 10L10 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </>
+                  )}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setCurrentStep(1)} 
+                  disabled={loading}
+                  className={styles.secondaryBtn}
+                >
+                  ← Change Wallet
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {currentStep === 3 && (
+          <div className={styles.content}>
+            <div className={styles.processing}>
+              <div className={styles.processingIcon}>
+                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                  <circle cx="32" cy="32" r="30" stroke="url(#grad2)" strokeWidth="4" strokeDasharray="188" strokeDashoffset="0" className={styles.processingCircle}/>
+                  <defs>
+                    <linearGradient id="grad2" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#10b981"/>
+                      <stop offset="1" stopColor="#06b6d4"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+              <h2>Authenticating</h2>
+              <p className={styles.processingMessage}>{message || 'Verifying credentials...'}</p>
+              <div className={styles.securityIndicators}>
+                <div className={styles.indicator}>
+                  <div className={styles.indicatorIcon}>🔐</div>
+                  <span>Decrypting Salt</span>
+                </div>
+                <div className={styles.indicator}>
+                  <div className={styles.indicatorIcon}>🔒</div>
+                  <span>Generating Proof</span>
+                </div>
+                <div className={styles.indicator}>
+                  <div className={styles.indicatorIcon}>✨</div>
+                  <span>Validating Session</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className={styles.footer}>
+          <div className={styles.securityBadges}>
+            <span>🔒 Password Protected</span>
+            <span>🛡️ Zero-Knowledge</span>
+            <span>⏰ 30min Session</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
