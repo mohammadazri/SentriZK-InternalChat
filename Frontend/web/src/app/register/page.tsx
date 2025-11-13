@@ -31,6 +31,15 @@ export default function RegisterPage() {
         return;
       }
 
+      // Check if this MAT has already been used
+      const usedKey = `mat_used_${mat}`;
+      if (sessionStorage.getItem(usedKey)) {
+        setIsAuthorized(false);
+        setError("This link has already been used. Please request a new link from the mobile app.");
+        setIsCheckingAuth(false);
+        return;
+      }
+
       // Set authorized
       setIsAuthorized(true);
       setIsCheckingAuth(false);
@@ -46,10 +55,24 @@ export default function RegisterPage() {
 
     checkAuthorization();
 
+    // Mark MAT as used when user navigates away or closes tab
+    const handleBeforeUnload = () => {
+      const params = new URLSearchParams(window.location.search);
+      const mat = params.get("mat");
+      if (mat && isAuthorized) {
+        sessionStorage.setItem(`mat_used_${mat}`, "true");
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     return () => {
       if (sessionTimeout) clearTimeout(sessionTimeout);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // Mark as used on cleanup
+      handleBeforeUnload();
     };
-  }, []);
+  }, [isAuthorized]);
 
   const handleWalletConnected = (address: string) => {
     setWalletAddress(address);
@@ -117,7 +140,14 @@ export default function RegisterPage() {
       // 3️⃣ Encrypt mnemonic for safe transport (simple base64)
       const encryptedMnemonic = btoa(prep.mnemonic);
 
-      // 4️⃣ Construct deep link URL
+      // 4️⃣ Mark MAT as used to prevent reuse
+      const params = new URLSearchParams(window.location.search);
+      const mat = params.get("mat");
+      if (mat) {
+        sessionStorage.setItem(`mat_used_${mat}`, "true");
+      }
+
+      // 5️⃣ Construct deep link URL
       setMessage("✅ Registration successful! Redirecting to app...");
       
       const redirectUri = "sentriapp://auth-callback";
@@ -131,7 +161,7 @@ export default function RegisterPage() {
       // Small delay to show success message
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // 5️⃣ Redirect automatically
+      // 6️⃣ Redirect automatically
       if (/android/i.test(navigator.userAgent)) {
         const intentUrl = `intent://auth-callback?${queryParams}#Intent;scheme=sentriapp;package=com.example.mobile;end`;
         window.location.href = intentUrl;
@@ -139,6 +169,15 @@ export default function RegisterPage() {
         const redirectUrl = `${redirectUri}?${queryParams}`;
         window.location.href = redirectUrl; // iOS / fallback
       }
+
+      // 7️⃣ Close the tab after redirect attempt
+      setTimeout(() => {
+        window.close();
+        // Fallback: if window.close() doesn't work, replace with blank page
+        if (!window.closed) {
+          document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;text-align:center;"><div><h2>✅ Registration Complete</h2><p>You can now close this tab and return to the app.</p></div></div>';
+        }
+      }, 500)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err));
       setCurrentStep(2); // Go back to form

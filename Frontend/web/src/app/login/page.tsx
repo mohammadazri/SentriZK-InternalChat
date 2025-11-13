@@ -36,6 +36,15 @@ export default function LoginPage() {
         return;
       }
 
+      // Check if this MAT has already been used
+      const usedKey = `mat_used_${mat}`;
+      if (sessionStorage.getItem(usedKey)) {
+        setIsAuthorized(false);
+        setError("This link has already been used. Please request a new link from the mobile app.");
+        setIsCheckingAuth(false);
+        return;
+      }
+
       // Set authorized
       setIsAuthorized(true);
       setIsCheckingAuth(false);
@@ -55,10 +64,24 @@ export default function LoginPage() {
 
     checkAuthorization();
 
+    // Mark MAT as used when user navigates away or closes tab
+    const handleBeforeUnload = () => {
+      const params = new URLSearchParams(window.location.search);
+      const mat = params.get("mat");
+      if (mat && isAuthorized) {
+        sessionStorage.setItem(`mat_used_${mat}`, "true");
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     return () => {
       if (sessionTimeout) clearTimeout(sessionTimeout);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // Mark as used on cleanup
+      handleBeforeUnload();
     };
-  }, []);
+  }, [isAuthorized]);
 
   const handleWalletConnected = (address: string) => {
     setWalletAddress(address);
@@ -130,7 +153,14 @@ export default function LoginPage() {
 
       setMessage("✅ Login successful! Returning to the app...");
 
-      // 3️⃣ Construct query params with session ID
+      // 3️⃣ Mark MAT as used to prevent reuse
+      const params = new URLSearchParams(window.location.search);
+      const mat = params.get("mat");
+      if (mat) {
+        sessionStorage.setItem(`mat_used_${mat}`, "true");
+      }
+
+      // 4️⃣ Construct query params with session ID
       const queryParams = new URLSearchParams({
         token: resp.token,
         username,
@@ -140,7 +170,7 @@ export default function LoginPage() {
       // Small delay to show success message
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // 4️⃣ Redirect back to mobile app
+      // 5️⃣ Redirect back to mobile app
       if (/android/i.test(navigator.userAgent)) {
         const intentUrl = `intent://login-success?${queryParams}#Intent;scheme=sentriapp;package=com.example.mobile;end`;
         window.location.href = intentUrl;
@@ -148,6 +178,15 @@ export default function LoginPage() {
         const redirectUrl = `sentriapp://login-success?${queryParams}`;
         window.location.href = redirectUrl;
       }
+
+      // 6️⃣ Close the tab after redirect attempt
+      setTimeout(() => {
+        window.close();
+        // Fallback: if window.close() doesn't work, replace with blank page
+        if (!window.closed) {
+          document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;text-align:center;"><div><h2>✅ Login Complete</h2><p>You can now close this tab and return to the app.</p></div></div>';
+        }
+      }, 500)
 
     } catch (err: unknown) {
       console.error(err);
