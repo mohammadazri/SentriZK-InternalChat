@@ -809,11 +809,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     final username = loginData['username'];
 
     if (encryptedSalt == null) {
-      _updateStatus(
-        "No saved credentials. Please register first.",
-        Icons.warning,
-        Colors.orangeAccent,
-      );
+      await _showFirstTimeSignInOptions();
       return;
     }
 
@@ -838,6 +834,295 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       opened ? "Opening secure portal..." : "Failed to open login",
       opened ? Icons.open_in_browser : Icons.error,
       opened ? Colors.cyan : Colors.redAccent,
+    );
+  }
+
+  Future<void> _handleSignIn() async {
+    setState(() => _isLoading = true);
+    try {
+      await _openWebLogin();
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _showFirstTimeSignInOptions() async {
+    final choice = await showDialog<String>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white24, width: 1),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'First-time Sign In',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'No saved credentials found on this device. Recover your account using your 24-word recovery phrase.',
+                style: TextStyle(color: Colors.white70),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.pop(context, 'recover'),
+                  icon: const Icon(Icons.key),
+                  label: const Text('Recover with Recovery Phrase'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6366F1),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(context, 'cancel'),
+                child: const Text('Cancel'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (choice == 'recover') {
+      await _showRecoveryDialog();
+    } else {
+      _updateStatus('Sign-in cancelled', Icons.info_outline, Colors.white70);
+    }
+  }
+
+  Future<void> _showRecoveryDialog() async {
+    final usernameCtrl = TextEditingController(text: _username ?? '');
+    final mnemonicCtrl = TextEditingController();
+    final passphraseCtrl = TextEditingController();
+    final passwordCtrl = TextEditingController();
+    final confirmCtrl = TextEditingController();
+    String? error;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDlg) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF111827), Color(0xFF0B1220)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white10),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'Recover Account',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Enter your username and 24-word recovery phrase. Choose a password to protect your salt for web login.',
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: usernameCtrl,
+                    decoration: _inputDeco('Username'),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: mnemonicCtrl,
+                    maxLines: 3,
+                    decoration: _inputDeco('Recovery phrase (24 words)'),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: passphraseCtrl,
+                    decoration: _inputDeco('BIP-39 passphrase (optional)'),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: passwordCtrl,
+                    obscureText: true,
+                    decoration: _inputDeco('New password (min 8 chars)'),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: confirmCtrl,
+                    obscureText: true,
+                    decoration: _inputDeco('Confirm password'),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  if (error != null) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      error!,
+                      style: const TextStyle(color: Colors.redAccent),
+                    ),
+                  ],
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white70,
+                            side: const BorderSide(color: Colors.white24),
+                          ),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final username = usernameCtrl.text.trim();
+                            final mnemonic = mnemonicCtrl.text.trim();
+                            final passphrase = passphraseCtrl.text;
+                            final pwd = passwordCtrl.text;
+                            final confirm = confirmCtrl.text;
+
+                            if (username.isEmpty || mnemonic.isEmpty) {
+                              setDlg(
+                                () => error =
+                                    'Username and recovery phrase are required',
+                              );
+                              return;
+                            }
+                            if (pwd.length < 8) {
+                              setDlg(
+                                () => error =
+                                    'Password must be at least 8 characters',
+                              );
+                              return;
+                            }
+                            if (pwd != confirm) {
+                              setDlg(() => error = 'Passwords do not match');
+                              return;
+                            }
+
+                            try {
+                              setDlg(() => error = null);
+                              _updateStatus(
+                                'Deriving credentials securely...',
+                                Icons.lock_clock,
+                                Colors.blueAccent,
+                              );
+                              final encrypted = await _authService
+                                  .recoverAndStoreEncryptedSalt(
+                                    username: username,
+                                    mnemonic: mnemonic,
+                                    passphrase: passphrase,
+                                    password: pwd,
+                                  );
+
+                              // Save local UI state and proceed to web login
+                              if (mounted) {
+                                setState(() => _username = username);
+                              }
+                              _updateStatus(
+                                'Opening secure login portal...',
+                                Icons.open_in_browser,
+                                Colors.cyan,
+                              );
+
+                              // Open web login with MAT including username & encrypted salt bundle
+                              final baseUrl = Uri.parse(AppConfig.loginUrl)
+                                  .replace(
+                                    queryParameters: {
+                                      'username': username,
+                                      'encryptedSalt': encrypted,
+                                    },
+                                  )
+                                  .toString();
+                              await _authService.openUrlWithMAT(
+                                baseUrl,
+                                'login',
+                              );
+                              if (context.mounted) Navigator.pop(context);
+                            } catch (e) {
+                              setDlg(
+                                () =>
+                                    error = 'Recovery failed: ${e.toString()}',
+                              );
+                              _updateStatus(
+                                'Recovery failed',
+                                Icons.error,
+                                Colors.redAccent,
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF10B981),
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('Continue to Web Login'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDeco(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: Colors.white70),
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.06),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.white24),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF6366F1)),
+      ),
     );
   }
 
@@ -1021,7 +1306,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             gradient: const LinearGradient(
               colors: [Color(0xFF10B981), Color(0xFF06B6D4)],
             ),
-            onTap: _openWebLogin,
+            onTap: _handleSignIn,
           ),
 
           const SizedBox(height: 40),

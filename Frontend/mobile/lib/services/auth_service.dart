@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'dart:math';
 import '../config/app_config.dart';
+import 'recovery_service.dart';
 
 class SaveResult {
   final String message;
@@ -218,6 +219,39 @@ class AuthService {
     final username = prefs.getString('username');
     final encryptedSalt = await _secureStorage.read(key: 'encrypted_salt');
     return {'username': username, 'encryptedSalt': encryptedSalt};
+  }
+
+  /// Save username and encrypted salt bundle (from recovery/import)
+  Future<void> saveRecoveredAccount({
+    required String username,
+    required String encryptedSaltBundle,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('username', username);
+    await _secureStorage.write(
+      key: 'encrypted_salt',
+      value: encryptedSaltBundle,
+    );
+  }
+
+  /// Derive salt from mnemonic + passphrase, encrypt with password, store locally
+  /// Returns the encrypted bundle (base64 JSON) for convenience
+  Future<String> recoverAndStoreEncryptedSalt({
+    required String username,
+    required String mnemonic,
+    String passphrase = '',
+    required String password,
+  }) async {
+    final saltHex = await RecoveryService.deriveSaltFromMnemonic(
+      mnemonic,
+      passphrase: passphrase,
+    );
+    final encrypted = await RecoveryService.encryptSaltHex(saltHex, password);
+    await saveRecoveredAccount(
+      username: username,
+      encryptedSaltBundle: encrypted,
+    );
+    return encrypted;
   }
 
   /// Load all stored data for debug/view
