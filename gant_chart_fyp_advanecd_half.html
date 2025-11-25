@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FYP Detailed Timeline - ZKP & AI Anomaly Detection</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 25px 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            transform: translate(30%, -30%);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 300;
+            margin-bottom: 8px;
+        }
+
+        .header .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .project-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-item i {
+            color: #3498db;
+            font-size: 18px;
+        }
+
+        .info-content h3 {
+            font-size: 12px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+
+        .info-content p {
+            font-size: 14px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .gantt-container {
+            padding: 25px 30px;
+            position: relative;
+        }
+
+        .timeline-header {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            margin-bottom: 10px;
+            background: #34495e;
+            color: white;
+            border-radius: 6px 6px 0 0;
+            overflow: hidden;
+        }
+
+        .task-header {
+            padding: 12px 20px;
+            font-weight: 600;
+            border-right: 1px solid #46627f;
+        }
+
+        .weeks-header {
+            display: grid;
+            grid-template-columns: repeat(28, 1fr);
+            text-align: center;
+        }
+
+        .week-header {
+            padding: 12px 5px;
+            font-size: 12px;
+            font-weight: 600;
+            border-right: 1px solid #46627f;
+            position: relative;
+        }
+
+        .week-header:last-child {
+            border-right: none;
+        }
+
+        .semester-label {
+            position: absolute;
+            top: -25px;
+            font-size: 11px;
+            background: #e74c3c;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+
+        .fyp1-label {
+            background: #e67e22;
+        }
+
+        .fyp2-label {
+            background: #27ae60;
+        }
+
+        .gantt-body {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            background: white;
+            border-radius: 0 0 6px 6px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+
+        .task-list {
+            background: #f8f9fa;
+            border-right: 1px solid #e9ecef;
+        }
+
+        .task-group {
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .task-group-header {
+            background: #2c3e50;
+            color: white;
+            padding: 12px 20px;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .task-group-header i {
+            font-size: 14px;
+        }
+
+        .task-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        .task-item:hover {
+            background: #edf2f7;
+        }
+
+        .task-item:last-child {
+            border-bottom: none;
+        }
+
+        .task-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .task-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        .task-duration {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .timeline {
+            position: relative;
+            background: white;
+            min-height: 400px;
+        }
+
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(28, 1fr);
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        .week-cell {
+            border-right: 1px solid #e9ecef;
+            position: relative;
+        }
+
+        .week-cell:nth-child(14) {
+            border-right: 2px solid #e67e22;
+        }
+
+        .week-cell:nth-child(28) {
+            border-right: none;
+        }
+
+        .current-week {
+            background: rgba(52, 152, 219, 0.05);
+        }
+
+        .task-row {
+            display: contents;
+        }
+
+        .task-bar-container {
+            grid-column: 1 / -1;
+            display: contents;
+        }
+
+        .task-bar {
+            height: 30px;
+            margin: 5px 0;
+            border-radius: 4px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            color: white;
+            font-size: 11px;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .task-bar:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .task-bar::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: rgba(255,255,255,0.5);
+        }
+
+        .task-progress {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px 0 0 4px;
+        }
+
+        .milestone {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 12px solid #9b59b6;
+            z-index: 10;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+        }
+
+        .milestone::after {
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: -8px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 12px solid #9b59b6;
+        }
+
+        .milestone-label {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #9b59b6;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .color-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+
+        .legend-text {
+            font-size: 12px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .dependency-line {
+            position: absolute;
+            height: 2px;
+            background: #7f8c8d;
+            z-index: 1;
+        }
+
+        .dependency-arrow {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 5px solid #7f8c8d;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                zoom: 0.9;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                zoom: 0.8;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Final Year Project: Detailed Timeline</h1>
+            <div class="subtitle">Zero-Knowledge Proof Authentication with AI-Powered Anomaly Detection System</div>
+        </div>
+
+        <div class="project-info">
+            <div class="info-item">
+                <i class="fas fa-calendar-alt"></i>
+                <div class="info-content">
+                    <h3>Duration</h3>
+                    <p>28 Weeks (2 Semesters)</p>
+                </div>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-tasks"></i>
+                <div class="info-content">
+                    <h3>Total Tasks</h3>
+                    <p>24 Major Deliverables</p>
+                </div>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-code-branch"></i>
+                <div class="info-content">
+                    <h3>Methodology</h3>
+                    <p>Agile Sprints + Research</p>
+                </div>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-layer-group"></i>
+                <div class="info-content">
+                    <h3>Components</h3>
+                    <p>ZKP, AI, Mobile, Backend</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="gantt-container">
+            <div class="timeline-header">
+                <div class="task-header">
+                    <i class="fas fa-list-ul"></i> Tasks & Deliverables
+                </div>
+                <div class="weeks-header" id="weeksHeader">
+                    <!-- Weeks will be generated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="gantt-body">
+                <div class="task-list" id="taskList">
+                    <!-- Task list will be generated by JavaScript -->
+                </div>
+                <div class="timeline" id="timeline">
+                    <!-- Timeline bars will be generated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="color-legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #4A6FA5;"></div>
+                    <span class="legend-text">Research & Planning</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #56A36C;"></div>
+                    <span class="legend-text">Development</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #E67E22;"></div>
+                    <span class="legend-text">Testing & Validation</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #95A5A6;"></div>
+                    <span class="legend-text">Documentation</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #9B59B6;"></div>
+                    <span class="legend-text">Milestones</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Comprehensive task data based on research of professional academic timelines
+        const timelineData = {
+            semesters: [
+                {
+                    name: "FYP 1",
+                    weeks: 14,
+                    color: "#e67e22"
+                },
+                {
+                    name: "FYP 2", 
+                    weeks: 14,
+                    color: "#27ae60"
+                }
+            ],
+            taskGroups: [
+                {
+                    name: "Research & Literature Review",
+                    color: "#4A6FA5",
+                    tasks: [
+                        {
+                            id: "lit_zkp",
+                            name: "ZKP Authentication Research",
+                            description: "Study zero-knowledge proof protocols, cryptographic foundations, and existing implementations",
+                            startWeek: 1,
+                            duration: 2,
+                            progress: 100,
+                            dependencies: []
+                        },
+                        {
+                            id: "lit_ai",
+                            name: "AI Anomaly Detection Research", 
+                            description: "Review Isolation Forest, Autoencoders, LSTM networks for anomaly detection",
+                            startWeek: 2,
+                            duration: 2,
+                            progress: 100,
+                            dependencies: ["lit_zkp"]
+                        },
+                        {
+                            id: "gap_analysis",
+                            name: "Research Gap Analysis",
+                            description: "Identify limitations in current approaches and define research contributions",
+                            startWeek: 3,
+                            duration: 1,
+                            progress: 100,
+                            dependencies: ["lit_ai"]
+                        }
+                    ]
+                },
+                {
+                    name: "System Design & Proposal",
+                    color: "#4A6FA5", 
+                    tasks: [
+                        {
+                            id: "arch_design",
+                            name: "System Architecture Design",
+                            description: "Design overall system architecture, component interactions, and data flow",
+                            startWeek: 4,
+                            duration: 2,
+                            progress: 100,
+                            dependencies: ["gap_analysis"]
+                        },
+                        {
+                            id: "proposal_write",
+                            name: "Proposal Documentation",
+                            description: "Write comprehensive proposal with methodology, objectives, and expected outcomes",
+                            startWeek: 5,
+                            duration: 2,
+                            progress: 100,
+                            dependencies: ["arch_design"]
+                        },
+                        {
+                            id: "proposal_revise",
+                            name: "Proposal Revision",
+                            description: "Incorporate supervisor feedback and refine research methodology",
+                            startWeek: 7,
+                            duration: 1,
+                            progress: 100,
+                            dependencies: ["proposal_write"]
+                        }
+                    ]
+                },
+                {
+                    name: "Core Development - FYP1",
+                    color: "#56A36C",
+                    tasks: [
+                        {
+                            id: "backend_proto",
+                            name: "Backend Prototype",
+                            description: "Develop minimal backend with authentication and basic APIs",
+                            startWeek: 7,
+                            duration: 3,
+                            progress: 80,
+                            dependencies: ["proposal_revise"]
+                        },
+                        {
+                            id: "frontend_proto", 
+                            name: "Frontend Prototype",
+                            description: "Create Flutter UI for registration, login, and basic navigation",
+                            startWeek: 9,
+                            duration: 2,
+                            progress: 70,
+                            dependencies: ["backend_proto"]
+                        },
+                        {
+                            id: "zkp_impl",
+                            name: "ZKP Implementation",
+                            description: "Implement zero-knowledge proof authentication flow",
+                            startWeek: 10,
+                            duration: 2,
+                            progress: 60,
+                            dependencies: ["frontend_proto"]
+                        }
+                    ]
+                },
+                {
+                    name: "Testing & Integration - FYP1", 
+                    color: "#E67E22",
+                    tasks: [
+                        {
+                            id: "integration_v1",
+                            name: "System Integration v1",
+                            description: "Connect backend, frontend, and ZKP modules",
+                            startWeek: 11,
+                            duration: 2,
+                            progress: 50,
+                            dependencies: ["zkp_impl"]
+                        },
+                        {
+                            id: "testing_v1",
+                            name: "Prototype Testing",
+                            description: "Unit testing, integration testing, and security validation",
+                            startWeek: 12,
+                            duration: 2,
+                            progress: 40,
+                            dependencies: ["integration_v1"]
+                        }
+                    ]
+                },
+                {
+                    name: "Development - FYP2",
+                    color: "#56A36C",
+                    tasks: [
+                        {
+                            id: "backend_full",
+                            name: "Full Backend Development",
+                            description: "Complete backend with all APIs, database optimization, and security",
+                            startWeek: 15,
+                            duration: 3,
+                            progress: 30,
+                            dependencies: []
+                        },
+                        {
+                            id: "ai_development",
+                            name: "AI Model Development", 
+                            description: "Train and optimize Isolation Forest and Autoencoder models",
+                            startWeek: 17,
+                            duration: 3,
+                            progress: 20,
+                            dependencies: ["backend_full"]
+                        },
+                        {
+                            id: "frontend_enhance",
+                            name: "Frontend Enhancement",
+                            description: "Polish UI/UX, add advanced features, and improve performance",
+                            startWeek: 18,
+                            duration: 2,
+                            progress: 15,
+                            dependencies: ["backend_full"]
+                        },
+                        {
+                            id: "ai_integration",
+                            name: "AI Model Integration",
+                            description: "Integrate trained models into mobile app using TensorFlow Lite",
+                            startWeek: 19,
+                            duration: 2,
+                            progress: 10,
+                            dependencies: ["ai_development", "frontend_enhance"]
+                        }
+                    ]
+                },
+                {
+                    name: "Comprehensive Testing - FYP2",
+                    color: "#E67E22",
+                    tasks: [
+                        {
+                            id: "system_testing",
+                            name: "System Integration Testing",
+                            description: "End-to-end testing of complete system workflow",
+                            startWeek: 20,
+                            duration: 3,
+                            progress: 10,
+                            dependencies: ["ai_integration"]
+                        },
+                        {
+                            id: "security_audit",
+                            name: "Security & Penetration Testing",
+                            description: "Comprehensive security testing including ZKP vulnerability assessment",
+                            startWeek: 21,
+                            duration: 2,
+                            progress: 5,
+                            dependencies: ["system_testing"]
+                        },
+                        {
+                            id: "performance_test",
+                            name: "Performance Optimization",
+                            description: "Load testing, response time optimization, and resource usage analysis",
+                            startWeek: 22,
+                            duration: 2,
+                            progress: 5,
+                            dependencies: ["security_audit"]
+                        },
+                        {
+                            id: "uat",
+                            name: "User Acceptance Testing",
+                            description: "Testing with subject matter experts and real-world scenarios",
+                            startWeek: 23,
+                            duration: 2,
+                            progress: 0,
+                            dependencies: ["performance_test"]
+                        }
+                    ]
+                },
+                {
+                    name: "Documentation & Finalization",
+                    color: "#95A5A6",
+                    tasks: [
+                        {
+                            id: "fyp1_doc",
+                            name: "FYP1 Documentation",
+                            description: "Complete documentation of literature review, methodology, and prototype",
+                            startWeek: 13,
+                            duration: 2,
+                            progress: 60,
+                            dependencies: ["testing_v1"]
+                        },
+                        {
+                            id: "final_doc",
+                            name: "Final Report Writing",
+                            description: "Comprehensive final report with implementation details and results",
+                            startWeek: 24,
+                            duration: 3,
+                            progress: 0,
+                            dependencies: ["uat"]
+                        },
+                        {
+                            id: "thesis_finalize",
+                            name: "Thesis Finalization",
+                            description: "Proofreading, formatting, and preparation for submission",
+                            startWeek: 26,
+                            duration: 2,
+                            progress: 0,
+                            dependencies: ["final_doc"]
+                        }
+                    ]
+                }
+            ],
+            milestones: [
+                {
+                    name: "Proposal Defense",
+                    week: 7,
+                    description: "Formal presentation and approval of project proposal"
+                },
+                {
+                    name: "FYP1 Submission", 
+                    week: 14,
+                    description: "Submission of prototype and first semester documentation"
+                },
+                {
+                    name: "Final Defense",
+                    week: 27,
+                    description: "Final project presentation and demonstration"
+                },
+                {
+                    name: "Project Submission",
+                    week: 28,
+                    description: "Final submission of complete project and documentation"
+                }
+            ]
+        };
+
+        // Initialize the Gantt chart
+        function initGanttChart() {
+            generateWeeksHeader();
+            generateTaskList();
+            generateTimelineBars();
+            generateMilestones();
+        }
+
+        // Generate weeks header
+        function generateWeeksHeader() {
+            const weeksHeader = document.getElementById('weeksHeader');
+            weeksHeader.innerHTML = '';
+
+            timelineData.semesters.forEach(semester => {
+                for (let i = 1; i <= semester.weeks; i++) {
+                    const weekHeader = document.createElement('div');
+                    weekHeader.className = 'week-header';
+                    weekHeader.textContent = i;
+                    
+                    // Add semester label for first week of each semester
+                    if (i === 1) {
+                        const semesterLabel = document.createElement('div');
+                        semesterLabel.className = `semester-label ${semester.name.toLowerCase().replace(' ', '-')}-label`;
+                        semesterLabel.textContent = semester.name;
+                        semesterLabel.style.background = semester.color;
+                        weekHeader.appendChild(semesterLabel);
+                    }
+                    
+                    weeksHeader.appendChild(weekHeader);
+                }
+            });
+        }
+
+        // Generate task list
+        function generateTaskList() {
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '';
+
+            timelineData.taskGroups.forEach(group => {
+                // Task group header
+                const groupHeader = document.createElement('div');
+                groupHeader.className = 'task-group-header';
+                groupHeader.innerHTML = `<i class="fas fa-folder"></i> ${group.name}`;
+                groupHeader.style.background = group.color;
+                taskList.appendChild(groupHeader);
+
+                // Tasks in group
+                group.tasks.forEach(task => {
+                    const taskItem = document.createElement('div');
+                    taskItem.className = 'task-item';
+                    taskItem.setAttribute('data-task-id', task.id);
+                    
+                    taskItem.innerHTML = `
+                        <div class="task-name">${task.name}</div>
+                        <div class="task-meta">
+                            <div class="task-duration">
+                                <i class="far fa-clock"></i>
+                                <span>${task.duration} week${task.duration > 1 ? 's' : ''}</span>
+                            </div>
+                            <div class="task-progress-indicator">
+                                <i class="fas fa-chart-line"></i>
+                                <span>${task.progress}% complete</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    taskList.appendChild(taskItem);
+                });
+            });
+        }
+
+        // Generate timeline bars
+        function generateTimelineBars() {
+            const timeline = document.getElementById('timeline');
+            timeline.innerHTML = '';
+
+            // Create week grid
+            const weekGrid = document.createElement('div');
+            weekGrid.className = 'week-grid';
+            weekGrid.id = 'weekGrid';
+            
+            for (let i = 1; i <= 28; i++) {
+                const weekCell = document.createElement('div');
+                weekCell.className = 'week-cell';
+                if (i === 7 || i === 14 || i === 21) {
+                    weekCell.classList.add('current-week');
+                }
+                weekGrid.appendChild(weekCell);
+            }
+            
+            timeline.appendChild(weekGrid);
+
+            // Create task bars
+            let rowIndex = 0;
+            timelineData.taskGroups.forEach(group => {
+                group.tasks.forEach(task => {
+                    const taskBarContainer = document.createElement('div');
+                    taskBarContainer.className = 'task-bar-container';
+                    
+                    const taskBar = document.createElement('div');
+                    taskBar.className = 'task-bar';
+                    taskBar.style.background = group.color;
+                    taskBar.style.gridRow = rowIndex + 1;
+                    taskBar.style.gridColumn = `${task.startWeek} / span ${task.duration}`;
+                    taskBar.innerHTML = `
+                        <div class="task-progress" style="width: ${task.progress}%"></div>
+                        <span>${task.name}</span>
+                    `;
+                    taskBar.title = `${task.name}\nDuration: ${task.duration} weeks\nProgress: ${task.progress}%\n${task.description}`;
+                    
+                    taskBarContainer.appendChild(taskBar);
+                    timeline.appendChild(taskBarContainer);
+                    rowIndex++;
+                });
+            });
+        }
+
+        // Generate milestones
+        function generateMilestones() {
+            const timeline = document.getElementById('timeline');
+            
+            timelineData.milestones.forEach(milestone => {
+                const milestoneEl = document.createElement('div');
+                milestoneEl.className = 'milestone';
+                milestoneEl.style.left = `calc(${(milestone.week - 0.5) * (100 / 28)}%)`;
+                milestoneEl.style.top = '100%';
+                milestoneEl.title = `${milestone.name}\n${milestone.description}`;
+                
+                const milestoneLabel = document.createElement('div');
+                milestoneLabel.className = 'milestone-label';
+                milestoneLabel.textContent = milestone.name;
+                milestoneEl.appendChild(milestoneLabel);
+                
+                timeline.appendChild(milestoneEl);
+            });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initGanttChart);
+
+        // Add print styles
+        const style = document.createElement('style');
+        style.textContent = `
+            @media print {
+                body {
+                    background: white !important;
+                    padding: 0 !important;
+                }
+                .container {
+                    box-shadow: none !important;
+                    margin: 0 !important;
+                    max-width: none !important;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
