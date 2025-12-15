@@ -1,11 +1,11 @@
 // src/lib/config.ts
-function getEnvVar(key: string): string {
-  const value = process.env[`NEXT_PUBLIC_${key}`];
-  if (!value) {
-    throw new Error(`Missing environment variable: NEXT_PUBLIC_${key}`);
-  }
-  return value;
-}
+
+// Log env vars to verify loading
+console.log("NEXT_PUBLIC_LOGIN_WASM:", process.env.NEXT_PUBLIC_LOGIN_WASM);
+console.log("NEXT_PUBLIC_LOGIN_ZKEY:", process.env.NEXT_PUBLIC_LOGIN_ZKEY);
+console.log("NEXT_PUBLIC_REG_WASM:", process.env.NEXT_PUBLIC_REG_WASM);
+console.log("NEXT_PUBLIC_REG_ZKEY:", process.env.NEXT_PUBLIC_REG_ZKEY);
+console.log("NEXT_PUBLIC_API_URL:", process.env.NEXT_PUBLIC_API_URL);
 
 export const config = {
   loginWasm: process.env.NEXT_PUBLIC_LOGIN_WASM!,
