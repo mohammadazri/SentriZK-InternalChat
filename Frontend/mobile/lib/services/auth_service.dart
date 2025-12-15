@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,6 +16,7 @@ class SaveResult {
 
 class AuthService {
   final _secureStorage = const FlutterSecureStorage();
+  Timer? _refreshTimer;
 
   // Generate a unique device ID
   Future<String> _getDeviceId() async {
@@ -112,6 +114,56 @@ class AuthService {
     return SaveResult("✅ Account registered successfully!", mnemonic);
   }
 
+  /// Validate one-time token with backend and bind to this device
+  Future<Map<String, dynamic>> validateToken(String token) async {
+    try {
+      final deviceId = await _getDeviceId();
+      final url =
+          '${AppConfig.apiUrl}/validate-token?token=$token&device=$deviceId';
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return Map<String, dynamic>.from(data);
+      } else {
+        throw Exception('Token validation failed: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error validating token: $e');
+    }
+  }
+
+  /// Full redirect processing: validate one-time token and store validated session
+  Future<void> processLoginRedirect({
+    required String token,
+    required String username,
+  }) async {
+    if (token.isEmpty || username.isEmpty) {
+      throw Exception("Token and username required");
+    }
+
+    // Validate token with backend (binds session to this device)
+    final data = await validateToken(token);
+    if (data['valid'] != true) {
+      throw Exception('Token not valid');
+    }
+
+    if (data['username'] != username) {
+      throw Exception('Username mismatch in token validation');
+    }
+
+    final sessionId = data['sessionId'];
+    if (sessionId == null)
+      throw Exception('No sessionId returned from validation');
+
+    // Persist validated session and schedule refresh
+    await updateLoginToken(
+      token: token,
+      username: username,
+      sessionId: sessionId,
+    );
+  }
+
   /// Update login token and session after successful login
   Future<void> updateLoginToken({
     required String token,
@@ -130,6 +182,9 @@ class AuthService {
         key: 'session_created_at',
         value: DateTime.now().toIso8601String(),
       );
+      // Schedule automatic refresh using configured TTL
+      final ttl = Duration(minutes: AppConfig.sessionTimeoutMinutes);
+      scheduleSessionRefresh(ttl);
     }
 
     // Optionally update username if it changed
@@ -165,23 +220,42 @@ class AuthService {
     }
   }
 
-  /// Refresh the current session
+  /// Refresh the current session (sends deviceId, handles rotated sessionId)
   Future<bool> refreshSession() async {
     try {
       final sessionId = await getSessionId();
       if (sessionId == null) return false;
 
+      final deviceId = await _getDeviceId();
       final response = await http.post(
         Uri.parse(AppConfig.refreshSessionEndpoint),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'sessionId': sessionId}),
+        body: jsonEncode({'sessionId': sessionId, 'deviceId': deviceId}),
       );
 
       if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final newSessionId = data['sessionId'];
+        final expiresIn = data['expiresIn'];
+
+        // If server rotated the sessionId, update stored value
+        if (newSessionId != null && newSessionId != sessionId) {
+          await _secureStorage.write(key: 'session_id', value: newSessionId);
+        }
+
         await _secureStorage.write(
           key: 'session_refreshed_at',
           value: DateTime.now().toIso8601String(),
         );
+
+        // Reschedule next refresh using server-provided TTL when available
+        if (expiresIn != null) {
+          try {
+            final ttl = Duration(milliseconds: expiresIn);
+            scheduleSessionRefresh(ttl);
+          } catch (_) {}
+        }
+
         return true;
       }
 
@@ -189,6 +263,31 @@ class AuthService {
     } catch (e) {
       return false;
     }
+  }
+
+  /// Schedule an automatic refresh before session expiry
+  void scheduleSessionRefresh(Duration ttl) {
+    // Cancel existing timer
+    _refreshTimer?.cancel();
+
+    // Refresh 60 seconds before expiry (or 20s if TTL small)
+    final refreshBefore = Duration(seconds: 60);
+    final delay = ttl > refreshBefore
+        ? ttl - refreshBefore
+        : Duration(seconds: 20);
+
+    _refreshTimer = Timer(delay, () async {
+      // Try refresh; on failure retry once after short delay
+      var ok = await refreshSession();
+      if (!ok) {
+        await Future.delayed(const Duration(seconds: 5));
+        ok = await refreshSession();
+      }
+      if (!ok) {
+        // If still failing, clear session and require re-login
+        await logout();
+      }
+    });
   }
 
   /// Logout (clear session)
@@ -207,6 +306,7 @@ class AuthService {
     }
 
     // Clear local session data
+    _refreshTimer?.cancel();
     await _secureStorage.delete(key: 'session_id');
     await _secureStorage.delete(key: 'session_created_at');
     await _secureStorage.delete(key: 'session_refreshed_at');

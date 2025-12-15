@@ -442,27 +442,39 @@ app.post("/login", async (req, res) => {
 app.get("/validate-token", (req, res) => {
   const db = loadDB();
   cleanupExpiredTokens(db);
-  
-  const { token } = req.query;
+
+  const { token, device } = req.query;
   if (!token || !db.tokens[token]) return res.status(400).json({ valid: false });
 
   const tokenData = db.tokens[token];
   const { username, expires, sessionId } = tokenData;
-  
+
   if (Date.now() > expires) {
     delete db.tokens[token];
     saveDB(db);
     return res.status(400).json({ valid: false });
   }
 
-  delete db.tokens[token]; // single-use
+  // If a sessionId exists, associate it with the requesting device (bind session to device)
+  if (sessionId && db.sessions[sessionId]) {
+    try {
+      if (device) db.sessions[sessionId].deviceId = String(device);
+      db.sessions[sessionId].validatedAt = Date.now();
+      saveDB(db);
+    } catch (e) {
+      console.error('[validate-token] failed to bind device to session', e);
+    }
+  }
+
+  // Consume token (single-use)
+  delete db.tokens[token];
   saveDB(db);
-  
-  res.json({ 
-    valid: true, 
+
+  res.json({
+    valid: true,
     username,
     sessionId: sessionId || null,
-    type: tokenData.type || "unknown"
+    type: tokenData.type || "unknown",
   });
 });
 
@@ -503,37 +515,52 @@ app.post("/validate-session", (req, res) => {
 // Refresh Session
 // ---------------------
 app.post("/refresh-session", (req, res) => {
-  const { sessionId } = req.body;
-  
-  if (!sessionId) {
-    return res.status(400).json({ error: "sessionId required" });
+  const { sessionId, deviceId } = req.body;
+
+  if (!sessionId || !deviceId) {
+    return res.status(400).json({ error: "sessionId and deviceId required" });
   }
-  
+
   const db = loadDB();
   cleanupExpiredTokens(db);
-  
+
   const session = db.sessions[sessionId];
-  
+
   if (!session) {
     return res.status(404).json({ error: "Session not found" });
   }
-  
+
   if (Date.now() > session.expires) {
     delete db.sessions[sessionId];
     saveDB(db);
     return res.status(400).json({ error: "Session expired" });
   }
-  
-  // Extend session
-  session.expires = Date.now() + SESSION_TTL;
-  session.refreshedAt = Date.now();
+
+  // Enforce device binding if present
+  if (session.deviceId && String(session.deviceId) !== String(deviceId)) {
+    return res.status(403).json({ error: "Device mismatch" });
+  }
+
+  // Rotate sessionId to mitigate replay risks
+  const newSessionId = generateToken(32);
+  const newSession = {
+    username: session.username,
+    deviceId: deviceId,
+    createdAt: session.createdAt || Date.now(),
+    refreshedAt: Date.now(),
+    expires: Date.now() + SESSION_TTL,
+  };
+
+  // Delete old session and store rotated session
+  delete db.sessions[sessionId];
+  db.sessions[newSessionId] = newSession;
   saveDB(db);
-  
-  res.json({ 
+
+  res.json({
     status: "ok",
-    sessionId,
+    sessionId: newSessionId,
     expiresIn: SESSION_TTL,
-    expiresAt: session.expires
+    expiresAt: newSession.expires,
   });
 });
 

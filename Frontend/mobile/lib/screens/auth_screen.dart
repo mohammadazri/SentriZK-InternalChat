@@ -13,7 +13,8 @@ class AuthScreen extends StatefulWidget {
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
+class _AuthScreenState extends State<AuthScreen>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   final AppLinks _appLinks = AppLinks();
   final AuthService _authService = AuthService();
 
@@ -34,6 +35,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     super.initState();
     _initAnimations();
     _listenForRedirect();
+    WidgetsBinding.instance.addObserver(this);
     _checkLoginStatus();
   }
 
@@ -89,9 +91,42 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _particleController.dispose();
     _pulseController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _onAppResume();
+    }
+  }
+
+  Future<void> _onAppResume() async {
+    try {
+      final isValid = await _authService.isSessionValid();
+      if (isValid) {
+        // Try to refresh silently
+        await _authService.refreshSession();
+      } else {
+        // Not valid — ensure UI reflects logged-out status
+        if (mounted) {
+          setState(() {
+            _isLoggedIn = false;
+            _username = null;
+            _updateStatus(
+              "Session expired. Please re-authenticate.",
+              Icons.lock_open,
+              Colors.orangeAccent,
+            );
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error on app resume refresh: $e');
+    }
   }
 
   /// Listen for redirect after web authentication with secure handling
@@ -185,13 +220,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               Colors.blueAccent,
             );
 
-            // Update token and session with timeout protection
+            // Secure login: validate token with backend and store validated session
             await _authService
-                .updateLoginToken(
-                  token: token,
-                  username: username,
-                  sessionId: sessionId.isNotEmpty ? sessionId : null,
-                )
+                .processLoginRedirect(token: token, username: username)
                 .timeout(
                   const Duration(seconds: 10),
                   onTimeout: () => throw TimeoutException('Login timeout'),
