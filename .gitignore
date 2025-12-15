@@ -101,5 +101,5 @@ docs/*.tmp
 *.log.*
 
 
-#ignore WhatsUp
-WhatsUp/*
+#ignore WhatsUp directir and all subdir
+WhatsUp/
