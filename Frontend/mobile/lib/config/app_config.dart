@@ -5,7 +5,7 @@ class AppConfig {
   static const String apiUrl = "https://backend.a4innovation.shop";
 
   // 🌐 WEB FRONTEND URL - Update this with your web app URL (NO trailing slash)
-  static const String webUrl = "https://6cfe15fe1c88.ngrok-free.app";
+  static const String webUrl = "https://frontend.a4innovation.shop";
 
   // 📱 DEEP LINK SCHEME - Don't change unless you modify AndroidManifest.xml
   static const String deepLinkScheme = "sentriapp";
