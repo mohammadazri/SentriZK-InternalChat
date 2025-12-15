@@ -1,6 +1,6 @@
 # =========================================
 # 🧠 SentriZK Unified .gitignore
-# Covers Node.js backend + Flutter mobile + docs
+# Covers Node.js backend + Flutter mobile + docs + binaries
 # =========================================
 
 # --- Node.js ---
@@ -8,6 +8,9 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
+yarn.lock
+.pnpm-debug.log*
 .env
 .env.local
 .env.development.local
@@ -31,39 +34,14 @@ yarn-error.log*
 **/android/app/build/
 **/android/local.properties
 **/android/key.properties
+**/android/.idea/
+**/android/captures/
+**/android/.cxx/
+**/windows/flutter/ephemeral/
+**/linux/flutter/ephemeral/
+**/macos/Flutter/ephemeral/
 
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
-
-# --- VS Code / IDE ---
-.vscode/
-.idea/
-*.iml
-
-# --- Logs & Temp ---
-*.log
-*.tmp
-*.swp
-*.swo
-.DS_Store
-Thumbs.db
-
-# --- Tests / Coverage ---
-coverage/
-test-results/
-
-# --- Build Artifacts ---
+# --- Build / Output ---
 dist/
 out/
 *.exe
@@ -75,11 +53,49 @@ out/
 *.pyd
 *.class
 *.jar
+*.apk
+*.aab
+*.ipa
+*.app
+
+# --- Logs / Temp ---
+*.log
+*.tmp
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+*.bak
+*.orig
+
+# --- IDE / Editor ---
+.vscode/
+.idea/
+*.iml
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# --- Tests / Coverage ---
+coverage/
+test-results/
+*.lcov
 
 # --- Docs / Misc ---
 docs/*.tmp
 *.bak
 *.orig
+*.pdf
 
-# --- Git ---
+# --- Git / Versioning ---
 .gitignore
+.gitattributes
+*.patch
+
+# --- Others ---
+*.zip
+*.tar
+*.gz
+*.7z
+*.rar
+*.log.*
