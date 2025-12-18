@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentriZK | Professional Overview</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Palette */
+            --bg-deep: #0B0E14;
+            --glass-surface: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #FFFFFF;
+            --text-secondary: #94A3B8;
+            
+            /* Status Colors */
+            --color-neutral: #38bdf8; /* Blue for Context */
+            --color-warning: #fb923c; /* Orange for Risk */
+            --color-success: #4ade80; /* Green for Solution */
+
+            /* Fluid Typography Variables */
+            --h1-size: clamp(2.5rem, 5vw, 4.5rem);
+            --p-size: clamp(0.9rem, 1.2vw, 1.4rem);
+            --gap-size: clamp(1rem, 2vh, 2rem);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden; /* Slide Mode */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* --- ANIMATED BACKGROUND --- */
+        .ambient-mesh {
+            position: absolute;
+            width: 100%; height: 100%;
+            z-index: 0;
+            background: radial-gradient(circle at 10% 10%, rgba(56, 189, 248, 0.08), transparent 40%),
+                        radial-gradient(circle at 90% 90%, rgba(74, 222, 128, 0.05), transparent 40%);
+            animation: pulseBackground 10s ease-in-out infinite alternate;
+        }
+
+        /* --- LAYOUT CONTAINER --- */
+        .slide-container {
+            position: relative;
+            z-index: 10;
+            width: 90%;
+            height: 90vh; /* Keeps slight padding top/bottom */
+            max-width: 1600px;
+            display: grid;
+            grid-template-rows: auto 1fr; /* Header fits content, Body fills rest */
+            gap: 4vh;
+        }
+
+        /* --- HEADER --- */
+        header {
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 2vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .eyebrow {
+            text-transform: uppercase;
+            font-size: 1.25rem;
+            letter-spacing: 0.2em;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: var(--h1-size);
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to right, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- CARDS WRAPPER --- */
+        .cards-stack {
+            display: grid;
+            grid-template-rows: repeat(3, 1fr); /* 3 Equal rows */
+            gap: var(--gap-size);
+            height: 100%;
+        }
+
+        /* --- INDIVIDUAL CARD DESIGN --- */
+        .card {
+            background: var(--glass-surface);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 0 3rem; /* Left/Right padding */
+            display: flex;
+            align-items: center; /* Vertically center text */
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, background 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            transform: translateX(5px);
+        }
+
+        /* The Colored Bar on the left */
+        .indicator-bar {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+        }
+
+        /* Card Content Grid (Label | Text) */
+        .card-content {
+            display: grid;
+            grid-template-columns: min-content 1fr; /* Label only as wide as needed */
+            gap: 2.5rem; /* Reduce gap for tighter layout */
+            width: 100%;
+            align-items: center;
+        }
+
+        .card-label {
+            font-size: 1.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 700;
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card p {
+            font-size: var(--p-size);
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .card strong {
+            color: white;
+            font-weight: 600;
+        }
+
+        /* --- THEMES FOR EACH CARD --- */
+        
+        /* 1. Context */
+        .theme-context .indicator-bar { background: var(--color-neutral); box-shadow: 2px 0 15px var(--color-neutral); opacity: 0.6; }
+        .theme-context .card-label { color: var(--color-neutral); }
+
+        /* 2. Gap/Risk */
+        .theme-gap .indicator-bar { background: var(--color-warning); box-shadow: 2px 0 15px var(--color-warning); opacity: 0.6; }
+        .theme-gap .card-label { color: var(--color-warning); }
+
+        /* 3. Solution (Highlighted) */
+        .theme-solution { 
+            background: linear-gradient(90deg, rgba(74, 222, 128, 0.05) 0%, transparent 100%);
+            border-color: rgba(74, 222, 128, 0.2);
+        }
+        .theme-solution .indicator-bar { background: var(--color-success); box-shadow: 2px 0 20px var(--color-success); }
+        .theme-solution .card-label { color: var(--color-success); }
+        .theme-solution p { color: #f0fdf4; } /* Brighter text for solution */
+        .sentrizk-brand { 
+            color: var(--color-success); 
+            font-weight: 700; 
+            font-size: 1.1em;
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes pulseBackground {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card:nth-child(1) { animation: slideIn 0.6s ease-out 0.2s backwards; }
+        .card:nth-child(2) { animation: slideIn 0.6s ease-out 0.3s backwards; }
+        .card:nth-child(3) { animation: slideIn 0.6s ease-out 0.4s backwards; }
+
+
+        /* --- RESPONSIVE DESIGN --- */
+        @media (max-width: 1024px) {
+            .card-content { grid-template-columns: 1fr; gap: 0.5rem; } /* Stack label above text */
+            .card { padding: 1.5rem 2rem; }
+            .card-label { margin-bottom: 5px; }
+        }
+
+        @media (max-width: 768px) {
+            body { height: auto; padding: 40px 0; overflow-y: auto; }
+            .slide-container { height: auto; display: flex; flex-direction: column; gap: 30px; }
+            .cards-stack { display: flex; flex-direction: column; gap: 20px; }
+            .card { padding: 1.5rem; border-radius: 12px; }
+            h1 { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-mesh"></div>
+
+    <div class="slide-container">
+        
+        <header>
+            <div class="eyebrow">Introduction </div>
+            <h1>Background</h1>
+        </header>
+
+        <div class="cards-stack">
+            
+            <div class="card theme-context">
+                <div class="indicator-bar"></div>
+                <div class="card-content">
+                    <div class="card-label">01 </div>
+                    <p>
+                        Internal messaging systems are widely used in organizations, particularly <strong>Small and Medium Enterprises (SMEs)</strong>, as the primary tool for daily professional communication and collaboration.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card theme-gap">
+                <div class="indicator-bar"></div>
+                <div class="card-content">
+                    <div class="card-label">02 </div>
+                    <p>
+                        Although many platforms use encryption and multi-factor authentication, research shows that centralized credential storage remains <strong>vulnerable to data breaches</strong> and lacks real-time detection for insider threats. This concerns data confidentiality, access integrity, and privacy.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card theme-solution">
+                <div class="indicator-bar"></div>
+                <div class="card-content">
+                    <div class="card-label">03 </div>
+                    <p>
+                        This project focuses on developing <span class="sentrizk-brand">"SentriZK,"</span> a secure internal chat application that integrates <strong>Zero-Knowledge Proof (ZKP)</strong> authentication and <strong>on-device AI anomaly detection</strong>. The system aims to help SMEs eliminate credential theft risks and detect suspicious behavior locally.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>

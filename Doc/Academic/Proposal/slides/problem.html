@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentriZK | Problem Statement</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Palette */
+            --bg-deep: #0B0E14;
+            --glass-surface: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #FFFFFF;
+            --text-secondary: #94A3B8;
+            
+            /* Status Colors */
+            --color-critical: #ef4444; /* Red for Critical Risk */
+            --color-warning: #fb923c; /* Orange for Blind Spot */
+
+            /* Fluid Typography Variables - Tweaked for 2-card layout */
+            --h1-size: clamp(2.5rem, 5vw, 5rem);
+            --p-size: clamp(1rem, 1.5vw, 1.8rem); /* Slightly larger text since we have more space */
+            --label-size: clamp(2rem, 3vw, 4rem);
+            --gap-size: clamp(1rem, 3vh, 3rem);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden; /* Slide Mode */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* --- ANIMATED BACKGROUND --- */
+        .ambient-mesh {
+            position: absolute;
+            width: 100%; height: 100%;
+            z-index: 0;
+            background: radial-gradient(circle at 10% 10%, rgba(239, 68, 68, 0.08), transparent 40%),
+                        radial-gradient(circle at 90% 90%, rgba(251, 146, 60, 0.05), transparent 40%);
+            animation: pulseBackground 10s ease-in-out infinite alternate;
+        }
+
+        /* --- LAYOUT CONTAINER --- */
+        .slide-container {
+            position: relative;
+            z-index: 10;
+            width: 90%;
+            height: 90vh; /* Keeps slight padding top/bottom */
+            max-width: 1600px;
+            display: grid;
+            grid-template-rows: auto 1fr; /* Header fits content, Body fills the rest */
+            gap: 4vh;
+        }
+
+        /* --- HEADER --- */
+        header {
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 2vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .eyebrow {
+            text-transform: uppercase;
+            font-size: clamp(0.8rem, 1vw, 1.2rem);
+            letter-spacing: 0.2em;
+            color: var(--color-critical); /* Red specifically for problem statement */
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: var(--h1-size);
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to right, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- CARDS WRAPPER --- */
+        .cards-stack {
+            display: grid;
+            /* CRITICAL CHANGE: repeat(2, 1fr) ensures 2 cards fill the WHOLE space */
+            grid-template-rows: repeat(2, 1fr); 
+            gap: var(--gap-size);
+            height: 100%;
+        }
+
+        /* --- INDIVIDUAL CARD DESIGN --- */
+        .card {
+            background: var(--glass-surface);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 0 clamp(2rem, 4vw, 5rem); /* Responsive padding */
+            display: flex;
+            align-items: center; /* Vertically center text */
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, background 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            transform: translateX(5px);
+        }
+
+        /* The Colored Bar on the left */
+        .indicator-bar {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 8px; /* Slightly thicker for impact */
+        }
+
+        /* Card Content Grid (Label | Text) */
+        .card-content {
+            display: grid;
+            grid-template-columns: min-content 1fr; /* Label width | Text width */
+            gap: clamp(2rem, 4vw, 5rem); /* Spacing between Number and Text */
+            width: 100%;
+            align-items: center;
+        }
+
+        .card-label {
+            font-size: var(--label-size);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            opacity: 0.9;
+            white-space: nowrap;
+        }
+
+        .card p {
+            font-size: var(--p-size);
+            line-height: 1.6;
+            color: var(--text-secondary);
+            text-align: justify; /* Clean edges */
+        }
+
+        .card strong {
+            color: white;
+            font-weight: 600;
+        }
+
+        /* --- THEMES --- */
+        
+        /* 1. Critical (Red) - For Credential Breach */
+        .theme-critical .indicator-bar { background: var(--color-critical); box-shadow: 2px 0 25px var(--color-critical); }
+        .theme-critical .card-label { color: var(--color-critical); }
+
+        /* 2. Warning (Orange) - For Encryption Blind Spot */
+        .theme-warning .indicator-bar { background: var(--color-warning); box-shadow: 2px 0 25px var(--color-warning); }
+        .theme-warning .card-label { color: var(--color-warning); }
+
+        /* --- ANIMATIONS --- */
+        @keyframes pulseBackground {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card:nth-child(1) { animation: slideIn 0.6s ease-out 0.2s backwards; }
+        .card:nth-child(2) { animation: slideIn 0.6s ease-out 0.4s backwards; }
+
+        /* --- RESPONSIVE DESIGN --- */
+        @media (max-width: 1024px) {
+            .card-content { grid-template-columns: 1fr; gap: 0.5rem; }
+            .card { padding: 2rem; align-items: flex-start; justify-content: center; flex-direction: column;}
+            .card-label { margin-bottom: 10px; font-size: 2rem; }
+            .card p { text-align: left; }
+        }
+
+        @media (max-width: 768px) {
+            body { height: auto; padding: 40px 0; overflow-y: auto; }
+            .slide-container { height: auto; display: flex; flex-direction: column; gap: 30px; }
+            .cards-stack { display: flex; flex-direction: column; gap: 20px; }
+            .card { padding: 1.5rem; border-radius: 12px; min-height: 300px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-mesh"></div>
+
+    <div class="slide-container">
+        
+        <header>
+            <div class="eyebrow">Introduction</div>
+            <h1>Problem Statement</h1>
+        </header>
+
+        <div class="cards-stack">
+            
+            <div class="card theme-critical">
+                <div class="indicator-bar"></div>
+                <div class="card-content">
+                    <div class="card-label">01</div>
+                    <p>
+                        Many organizations rely on internal chat platforms like <strong>Slack</strong> or <strong>Microsoft Teams</strong>, which use centralized servers to store hashed credentials. Real-world incidents, such as the <strong>2023 Slack data breach</strong>, demonstrate that attackers can exploit stolen session tokens to expose internal communications, proving that stored credentials remain a critical vulnerability even when multi-factor authentication is in place.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card theme-warning">
+                <div class="indicator-bar"></div>
+                <div class="card-content">
+                    <div class="card-label">02</div>
+                    <p>
+                        While end-to-end encryption secures message content, it simultaneously creates a blind spot by preventing servers from analyzing chats for threats. For instance, in 2025, attackers hijacked expired <strong>Discord</strong> invite links to deliver malware undetected within normal chat flows, highlighting the urgent need for on-device AI anomaly detection to identify risky behavior locally without breaking encryption.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>

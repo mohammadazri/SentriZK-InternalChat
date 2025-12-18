@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentriZK | Final Year Project</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;800&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #030712;
+            --primary: #3b82f6; /* Blue */
+            --accent: #10b981;  /* Green/Success */
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        /* --- RESET --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            overflow-x: hidden;
+            width: 100vw;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- BACKGROUND FX --- */
+        .bg-gradient {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(0,0,0,0) 70%);
+            top: -100px;
+            right: -100px;
+            z-index: 0;
+            filter: blur(80px);
+        }
+
+        .bg-grid {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* --- LAYOUT CONTAINER --- */
+        .container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 4rem;
+            width: 100%;
+            align-items: center;
+        }
+
+        /* --- LEFT SIDE: CONTENT (Fluid Text/Gap) --- */
+        .hero-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            animation: slideRight 1s ease-out;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 100px;
+            color: var(--accent);
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            width: fit-content;
+        }
+        
+        .badge::before {
+            content: '';
+            display: block;
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        h1 {
+            font-size: clamp(3.5rem, 6vw, 6rem); /* Fluid Typography */
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -2px;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h2 {
+            font-family: 'Space Grotesk', monospace;
+            font-size: clamp(1.2rem, 2vw, 1.8rem); /* Fluid Typography */
+            color: var(--primary);
+            font-weight: 400;
+            margin-top: -0.5rem;
+        }
+
+        p.description {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            max-width: 600px;
+            border-left: 2px solid var(--glass-border);
+            padding-left: 1rem;
+        }
+
+        /* --- INFO CARDS (Grid) --- */
+        .info-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 2rem;
+            max-width: 600px;
+        }
+
+        .card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 1.2rem;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .card-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .card-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* --- RIGHT SIDE: VISUALS (CSS Shapes) - UPDATED FOR DYNAMIC SIZING --- */
+        .hero-visual {
+            position: relative;
+            /* New: Use VW/Max-height for better dynamic sizing */
+            width: 100%;
+            height: 50vw; /* Base height on viewport width for square-like scaling */
+            max-height: 500px; /* Limit max size */
+            max-width: 500px; /* Limit max size */
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 1.5s ease-out;
+        }
+
+        .shield-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.05);
+        }
+
+        /* New: Use percentage widths relative to the .hero-visual container */
+        .ring-1 { width: 80%; height: 80%; animation: spin 20s linear infinite; border-top: 1px solid var(--primary); }
+        .ring-2 { width: 60%; height: 60%; animation: spin-rev 15s linear infinite; border-bottom: 1px solid var(--accent); }
+        .ring-3 { width: 30%; height: 30%; background: radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%); }
+
+        .lock-icon {
+            font-size: 3rem;
+            color: #fff;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 0 20px var(--primary);
+        }
+
+        .logo-wrap {
+            position: relative;
+            /* New: Use percentage widths relative to the .hero-visual container */
+            width: 28%; 
+            height: 28%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(59, 130, 246, 0.25), rgba(3, 7, 18, 0.6));
+            background-image: url('../../Images/logo_no_bg.png');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 70%;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.25), 0 0 60px rgba(16, 185, 129, 0.18);
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            z-index: 2;
+        }
+
+        .logo-wrap::after {
+            content: "";
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 2px solid rgba(59, 130, 246, 0.35);
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.25);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        .logo-img {
+            /* Kept as % relative to .logo-wrap */
+            width: 105%;
+            height: 105%;
+            object-fit: contain;
+            filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.35));
+            z-index: 3;
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes spin-rev { 100% { transform: rotate(-360deg); } }
+        @keyframes slideRight {
+            from { opacity: 0; transform: translateX(-50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.98); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(0.98); }
+        }
+
+        /* --- RESPONSIVENESS --- */
+        /* Tablet & Mobile */
+        @media (max-width: 1024px) {
+            .hero-grid {
+                grid-template-columns: 1fr;
+                text-align: left;
+                gap: 2rem;
+            }
+            /* Re-activate visual for small screens, using the new dynamic sizes */
+            .hero-visual {
+                display: flex;
+                height: 300px;
+                max-width: 100%; /* Ensure it uses full width if needed */
+            }
+        }
+
+        @media (max-width: 600px) {
+            .info-cards {
+                grid-template-columns: 1fr; /* Stack cards */
+            }
+            .container {
+                padding: 1.5rem;
+            }
+            h1 {
+                line-height: 1.1;
+            }
+            /* REMOVED/OVERRIDDEN: The percentage widths now handle scaling better, 
+               but we set a new fixed height max for the visual block on mobile */
+            /* .ring-1 { width: 280px; height: 280px; } */ 
+            /* .ring-2 { width: 200px; height: 200px; } */
+            .hero-visual {
+                 height: 250px; /* Smallest height for visual element */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-grid"></div>
+    <div class="bg-gradient"></div>
+
+    <div class="container">
+        <div class="hero-grid">
+            
+            <div class="hero-content">
+                <div class="badge">PROPOSAL DEFENSE | BCSS Final Year Project</div>
+                
+                <div>
+                    <h1>SentriZK</h1>
+                    <h2>Secure Internal Messaging with Zero-Knowledge & AI</h2>
+                </div>
+
+                <p class="description">
+                    A next-generation secure communication framework designed for SMEs. 
+                    Eliminating credential theft via ZKP authentication and detecting 
+                    threats locally with on-device AI.
+                </p>
+
+                <div class="info-cards">
+                    <div class="card">
+                        <div class="card-label">Developer</div>
+                        <div class="card-value">Mohammad Azri Bin Aziz</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Student ID</div>
+                        <div class="card-value" style="color: var(--accent);">52215123264</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Supervisor</div>
+                        <div class="card-value">DR DELINA BEH MEI YIN</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Tech Stack</div>
+                        <div class="card-value">Android · Node.js · TFLite</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-visual">
+                <div class="shield-ring ring-1"></div>
+                <div class="shield-ring ring-2"></div>
+                <div class="shield-ring ring-3"></div>
+                <div class="logo-wrap">
+                    <img class="logo-img" src="../../../Images/logo_only.png" alt="SentriZK Logo">
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>

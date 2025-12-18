@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentriZK | Research Journey</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-void: #050505;
+            --text-main: #ffffff;
+            --text-muted: #9ca3af;
+            
+            /* Psychology Colors */
+            --step-1: #06b6d4; /* Cyan: Analysis */
+            --step-2: #8b5cf6; /* Violet: Creation */
+            --step-3: #10b981; /* Green: Validation */
+            
+            --glass: rgba(255, 255, 255, 0.02);
+            --border: rgba(255, 255, 255, 0.05);
+
+            /* Sizing */
+            --h1-size: clamp(2.5rem, 5vw, 5rem);
+            --p-size: clamp(1rem, 1.4vw, 1.6rem);
+            --num-size: clamp(1.2rem, 1.5vw, 2rem);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-void);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- BACKGROUND ATMOSPHERE --- */
+        .fog {
+            position: absolute;
+            width: 100vw; height: 100vh;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(6, 182, 212, 0.06), transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.06), transparent 40%);
+            z-index: 0;
+            filter: blur(60px);
+        }
+
+        /* --- LAYOUT --- */
+        .container {
+            position: relative;
+            z-index: 10;
+            width: 85%;
+            height: 90vh;
+            max-width: 1400px;
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-template-rows: auto 1fr;
+        }
+
+        /* --- HEADER --- */
+        header {
+            padding-bottom: 4vh;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 4vh;
+        }
+
+        .eyebrow {
+            font-size: clamp(0.8rem, 1vw, 1rem);
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .eyebrow::before {
+            content: ''; height: 1px; width: 40px; background: var(--step-1);
+        }
+
+        h1 {
+            font-size: var(--h1-size);
+            font-weight: 800;
+            background: linear-gradient(to right, #fff, #9ca3af);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+        }
+
+        /* --- TIMELINE GRID --- */
+        .timeline-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Stretches items to full height */
+            height: 100%;
+        }
+
+        /* The Vertical Line */
+        .timeline-line {
+            position: absolute;
+            left: 29px; /* Aligns with center of nodes */
+            top: 20px;
+            bottom: 20px;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--step-1), var(--step-2), var(--step-3));
+            opacity: 0.3;
+            z-index: 0;
+        }
+
+        /* --- INDIVIDUAL ITEM --- */
+        .objective-item {
+            display: grid;
+            grid-template-columns: 80px 1fr; /* Node Area | Content Area */
+            align-items: center;
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+
+        .objective-item:hover {
+            transform: translateX(10px);
+        }
+
+        /* The Glowing Node */
+        .node-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .node {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--bg-void);
+            border: 2px solid; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: var(--num-size);
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+
+        /* Content Card */
+        .text-card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            padding: clamp(2rem, 3.5vw, 4rem);
+            border-radius: 0 20px 20px 0; /* Rounded right side */
+            border-left: 4px solid transparent; /* Colored accent line */
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            height: 100%; /* Fill available vertical space */
+        }
+
+        .text-card p {
+            font-size: var(--p-size);
+            line-height: 1.6;
+            color: var(--text-muted);
+            max-width: 95%;
+        }
+
+        .text-card strong {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* --- THEME VARIATIONS --- */
+
+        /* 01: STUDY (Cyan) */
+        .item-1 .node { border-color: var(--step-1); color: var(--step-1); box-shadow: 0 0 15px rgba(6, 182, 212, 0.2); }
+        .item-1 .text-card { border-left-color: var(--step-1); }
+        .item-1:hover .node { background: var(--step-1); color: #000; box-shadow: 0 0 30px var(--step-1); }
+
+        /* 02: DEVELOP (Violet) */
+        .item-2 .node { border-color: var(--step-2); color: var(--step-2); box-shadow: 0 0 15px rgba(139, 92, 246, 0.2); }
+        .item-2 .text-card { border-left-color: var(--step-2); }
+        .item-2:hover .node { background: var(--step-2); color: #000; box-shadow: 0 0 30px var(--step-2); }
+
+        /* 03: TEST (Green) */
+        .item-3 .node { border-color: var(--step-3); color: var(--step-3); box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); }
+        .item-3 .text-card { border-left-color: var(--step-3); }
+        .item-3:hover .node { background: var(--step-3); color: #000; box-shadow: 0 0 30px var(--step-3); }
+
+        /* --- ANIMATION --- */
+        @keyframes reveal {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .objective-item:nth-child(2) { animation: reveal 0.8s ease 0.2s backwards; } /* 2 is first item because of the line div */
+        .objective-item:nth-child(3) { animation: reveal 0.8s ease 0.4s backwards; }
+        .objective-item:nth-child(4) { animation: reveal 0.8s ease 0.6s backwards; }
+
+        /* --- MOBILE --- */
+        @media (max-width: 768px) {
+            body { height: auto; padding: 40px 0; overflow-y: auto; }
+            .container { height: auto; display: flex; flex-direction: column; }
+            .timeline-wrapper { gap: 30px; }
+            .timeline-line { top: 0; bottom: 0; }
+            .text-card { padding: 1.5rem; border-radius: 12px; margin-left: 10px; }
+            .objective-item { grid-template-columns: 60px 1fr; }
+            .node { width: 40px; height: 40px; font-size: 1rem; }
+            .timeline-line { left: 19px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="fog"></div>
+
+    <div class="container">
+        
+        <header>
+            <div class="eyebrow">Project Roadmap</div>
+            <h1>Research Objectives</h1>
+        </header>
+
+        <div class="timeline-wrapper">
+            <div class="timeline-line"></div>
+
+            <div class="objective-item item-1">
+                <div class="node-container">
+                    <div class="node">01</div>
+                </div>
+                <div class="text-card">
+                    <p>
+                        To study existing authentication and anomaly detection methods in internal messaging systems and identify their <strong>security limitations</strong>.
+                    </p>
+                </div>
+            </div>
+
+            <div class="objective-item item-2">
+                <div class="node-container">
+                    <div class="node">02</div>
+                </div>
+                <div class="text-card">
+                    <p>
+                        To develop a secure internal chat application integrating <strong>Zero-Knowledge Proof</strong> authentication and <strong>on-device AI anomaly detection</strong>.
+                    </p>
+                </div>
+            </div>
+
+            <div class="objective-item item-3">
+                <div class="node-container">
+                    <div class="node">03</div>
+                </div>
+                <div class="text-card">
+                    <p>
+                        To test the system’s effectiveness in preventing <strong>unauthorized access</strong> and detecting suspicious behaviour without compromising privacy.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
