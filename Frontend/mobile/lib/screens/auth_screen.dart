@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:app_links/app_links.dart';
 import '../services/auth_service.dart';
+import '../services/user_service.dart';
+import '../services/notification_service.dart';
 import '../config/app_config.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -227,6 +229,21 @@ class _AuthScreenState extends State<AuthScreen>
                   const Duration(seconds: 10),
                   onTimeout: () => throw TimeoutException('Login timeout'),
                 );
+
+            // Create or update Firestore user profile after successful login
+            final deviceId = await _authService.getDeviceId();
+            final userService = UserService();
+
+            await userService.createOrUpdateUser(
+              userId: username, // Use a unique userId if available
+              username: username,
+              deviceId: deviceId,
+              // Add avatarUrl/phone if available
+            );
+
+            // Register and save FCM token for push notifications
+            final notificationService = NotificationService();
+            await notificationService.saveFcmToken(userId: username);
 
             _updateStatus(
               "Welcome back, $username",

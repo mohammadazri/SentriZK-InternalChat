@@ -18,8 +18,8 @@ class AuthService {
   final _secureStorage = const FlutterSecureStorage();
   Timer? _refreshTimer;
 
-  // Generate a unique device ID
-  Future<String> _getDeviceId() async {
+  // Generate a unique device ID (public)
+  Future<String> getDeviceId() async {
     final prefs = await SharedPreferences.getInstance();
     String? deviceId = prefs.getString('device_id');
 
@@ -44,7 +44,7 @@ class AuthService {
   /// Generate Mobile Access Token from backend
   Future<Map<String, dynamic>> generateMobileAccessToken(String action) async {
     try {
-      final deviceId = await _getDeviceId();
+      final deviceId = await getDeviceId();
       final endpoint = AppConfig.generateMATEndpoint;
 
       print('🔐 Generating MAT...');
@@ -117,7 +117,7 @@ class AuthService {
   /// Validate one-time token with backend and bind to this device
   Future<Map<String, dynamic>> validateToken(String token) async {
     try {
-      final deviceId = await _getDeviceId();
+      final deviceId = await getDeviceId();
       final url =
           '${AppConfig.apiUrl}/validate-token?token=$token&device=$deviceId';
       final response = await http.get(Uri.parse(url));
@@ -226,7 +226,7 @@ class AuthService {
       final sessionId = await getSessionId();
       if (sessionId == null) return false;
 
-      final deviceId = await _getDeviceId();
+      final deviceId = await getDeviceId();
       final response = await http.post(
         Uri.parse(AppConfig.refreshSessionEndpoint),
         headers: {'Content-Type': 'application/json'},
@@ -393,7 +393,7 @@ class AuthService {
       // Generate MAT
       final matData = await generateMobileAccessToken(action);
       final mat = matData['mobileAccessToken'];
-      final deviceId = await _getDeviceId();
+      final deviceId = await getDeviceId();
 
       if (mat == null || mat.isEmpty) {
         print('❌ MAT is empty!');
