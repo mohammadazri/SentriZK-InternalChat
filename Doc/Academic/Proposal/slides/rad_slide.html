@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentriZK - RAD Methodology</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Dark Theme Background */
+            --bg-deep: #050b14; 
+            
+            /* The "Professional" Gradients from your image */
+            --grad-req-start: #3b82f6;
+            --grad-req-end: #6366f1;
+            
+            --grad-iter-start: #a855f7; /* Purple */
+            --grad-iter-end: #d946ef;   /* Pink */
+            
+            --grad-dep-start: #10b981;  /* Emerald */
+            --grad-dep-end: #0ea5e9;    /* Sky Blue */
+
+            /* Enhanced Neon Cycle Colors */
+            --cycle-orange-start: #ff9933; /* Bright Orange */
+            --cycle-orange-end: #ff6600;
+            --cycle-pink-start: #ff66b2;   /* Neon Pink */
+            --cycle-pink-end: #cc0066;
+            --cycle-purple-start: #cc66ff; /* Neon Purple */
+            --cycle-purple-end: #6600cc;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* Background Grid for Texture */
+        .bg-grid {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+        }
+
+        h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            letter-spacing: 4px;
+            margin-bottom: 3rem;
+            text-transform: uppercase;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 20px rgba(255,255,255,0.1));
+        }
+
+        /* --- DIAGRAM CONTAINER --- */
+        .diagram-wrapper {
+            width: 1400px; /* Wide canvas for the horizontal flow */
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        /* --- TYPOGRAPHY --- */
+        .label-header {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 15px;
+            fill: white;
+            text-anchor: middle;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+
+        .label-sub {
+            font-weight: 400;
+            font-size: 12px;
+            fill: rgba(255,255,255,0.9);
+            text-anchor: middle;
+            letter-spacing: 0.5px;
+            pointer-events: none;
+        }
+
+        .hub-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 22px;
+            fill: white;
+            text-anchor: middle;
+            text-transform: uppercase;
+        }
+
+        .cycle-label {
+            font-weight: 700;
+            font-size: 13px;
+            fill: white;
+            text-anchor: middle;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+
+        /* --- ANIMATIONS --- */
+        .float { animation: float 6s ease-in-out infinite; }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Spinning Outer Neon Glimmer */
+        .glow-glimmer {
+            animation: glimmer 3s linear infinite;
+            transform-origin: center;
+        }
+        @keyframes glimmer {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-grid"></div>
+
+    
+
+</body>
+</html>

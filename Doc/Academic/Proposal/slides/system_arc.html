@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentriZK - Professional System Architecture</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Professional Dark Theme */
+            --bg-color: #0f172a;       /* Slate 900 */
+            --zone-bg: #1e293b;        /* Slate 800 */
+            --border-col: #334155;     /* Slate 700 */
+            
+            /* Logic Colors (Muted/Professional) */
+            --c-app: #3b82f6;          /* Client Blue */
+            --c-auth: #d946ef;         /* Auth/ZKP Purple */
+            --c-server: #f59e0b;       /* Server Amber */
+            --c-safe: #10b981;         /* Success Green */
+            --c-threat: #ef4444;       /* Threat Red */
+            
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            /* Subtle grid pattern */
+            background-image: linear-gradient(#1e293b 1px, transparent 1px), linear-gradient(90deg, #1e293b 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* --- HEADER --- */
+        .header {
+            position: absolute; top: 30px; left: 50px;
+        }
+        .header h4 { font-size: 0.8rem; color: var(--c-app); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; }
+        .header h1 { font-size: 2rem; font-weight: 800; }
+
+        /* --- GRID LAYOUT --- */
+        .layout-grid {
+            position: relative;
+            width: 1400px;
+            height: 750px;
+            display: grid;
+            grid-template-columns: 1fr 0.8fr 1fr; /* Client | Browser | Server */
+            gap: 40px;
+            align-items: stretch;
+            padding-top: 60px;
+        }
+
+        /* --- ZONES --- */
+        .zone {
+            position: relative;
+            border: 1px dashed var(--border-col);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .zone-label {
+            position: absolute; top: -12px; left: 20px;
+            background: var(--bg-color); padding: 0 10px;
+            font-size: 0.75rem; font-weight: 700; color: var(--text-sub);
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        /* CLIENT SIDE */
+        .client-zone { border-color: var(--c-app); background: rgba(59, 130, 246, 0.02); }
+        
+        /* BROWSER SIDE */
+        .browser-zone { border-color: var(--c-auth); background: rgba(217, 70, 239, 0.02); justify-content: center; }
+        
+        /* SERVER SIDE */
+        .server-zone { border: none; padding-top: 50px; gap: 40px; }
+
+        /* --- COMPONENT CARDS --- */
+        .card {
+            background: var(--zone-bg);
+            border: 1px solid var(--border-col);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .icon {
+            width: 40px; height: 40px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; flex-shrink: 0;
+        }
+
+        .text h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 2px; }
+        .text p { font-size: 0.7rem; color: var(--text-sub); }
+
+        /* Specific Card Styles */
+        .card-auth { border-left: 4px solid var(--c-auth); margin-bottom: 40px; }
+        .card-msg { border-left: 4px solid var(--c-app); margin-top: 20px; }
+        
+        /* AI Scanner Special Style */
+        .ai-scanner {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px dashed var(--c-server);
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .ai-status {
+            display: flex; justify-content: space-between;
+            margin-top: 15px; font-size: 0.75rem; font-weight: 700;
+        }
+        .status-block { color: var(--c-threat); display: flex; align-items: center; gap: 5px; }
+        .status-safe { color: var(--c-safe); display: flex; align-items: center; gap: 5px; }
+
+        /* Encrypt Node */
+        .encrypt-node {
+            background: #064e3b; color: #34d399;
+            padding: 8px 16px; border-radius: 8px;
+            font-size: 0.8rem; font-weight: 700;
+            text-align: center; width: fit-content;
+            margin-left: auto; margin-top: 10px;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        /* Server Nodes */
+        .server-node { width: 100%; padding: 20px; }
+        .sn-api { border-left: 4px solid var(--c-server); }
+        .sn-kms { border-left: 4px solid var(--c-safe); width: 80%; margin-left: auto;}
+        .sn-db { border-left: 4px solid var(--c-app); }
+
+        /* --- SVG LINES --- */
+        .connections {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 5;
+        }
+
+        .path { fill: none; stroke-width: 2; }
+        .dashed { stroke-dasharray: 6 4; }
+        
+        /* Colors */
+        .stroke-auth { stroke: var(--c-auth); }
+        .stroke-safe { stroke: var(--c-safe); }
+        .stroke-threat { stroke: var(--c-threat); }
+        .stroke-app { stroke: var(--c-app); }
+
+        /* Labels */
+        .label-bg { 
+            font-size: 0.7rem; font-family: 'JetBrains Mono'; font-weight: 700; fill: #fff;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
+        }
+
+        /* Number Badges */
+        .step-badge {
+            display: inline-flex; width: 20px; height: 20px; 
+            background: #fff; color: #000; border-radius: 50%;
+            align-items: center; justify-content: center; 
+            font-weight: 700; font-size: 0.7rem; margin-right: 8px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h4>System Architecture</h4>
+        <h1>Data Flow & Logic</h1>
+    </div>
+
+    <div class="layout-grid">
+        
+        <div class="zone client-zone">
+            <div class="zone-label">Android Client (Flutter)</div>
+            
+            <div class="card card-auth" id="node-login">
+                <div class="icon" style="color:var(--c-auth)"><i class="ri-user-add-line"></i></div>
+                <div class="text">
+                    <h3>Create Account</h3>
+                    <p>Trigger Registration</p>
+                </div>
+            </div>
+
+            <div class="card" id="node-deeplink" style="position:absolute; top:180px; width:calc(100% - 40px);">
+                <div class="icon" style="color:var(--c-app)"><i class="ri-links-line"></i></div>
+                <div class="text">
+                    <h3>Deep Link Handler</h3>
+                    <p>Receive Session</p>
+                </div>
+            </div>
+
+            <div style="margin-top: 100px; padding-top: 20px; border-top: 1px dashed var(--border-col);">
+                <div class="card card-msg" id="node-input">
+                    <div class="icon"><i class="ri-chat-3-line"></i></div>
+                    <div class="text">
+                        <h3>User Message</h3>
+                        <p>Input Text</p>
+                    </div>
+                </div>
+
+                <div class="ai-scanner" id="node-ai">
+                    <div style="font-weight:700; color:var(--c-server); margin-bottom:10px;">
+                        <i class="ri-brain-line"></i> TFLite Scanner
+                    </div>
+                    <div class="ai-status">
+                        <div class="status-block" id="node-block"><i class="ri-prohibited-line"></i> Block</div>
+                        <div class="status-safe" id="node-safe"><i class="ri-check-double-line"></i> Safe</div>
+                    </div>
+                </div>
+
+                <div class="encrypt-node" id="node-enc">
+                    <i class="ri-lock-2-line"></i> Encrypt
+                </div>
+            </div>
+        </div>
+
+        <div class="zone browser-zone">
+            <div class="zone-label" style="color:var(--c-auth)">Secure Context (ZKP)</div>
+            
+            <div class="card" id="node-zkp" style="border-color:var(--c-auth); width:100%; height:150px; justify-content:center; flex-direction:column; text-align:center;">
+                <div class="icon" style="background:rgba(217, 70, 239, 0.1); color:var(--c-auth); width:60px; height:60px; font-size:1.5rem;">
+                    <i class="ri-shield-keyhole-line"></i>
+                </div>
+                <div class="text" style="margin-top:10px;">
+                    <h3>Proof Generation</h3>
+                    <p>Groth16 Circuit Execution</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="zone server-zone">
+            <div class="zone-label">Backend Infrastructure</div>
+
+            <div class="card server-node sn-api" id="node-api">
+                <div class="icon" style="color:var(--c-server)"><i class="ri-server-line"></i></div>
+                <div class="text">
+                    <h3>Node.js API</h3>
+                    <p>Middleware & Verification</p>
+                </div>
+            </div>
+
+            <div class="card server-node sn-kms" id="node-kms">
+                <div class="icon" style="color:var(--c-safe)"><i class="ri-key-2-line"></i></div>
+                <div class="text">
+                    <h3>KMS Service</h3>
+                    <p>Key Management</p>
+                </div>
+            </div>
+
+            <div class="card server-node sn-db" id="node-db">
+                <div class="icon" style="color:var(--c-app)"><i class="ri-database-2-line"></i></div>
+                <div class="text">
+                    <h3>MongoDB</h3>
+                    <p>Encrypted Storage</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <svg class="connections">
+        <defs>
+            <marker id="arr-auth" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#d946ef"/></marker>
+            <marker id="arr-safe" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#10b981"/></marker>
+            <marker id="arr-std" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#3b82f6"/></marker>
+        </defs>
+
+        <path d="M 450 160 Q 550 160 550 350" class="path dashed stroke-auth" marker-end="url(#arr-auth)"/>
+        <text x="460" y="150" class="label-bg">1. Redirect (MAT)</text>
+
+        <path d="M 850 420 L 980 180" class="path stroke-auth" marker-end="url(#arr-auth)"/>
+        <text x="880" y="280" class="label-bg">2. Verify Proof</text>
+
+        <path d="M 980 200 Q 700 300 450 300" class="path dashed stroke-app" marker-end="url(#arr-std)"/>
+        <text x="650" y="320" class="label-bg">3. Deep Link (Session)</text>
+
+        <path d="M 850 450 Q 1000 450 1080 380" class="path dashed stroke-app" marker-end="url(#arr-std)" style="opacity:0.5"/>
+        <text x="950" y="440" class="label-bg" style="opacity:0.7">Fetch Keys</text>
+
+        <path d="M 230 490 L 230 520" class="path stroke-app" marker-end="url(#arr-std)"/>
+
+        <path d="M 330 635 L 350 660" class="path stroke-safe"/>
+
+        <path d="M 430 700 Q 800 750 980 230" class="path dashed stroke-safe" marker-end="url(#arr-safe)"/>
+        <text x="600" y="720" class="label-bg">4. POST Encrypted Msg</text>
+
+        <path d="M 1190 230 L 1190 550" class="path stroke-app" marker-end="url(#arr-std)"/>
+
+    </svg>
+
+</body>
+</html>

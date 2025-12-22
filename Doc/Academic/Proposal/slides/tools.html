@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentriZK - Ultimate Tech Stack</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css">
+    
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            /* Category Colors */
+            --col-back: #8b5cf6;  /* Violet */
+            --col-front: #3b82f6; /* Blue */
+            --col-sec: #10b981;   /* Emerald */
+            --col-ai: #f59e0b;    /* Amber */
+            --col-ops: #64748b;   /* Slate */
+            
+            --card-bg: rgba(15, 23, 42, 0.6);
+            --card-border: rgba(255, 255, 255, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- ANIMATED BACKGROUND --- */
+        .bg-mesh {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: 
+                radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+            filter: blur(80px);
+            z-index: 0;
+            animation: pulseBg 10s ease-in-out infinite alternate;
+        }
+        
+        .bg-grid {
+            position: absolute; inset: 0;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 1;
+            mask-image: radial-gradient(circle at center, black 50%, transparent 100%);
+        }
+
+        /* --- LAYOUT --- */
+        .container {
+            position: relative;
+            z-index: 10;
+            width: 92%;
+            max-width: 1400px;
+            height: 88vh;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 1.5rem;
+        }
+
+        /* --- HEADER --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .header-left h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            color: var(--col-front);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+
+        .header-left h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .tag-pill {
+            background: rgba(255,255,255,0.05);
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-family: 'Space Grotesk';
+            font-size: 0.85rem;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* --- GRID --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        /* --- CARD STYLES --- */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.6);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        /* Holographic Watermark Icon */
+        .watermark {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            font-size: 8rem;
+            opacity: 0.05;
+            transform: rotate(15deg);
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .card:hover .watermark {
+            opacity: 0.1;
+            transform: rotate(0deg) scale(1.1);
+        }
+
+        /* Top Line Accent */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: var(--theme-col);
+            box-shadow: 0 0 10px var(--theme-col);
+        }
+
+        /* Card Header */
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .icon-box {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem;
+            color: var(--theme-col);
+        }
+
+        .card-title {
+            font-family: 'Space Grotesk';
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        /* Chips */
+        .chips-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .chip {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            padding: 5px 10px;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.05);
+            color: var(--text-muted);
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        
+        .chip i { font-size: 0.9rem; } /* Icon inside chip */
+        
+        .card:hover .chip {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.2);
+            color: #fff;
+        }
+
+        /* List */
+        .tech-list {
+            margin-top: auto;
+            list-style: none;
+            position: relative;
+            z-index: 2;
+        }
+
+        .tech-list li {
+            position: relative;
+            padding-left: 14px;
+            margin-bottom: 6px;
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .tech-list li::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 7px;
+            width: 4px; height: 4px;
+            background: var(--theme-col);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--theme-col);
+        }
+
+        /* Stats Card specific */
+        .stat-card-inner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .stat-ring {
+            width: 100px; height: 100px;
+            border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--col-sec);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            animation: spinRing 1.5s ease-out forwards;
+        }
+        .stat-val { font-size: 1.8rem; font-weight: 800; color: #fff; font-family: 'Space Grotesk'; }
+
+        /* THEMES */
+        .t-back { --theme-col: var(--col-back); }
+        .t-front { --theme-col: var(--col-front); }
+        .t-sec { --theme-col: var(--col-sec); }
+        .t-ai { --theme-col: var(--col-ai); }
+        .t-ops { --theme-col: var(--col-ops); }
+
+        @keyframes pulseBg {
+            0% { opacity: 0.5; transform: scale(1); }
+            100% { opacity: 0.8; transform: scale(1.02); }
+        }
+        @keyframes spinRing { from { transform: rotate(-45deg); opacity: 0; } to { transform: rotate(0deg); opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-mesh"></div>
+    <div class="bg-grid"></div>
+
+    <div class="container">
+        
+        <header>
+            <div class="header-left">
+                <h2>Research Methodology</h2>
+                <h1>Tools & Techniques</h1>
+            </div>
+            <div class="header-right">
+                <span class="tag-pill">SentriZK Architecture</span>
+            </div>
+        </header>
+
+        <div class="grid">
+            
+            <div class="card t-back">
+                <i class="devicon-nodejs-plain watermark"></i>
+                <div class="card-header">
+                    <div class="icon-box"><i class="ph-duotone ph-hard-drives"></i></div>
+                    <div class="card-title">Backend & ZKP</div>
+                </div>
+                <div class="chips-row">
+                    <div class="chip"><i class="devicon-nodejs-plain"></i> Node.js</div>
+                    <div class="chip"><i class="devicon-express-original"></i> Express</div>
+                    <div class="chip">Circom</div>
+                    <div class="chip">SnarkJS</div>
+                </div>
+                <ul class="tech-list">
+                    <li>ZKP circuit design & compilation</li>
+                    <li>Cryptographic proof generation</li>
+                    <li>Verification logic integration</li>
+                    <li>RESTful API Architecture</li>
+                </ul>
+            </div>
+
+            <div class="card t-front">
+                <i class="devicon-flutter-plain watermark"></i>
+                <div class="card-header">
+                    <div class="icon-box"><i class="ph-duotone ph-device-mobile"></i></div>
+                    <div class="card-title">Frontend</div>
+                </div>
+                <div class="chips-row">
+                    <div class="chip"><i class="devicon-flutter-plain"></i> Flutter</div>
+                    <div class="chip"><i class="devicon-nextjs-plain"></i> Next.js</div>
+                    <div class="chip"><i class="devicon-react-original"></i> React</div>
+                    <div class="chip"><i class="devicon-tailwindcss-original"></i> Tailwind</div>
+                </div>
+                <ul class="tech-list">
+                    <li>Cross-platform UI (Mobile/Web)</li>
+                    <li>Mobile-to-Web auth workflow</li>
+                    <li>Deep link handling</li>
+                    <li>Component-based Architecture</li>
+                </ul>
+            </div>
+
+            <div class="card t-sec">
+                <i class="ph-duotone ph-shield-check watermark"></i>
+                <div class="card-header">
+                    <div class="icon-box"><i class="ph-duotone ph-shield-check"></i></div>
+                    <div class="card-title">Security Core</div>
+                </div>
+                <div class="chips-row">
+                    <div class="chip">AES-256</div>
+                    <div class="chip">MAT Protocol</div>
+                    <div class="chip">Nonces</div>
+                </div>
+                <ul class="tech-list">
+                    <li>Zero-Knowledge auth flow</li>
+                    <li>Replay-attack mitigation</li>
+                    <li>Secure Hardware Storage</li>
+                    <li>Session management</li>
+                </ul>
+            </div>
+
+            <div class="card t-ai">
+                <i class="devicon-tensorflow-original watermark"></i>
+                <div class="card-header">
+                    <div class="icon-box"><i class="ph-duotone ph-brain"></i></div>
+                    <div class="card-title">AI Engine</div>
+                </div>
+                <div class="chips-row">
+                    <div class="chip"><i class="devicon-tensorflow-original"></i> TFLite</div>
+                    <div class="chip">Isolation Forest</div>
+                    <div class="chip">Autoencoder</div>
+                </div>
+                <ul class="tech-list">
+                    <li>On-device inference (Privacy)</li>
+                    <li>Behavioral anomaly classification</li>
+                    <li>Lightweight model optimization</li>
+                    <li>Real-time threat scoring</li>
+                </ul>
+            </div>
+
+            <div class="card t-ops">
+                <i class="devicon-github-original watermark"></i>
+                <div class="card-header">
+                    <div class="icon-box"><i class="ph-duotone ph-git-merge"></i></div>
+                    <div class="card-title">DevOps</div>
+                </div>
+                <div class="chips-row">
+                    <div class="chip"><i class="devicon-github-original"></i> GitHub</div>
+                    <div class="chip"><i class="devicon-eslint-original"></i> ESLint</div>
+                    <div class="chip">Turbopack</div>
+                </div>
+                <ul class="tech-list">
+                    <li>Version control strategy</li>
+                    <li>Static Code Analysis</li>
+                    <li>Continuous Integration</li>
+                </ul>
+            </div>
+
+            <div class="card t-sec" style="background: rgba(16, 185, 129, 0.05); border-style: dashed;">
+                <div class="stat-card-inner">
+                    <div class="stat-ring">
+                        <span class="stat-val">100%</span>
+                    </div>
+                    <div style="font-size:0.8rem; color:var(--col-sec); text-transform:uppercase; letter-spacing:1px; font-weight:700;">
+                        Privacy Preserved
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
