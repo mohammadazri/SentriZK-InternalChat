@@ -6,7 +6,9 @@ import 'package:app_links/app_links.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 import '../services/notification_service.dart';
+
 import '../config/app_config.dart';
+import 'user_list_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -257,6 +259,13 @@ class _AuthScreenState extends State<AuthScreen>
                 _isLoggedIn = true;
                 _username = username;
               });
+
+              // Navigate to UserListScreen after successful login
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => UserListScreen(currentUserId: username),
+                ),
+              );
             }
 
             HapticFeedback.mediumImpact();
