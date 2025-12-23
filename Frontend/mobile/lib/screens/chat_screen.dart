@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import '../models/message.dart';
 import '../services/chat_service.dart';
 
+import 'package:isar/isar.dart';
+import '../models/local_message.dart';
+
+// ...existing code...
+
 class ChatScreen extends StatefulWidget {
   final String username;
   final String peerId;
@@ -34,49 +39,88 @@ class _ChatScreenState extends State<ChatScreen> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                final messages = snapshot.data ?? [];
-                return ListView.builder(
-                  padding: const EdgeInsets.all(8),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final msg = messages[index];
-                    final isMe = msg.senderId == widget.username;
-                    return Align(
-                      alignment: isMe
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 2),
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: isMe ? Colors.blue[100] : Colors.grey[200],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(msg.content),
-                            if (msg.attachmentUrl != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Text(
-                                  '[Attachment]',
-                                  style: TextStyle(color: Colors.blue),
-                                ),
-                              ),
-                            Text(
-                              msg.timestamp.toLocal().toString().substring(
-                                0,
-                                16,
-                              ),
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey,
-                              ),
+                final received = snapshot.data ?? [];
+                return StreamBuilder<List<Message>>(
+                  stream: _chatService.getMessages(
+                    widget.peerId,
+                    widget.username,
+                  ),
+                  builder: (context, sentSnapshot) {
+                    final sent = sentSnapshot.data ?? [];
+                    final allMessages = [...received, ...sent];
+                    allMessages.sort(
+                      (a, b) => a.timestamp.compareTo(b.timestamp),
+                    );
+                    // Mark received messages as seen, save locally, then delete from Firestore
+                    for (final msg in received) {
+                      if (msg.status != 'seen') {
+                        _chatService.markMessageSeen(widget.username, msg.id);
+                        // Save to Isar local DB
+                        Future.microtask(() async {
+                          final isar = await Isar.open([LocalMessageSchema]);
+                          await isar.writeTxn(() async {
+                            await isar.localMessages.put(
+                              LocalMessage()
+                                ..content = msg.content
+                                ..senderId = msg.senderId
+                                ..receiverId = msg.receiverId
+                                ..timestamp = msg.timestamp
+                                ..attachmentUrl = msg.attachmentUrl
+                                ..status = msg.status,
+                            );
+                          });
+                          await _chatService.deleteMessageAfterLocalSave(
+                            widget.username,
+                            msg.id,
+                          );
+                          await isar.close();
+                        });
+                      }
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(8),
+                      itemCount: allMessages.length,
+                      itemBuilder: (context, index) {
+                        final msg = allMessages[index];
+                        final isMe = msg.senderId == widget.username;
+                        return Align(
+                          alignment: isMe
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 2),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: isMe ? Colors.blue[100] : Colors.grey[200],
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                          ],
-                        ),
-                      ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(msg.content),
+                                if (msg.attachmentUrl != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      '[Attachment]',
+                                      style: TextStyle(color: Colors.blue),
+                                    ),
+                                  ),
+                                Text(
+                                  msg.timestamp.toLocal().toString().substring(
+                                    0,
+                                    16,
+                                  ),
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
                 );

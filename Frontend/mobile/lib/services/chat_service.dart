@@ -51,16 +51,28 @@ class ChatService {
         .doc();
     await docRef.set(message.toMap());
     // Do NOT delete immediately. Deletion will occur after receiver marks as 'seen'.
-    Future<void> markMessageSeen(String ownId, String messageId) async {
-      final docRef = _firestore
-          .collection('chats')
-          .doc(ownId)
-          .collection('messages')
-          .doc(messageId);
-      await docRef.update({'status': 'seen'});
-      // Delete after marking as seen
-      await docRef.delete();
-    }
+  }
+
+  Future<void> markMessageSeen(String ownId, String messageId) async {
+    final docRef = _firestore
+        .collection('chats')
+        .doc(ownId)
+        .collection('messages')
+        .doc(messageId);
+    await docRef.update({'status': 'seen'});
+    // Do NOT delete here! Deletion will occur after local save.
+  }
+
+  Future<void> deleteMessageAfterLocalSave(
+    String ownId,
+    String messageId,
+  ) async {
+    await _firestore
+        .collection('chats')
+        .doc(ownId)
+        .collection('messages')
+        .doc(messageId)
+        .delete();
   }
 
   Future<void> deleteMessage(String ownId, String messageId) async {
