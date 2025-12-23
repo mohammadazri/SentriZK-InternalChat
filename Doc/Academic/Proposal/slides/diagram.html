@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture Diagram</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #030712;
+            --primary: #3b82f6;
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            font-family: 'Space Grotesk', sans-serif;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- BACKGROUND --- */
+        .bg-grid {
+            position: absolute; inset: 0;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: -1;
+            mask-image: radial-gradient(circle at center, black 60%, transparent 100%);
+        }
+
+        /* --- HEADER --- */
+        header {
+            padding: 20px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-bottom: 1px solid var(--glass-border);
+            background: rgba(3, 7, 18, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        h2 {
+            font-size: 0.9rem;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 5px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -1px;
+            line-height: 1;
+        }
+
+        /* --- DIAGRAM CONTAINER --- */
+        .diagram-viewer {
+            flex: 1; /* Fills remaining height */
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* The Image/SVG Itself */
+        .diagram-viewer img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Ensures the whole diagram is visible */
+            filter: drop-shadow(0 0 40px rgba(59, 130, 246, 0.15)); /* Subtle glow */
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-grid"></div>
+
+    <header>
+        <h2>System Overview</h2>
+        <h1>Architecture Diagram</h1>
+    </header>
+
+    <div class="diagram-viewer">
+        <img src="../../../Images/architecture.svg" alt="System Architecture Diagram">
+    </div>
+
+</body>
+</html>
