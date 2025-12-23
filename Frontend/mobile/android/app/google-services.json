@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "210633721860",
+    "project_id": "sentri-zk-chat",
+    "storage_bucket": "sentri-zk-chat.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:210633721860:android:9191c905441beff0814d51",
+        "android_client_info": {
+          "package_name": "com.example.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIea0xd1BUggm1GLtVl3R2wYqmdWnrq_E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

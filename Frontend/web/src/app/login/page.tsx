@@ -221,7 +221,7 @@ export default function LoginPage() {
             <h3>How to Login:</h3>
             <ol>
               <li>Open the SentriApp mobile application</li>
-              <li>Tap on "Open Web Login"</li>
+              <li>Tap on &quot;Open Web Login&quot;</li>
               <li>Complete the login process</li>
             </ol>
           </div>

@@ -99,3 +99,7 @@ docs/*.tmp
 *.7z
 *.rar
 *.log.*
+
+
+#ignore WhatsUp directir and all subdir
+WhatsUp/

@@ -4,7 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:app_links/app_links.dart';
 import '../services/auth_service.dart';
+import '../services/user_service.dart';
+import '../services/notification_service.dart';
+
 import '../config/app_config.dart';
+import 'user_list_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -228,6 +232,21 @@ class _AuthScreenState extends State<AuthScreen>
                   onTimeout: () => throw TimeoutException('Login timeout'),
                 );
 
+            // Create or update Firestore user profile after successful login
+            final deviceId = await _authService.getDeviceId();
+            final userService = UserService();
+
+            await userService.createOrUpdateUser(
+              userId: username, // Use a unique userId if available
+              username: username,
+              deviceId: deviceId,
+              // Add avatarUrl/phone if available
+            );
+
+            // Register and save FCM token for push notifications
+            final notificationService = NotificationService();
+            await notificationService.saveFcmToken(userId: username);
+
             _updateStatus(
               "Welcome back, $username",
               Icons.verified_user,
@@ -240,6 +259,13 @@ class _AuthScreenState extends State<AuthScreen>
                 _isLoggedIn = true;
                 _username = username;
               });
+
+              // Navigate to UserListScreen after successful login
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => UserListScreen(currentUserId: username),
+                ),
+              );
             }
 
             HapticFeedback.mediumImpact();
