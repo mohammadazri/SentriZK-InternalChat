@@ -18,10 +18,10 @@
             --text-muted: #94a3b8;
             
             /* Category Colors */
-            --col-back: #8b5cf6;  /* Violet */
+            --col-back: #f59e0b;  /* Firebase Orange */
             --col-front: #3b82f6; /* Blue */
             --col-sec: #10b981;   /* Emerald */
-            --col-ai: #f59e0b;    /* Amber */
+            --col-ai: #8b5cf6;    /* Violet */
             --col-ops: #64748b;   /* Slate */
             
             --card-bg: rgba(15, 23, 42, 0.6);
@@ -47,7 +47,7 @@
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             background: 
-                radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 0% 0%, rgba(245, 158, 11, 0.15) 0px, transparent 50%),
                 radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
                 radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
             filter: blur(80px);
@@ -305,22 +305,21 @@
         <div class="grid">
             
             <div class="card t-back">
-                <i class="devicon-nodejs-plain watermark"></i>
+                <i class="devicon-firebase-plain watermark"></i>
                 <div class="card-header">
-                    <div class="icon-box"><i class="ph-duotone ph-hard-drives"></i></div>
-                    <div class="card-title">Backend & ZKP</div>
+                    <div class="icon-box"><i class="ph-duotone ph-cloud"></i></div>
+                    <div class="card-title">Cloud & Backend</div>
                 </div>
                 <div class="chips-row">
+                    <div class="chip"><i class="devicon-firebase-plain"></i> Firebase</div>
                     <div class="chip"><i class="devicon-nodejs-plain"></i> Node.js</div>
-                    <div class="chip"><i class="devicon-express-original"></i> Express</div>
-                    <div class="chip">Circom</div>
                     <div class="chip">SnarkJS</div>
                 </div>
                 <ul class="tech-list">
-                    <li>ZKP circuit design & compilation</li>
-                    <li>Cryptographic proof generation</li>
-                    <li>Verification logic integration</li>
-                    <li>RESTful API Architecture</li>
+                    <li>Firebase for temp queuing</li>
+                    <li>Node.js Proof Verification API</li>
+                    <li>ZKP Circuits for Validation</li>
+                    <li>Ephemeral Message Signaling</li>
                 </ul>
             </div>
 
@@ -328,16 +327,16 @@
                 <i class="devicon-flutter-plain watermark"></i>
                 <div class="card-header">
                     <div class="icon-box"><i class="ph-duotone ph-device-mobile"></i></div>
-                    <div class="card-title">Frontend</div>
+                    <div class="card-title">Mobile Frontend</div>
                 </div>
                 <div class="chips-row">
                     <div class="chip"><i class="devicon-flutter-plain"></i> Flutter</div>
                     <div class="chip"><i class="devicon-nextjs-plain"></i> Next.js</div>
                     <div class="chip"><i class="devicon-react-original"></i> React</div>
-                    <div class="chip"><i class="devicon-tailwindcss-original"></i> Tailwind</div>
+                    <div class="chip">GetX</div>
                 </div>
                 <ul class="tech-list">
-                    <li>Cross-platform UI (Mobile/Web)</li>
+                    <li>Cross-platform UI (Mobile)</li>
                     <li>Mobile-to-Web auth workflow</li>
                     <li>Deep link handling</li>
                     <li>Component-based Architecture</li>
@@ -345,21 +344,21 @@
             </div>
 
             <div class="card t-sec">
-                <i class="ph-duotone ph-shield-check watermark"></i>
+                <i class="ph-duotone ph-database watermark"></i>
                 <div class="card-header">
                     <div class="icon-box"><i class="ph-duotone ph-shield-check"></i></div>
-                    <div class="card-title">Security Core</div>
+                    <div class="card-title">Security & Storage</div>
                 </div>
                 <div class="chips-row">
+                    <div class="chip">Hive DB</div>
                     <div class="chip">AES-256</div>
-                    <div class="chip">MAT Protocol</div>
-                    <div class="chip">Nonces</div>
+                    <div class="chip">Signal Proto</div>
                 </div>
                 <ul class="tech-list">
+                    <li>Local Storage (On-Device DB)</li>
                     <li>Zero-Knowledge auth flow</li>
-                    <li>Replay-attack mitigation</li>
-                    <li>Secure Hardware Storage</li>
-                    <li>Session management</li>
+                    <li>E2EE (Signal Protocol)</li>
+                    <li>Secure KeyStore</li>
                 </ul>
             </div>
 
@@ -406,7 +405,7 @@
                         <span class="stat-val">100%</span>
                     </div>
                     <div style="font-size:0.8rem; color:var(--col-sec); text-transform:uppercase; letter-spacing:1px; font-weight:700;">
-                        Privacy Preserved
+                        Local Data Ownership
                     </div>
                 </div>
             </div>
