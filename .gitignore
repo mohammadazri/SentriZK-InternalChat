@@ -106,6 +106,8 @@ docs/*.tmp
 
 
 
+#ignore .github folder
+.github/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
