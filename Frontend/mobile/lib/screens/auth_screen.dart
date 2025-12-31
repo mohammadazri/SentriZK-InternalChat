@@ -1294,25 +1294,20 @@ class _AuthScreenState extends State<AuthScreen>
         children: [
           const SizedBox(height: 40),
 
-          // Logo and title
+          // Large logo, no background
           ScaleTransition(
             scale: _pulseAnimation,
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF6366F1).withOpacity(0.3),
-                    const Color(0xFF8B5CF6).withOpacity(0.3),
-                  ],
-                ),
+            child: Center(
+              child: Image.asset(
+                'assets/logo_only.png',
+                width: 120,
+                height: 120,
+                fit: BoxFit.contain,
               ),
-              child: const Icon(Icons.shield, size: 80, color: Colors.white),
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
 
           const Text(
             'SentriZK',
@@ -1330,7 +1325,7 @@ class _AuthScreenState extends State<AuthScreen>
             'Zero-Knowledge Authentication',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white70,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -1371,10 +1366,7 @@ class _AuthScreenState extends State<AuthScreen>
           // Footer
           Text(
             'Powered by ZK-SNARKs',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
-              fontSize: 12,
-            ),
+            style: TextStyle(color: Colors.white54, fontSize: 12),
           ),
         ],
       ),
