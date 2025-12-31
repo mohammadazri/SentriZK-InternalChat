@@ -4,6 +4,7 @@ import '../services/chat_service.dart';
 
 import 'package:isar/isar.dart';
 import '../models/local_message.dart';
+import 'package:path_provider/path_provider.dart';
 
 // ...existing code...
 
@@ -57,7 +58,10 @@ class _ChatScreenState extends State<ChatScreen> {
                         _chatService.markMessageSeen(widget.username, msg.id);
                         // Save to Isar local DB
                         Future.microtask(() async {
-                          final isar = await Isar.open([LocalMessageSchema]);
+                          final dir = await getApplicationDocumentsDirectory();
+                          final isar = await Isar.open([
+                            LocalMessageSchema,
+                          ], directory: dir.path);
                           await isar.writeTxn(() async {
                             await isar.localMessages.put(
                               LocalMessage()
