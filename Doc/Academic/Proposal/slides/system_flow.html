@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentriZK - Sequence Diagram</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --lifeline: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            /* Actor Colors */
+            --c-user: #f43f5e;   /* User */
+            --c-mobile: #3b82f6; /* Mobile App */
+            --c-web: #8b5cf6;    /* Web Auth */
+            --c-server: #10b981; /* Server/DB */
+            
+            --activation-bg: #1e293b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            width: 100vw; height: 100vh;
+            overflow: hidden;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+
+        /* --- BACKGROUND --- */
+        .bg-grid {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 50px 50px; z-index: 0;
+            mask-image: radial-gradient(circle at center, black 60%, transparent 100%);
+        }
+
+        /* --- LAYOUT --- */
+        .layout {
+            position: relative; z-index: 10;
+            width: 95vw; height: 90vh;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 1rem;
+        }
+
+        header {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            border-bottom: 1px solid var(--lifeline); padding-bottom: 1rem;
+        }
+        h1 { font-family: 'Space Grotesk'; font-size: 1.8rem; line-height: 1; }
+        .subtitle { font-family: 'JetBrains Mono'; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; }
+
+        /* --- DIAGRAM SURFACE --- */
+        .diagram-container {
+            position: relative;
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--lifeline);
+            border-radius: 12px;
+            overflow-y: auto; /* Allow scroll if sequence is long */
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4 Actors */
+            height: 100%;
+        }
+
+        /* --- ACTORS (HEADERS) --- */
+        .actor-col {
+            display: flex; flex-direction: column; align-items: center;
+            position: relative; height: 100%;
+        }
+
+        .actor-head {
+            background: var(--activation-bg);
+            border: 1px solid var(--color);
+            border-bottom: 4px solid var(--color);
+            padding: 10px 20px; border-radius: 8px;
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            z-index: 10; width: 140px; text-align: center;
+            box-shadow: 0 10px 20px -5px rgba(0,0,0,0.5);
+        }
+
+        .a-icon { font-size: 1.5rem; color: var(--color); }
+        .a-name { font-weight: 600; font-size: 0.9rem; color: #fff; }
+        .a-type { font-family: 'JetBrains Mono'; font-size: 0.65rem; color: var(--text-muted); }
+
+        /* Lifeline (Vertical Line) */
+        .lifeline {
+            position: absolute; top: 60px; bottom: 0; width: 2px;
+            background: repeating-linear-gradient(to bottom, var(--lifeline) 0, var(--lifeline) 8px, transparent 8px, transparent 16px);
+            z-index: 1;
+        }
+
+        /* --- MESSAGES (ARROWS) --- */
+        .sequence-layer {
+            position: absolute; top: 80px; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            display: flex; flex-direction: column; gap: 1rem; /* Spacing between steps */
+            padding-top: 20px;
+        }
+
+        .step {
+            position: relative; height: 40px; width: 100%;
+        }
+
+        /* The Arrow Line */
+        .arrow {
+            position: absolute; top: 50%; height: 2px;
+            background: var(--arr-color);
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* Arrow Head */
+        .arrow::after {
+            content: ''; position: absolute; right: 0; top: -4px;
+            border-width: 5px; border-style: solid;
+            border-color: transparent transparent transparent var(--arr-color);
+        }
+        
+        /* Dashed Line (Return) */
+        .return .arrow { background: transparent; border-bottom: 2px dashed var(--arr-color); height: 0; }
+        .return .arrow::after { border-color: transparent transparent transparent var(--arr-color); }
+
+        /* Self Loop */
+        .self-loop {
+            position: absolute; top: 10%; width: 40px; height: 30px;
+            border: 2px solid var(--arr-color); border-left: none;
+            border-radius: 0 8px 8px 0;
+        }
+
+        /* Message Label */
+        .msg-label {
+            background: var(--bg-dark); padding: 2px 8px; border-radius: 4px;
+            font-family: 'JetBrains Mono'; font-size: 0.7rem; color: var(--text-main);
+            border: 1px solid var(--lifeline); z-index: 5;
+            position: relative; top: -12px;
+        }
+
+        /* Activation Box (The vertical rectangles on lifeline) */
+        .activation {
+            position: absolute; width: 12px; background: var(--color); opacity: 0.3;
+            border-radius: 2px; left: 50%; transform: translateX(-50%);
+            border: 1px solid rgba(255,255,255,0.4);
+        }
+
+        /* --- NOTES / ALT BLOCKS --- */
+        .alt-block {
+            position: absolute; left: 2%; width: 96%;
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px; padding: 8px;
+            top: 280px; height: 160px; pointer-events: none;
+        }
+        .alt-label {
+            background: #334155; padding: 2px 6px; font-size: 0.65rem; font-weight: bold;
+            border-radius: 0 0 4px 0; position: absolute; top: 0; left: 0;
+        }
+
+        /* Specific Styling Classes */
+        .c-1 { --color: var(--c-user); }
+        .c-2 { --color: var(--c-mobile); }
+        .c-3 { --color: var(--c-web); }
+        .c-4 { --color: var(--c-server); }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-grid"></div>
+
+    <div class="layout">
+        
+        <header>
+            <div>
+                <div class="subtitle">System Interaction</div>
+                <h1>Sequence Diagram</h1>
+            </div>
+            <div style="display:flex; gap:1rem;">
+                <div class="subtitle" style="color:var(--c-mobile);">Client Side</div>
+                <div class="subtitle" style="color:var(--c-server);">Server Side</div>
+            </div>
+        </header>
+
+        <div class="diagram-container">
+
+            <div class="actor-col c-1">
+                <div class="actor-head">
+                    <i class="ph-duotone ph-user a-icon"></i>
+                    <div class="a-name">User</div>
+                </div>
+                <div class="lifeline"></div>
+                <div class="activation" style="top: 20px; height: 450px;"></div>
+            </div>
+
+            <div class="actor-col c-2">
+                <div class="actor-head">
+                    <i class="ph-duotone ph-device-mobile a-icon"></i>
+                    <div class="a-name">Mobile App</div>
+                    <div class="a-type">Flutter</div>
+                </div>
+                <div class="lifeline"></div>
+                <div class="activation" style="top: 40px; height: 40px;"></div>
+                <div class="activation" style="top: 200px; height: 60px;"></div> <div class="activation" style="top: 300px; height: 120px;"></div> </div>
+
+            <div class="actor-col c-3">
+                <div class="actor-head">
+                    <i class="ph-duotone ph-globe a-icon"></i>
+                    <div class="a-name">Web Auth</div>
+                    <div class="a-type">Next.js / WASM</div>
+                </div>
+                <div class="lifeline"></div>
+                <div class="activation" style="top: 100px; height: 100px;"></div>
+            </div>
+
+            <div class="actor-col c-4">
+                <div class="actor-head">
+                    <i class="ph-duotone ph-server a-icon"></i>
+                    <div class="a-name">Backend</div>
+                    <div class="a-type">Node.js</div>
+                </div>
+                <div class="lifeline"></div>
+                <div class="activation" style="top: 60px; height: 20px;"></div> <div class="activation" style="top: 150px; height: 40px;"></div> <div class="activation" style="top: 380px; height: 30px;"></div> </div>
+
+
+            <div class="sequence-layer">
+
+                <div class="step">
+                    <div class="arrow" style="left: 12.5%; width: 25%; var(--arr-color): #fff;">
+                        <span class="msg-label">1. Click Login</span>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="arrow" style="left: 37.5%; width: 50%; --arr-color: var(--c-mobile);">
+                        <span class="msg-label">2. POST /get-mat (deviceID)</span>
+                    </div>
+                </div>
+
+                <div class="step return">
+                    <div class="arrow" style="left: 37.5%; width: 50%; --arr-color: var(--c-server);">
+                        <span class="msg-label">3. Return MAT Token</span>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="arrow" style="left: 37.5%; width: 25%; --arr-color: var(--c-mobile);">
+                        <span class="msg-label">4. Open Web View (url?token=MAT)</span>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="self-loop" style="left: 63%; --arr-color: var(--c-web);"></div>
+                    <span class="msg-label" style="margin-left: 68%;">5. Generate ZK Proof (Groth16)</span>
+                </div>
+
+                <div class="step" style="margin-top: 10px;">
+                    <div class="arrow" style="left: 62.5%; width: 25%; --arr-color: var(--c-web);">
+                        <span class="msg-label">6. POST /verify-proof</span>
+                    </div>
+                </div>
+
+                <div class="step return">
+                    <div class="arrow" style="left: 62.5%; width: 25%; --arr-color: var(--c-server);">
+                        <span class="msg-label">7. 200 OK + Session JWT</span>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="arrow return" style="left: 37.5%; width: 25%; --arr-color: var(--c-web);">
+                        <span class="msg-label">8. Deep Link (sentri://session=JWT)</span>
+                    </div>
+                </div>
+
+                <div style="height: 30px;"></div>
+
+                <div class="step">
+                    <div class="arrow" style="left: 12.5%; width: 25%; --arr-color: #fff;">
+                        <span class="msg-label">9. Type Message</span>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="self-loop" style="left: 38%; --arr-color: var(--c-mobile);"></div>
+                    <span class="msg-label" style="margin-left: 43%; color: var(--c-mobile);">10. AI Scan (Isolation Forest)</span>
+                </div>
+
+                <div class="step" style="margin-top: 10px;">
+                    <div class="arrow" style="left: 37.5%; width: 50%; --arr-color: var(--c-mobile);">
+                        <span class="msg-label">11. POST /send-msg (Encrypted)</span>
+                    </div>
+                </div>
+
+                <div class="step return">
+                    <div class="arrow" style="left: 37.5%; width: 50%; --arr-color: var(--c-server);">
+                        <span class="msg-label">12. ACK (Saved)</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="alt-block">
+                <div class="alt-label">ALT: AI CHECK</div>
+                <div style="font-family:'JetBrains Mono'; font-size:0.65rem; color:var(--text-muted); margin-top: 15px; margin-left: 10px;">
+                    [Condition: Threat Detected] -> Block & Alert User <br><br>
+                    [Condition: Safe] -> Encrypt (AES) -> Send to Server
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>

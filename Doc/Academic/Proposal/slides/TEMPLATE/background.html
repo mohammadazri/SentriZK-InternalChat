@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentriZK - Diagram Template</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --lifeline: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            /* Actor Colors */
+            --c-user: #f43f5e;   /* User */
+            --c-mobile: #3b82f6; /* Mobile App */
+            --c-web: #8b5cf6;    /* Web Auth */
+            --c-server: #10b981; /* Server/DB */
+            
+            --activation-bg: #1e293b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            width: 100vw; height: 100vh;
+            overflow: hidden;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+
+        /* --- BACKGROUND --- */
+        .bg-grid {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 50px 50px; z-index: 0;
+            mask-image: radial-gradient(circle at center, black 60%, transparent 100%);
+        }
+
+        /* --- LAYOUT --- */
+        .layout {
+            position: relative; z-index: 10;
+            width: 95vw; height: 90vh;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 1rem;
+        }
+
+        header {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            border-bottom: 1px solid var(--lifeline); padding-bottom: 1rem;
+        }
+        h1 { font-family: 'Space Grotesk'; font-size: 1.8rem; line-height: 1; }
+        .subtitle { font-family: 'JetBrains Mono'; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; }
+
+        /* --- DIAGRAM SURFACE --- */
+        .diagram-container {
+            position: relative;
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--lifeline);
+            border-radius: 12px;
+            overflow-y: auto; 
+            padding: 2rem;
+            display: flex; /* Changed to flex for centering empty state */
+            align-items: center; 
+            justify-content: center;
+            height: 100%;
+        }
+
+        /* Empty State Text */
+        .empty-state {
+            font-family: 'Space Grotesk';
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--lifeline);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            pointer-events: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-grid"></div>
+
+    <div class="layout">
+        
+        <header>
+            <div>
+                <div class="subtitle">System Logic</div>
+                <h1>Activity Diagram</h1>
+            </div>
+            <div style="display:flex; gap:1rem;">
+                <div class="subtitle" style="color:var(--c-mobile);">Algorithm</div>
+                <div class="subtitle" style="color:var(--c-server);">Groth16 ZKP</div>
+            </div>
+        </header>
+
+        <div class="diagram-container">
+
+        </div>
+    </div>
+
+</body>
+</html>

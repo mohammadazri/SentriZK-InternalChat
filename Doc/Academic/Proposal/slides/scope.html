@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Scope & Capabilities</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            /* Professional Palette */
+            --accent-blue: #3b82f6; 
+            --accent-purple: #8b5cf6;
+            --accent-emerald: #10b981;
+            
+            --glass-bg: rgba(15, 23, 42, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-highlight: rgba(255, 255, 255, 0.05);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+
+        /* --- BACKGROUND --- */
+        .bg-gradient {
+            position: absolute; width: 100%; height: 100%;
+            background: radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.15), transparent 50%),
+                        radial-gradient(circle at 85% 85%, rgba(139, 92, 246, 0.15), transparent 50%);
+            z-index: 0;
+            animation: float 10s ease-in-out infinite reverse;
+        }
+        .bg-grid {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: 1;
+            mask-image: radial-gradient(circle at center, black 60%, transparent 100%);
+        }
+
+        /* --- LAYOUT --- */
+        .container {
+            position: relative; z-index: 10;
+            width: 100%;
+            max-width: 1600px; /* Wider for full screen feel */
+            padding: 0 4rem;
+            display: flex;
+            flex-direction: column;
+            gap: 3rem;
+        }
+
+        /* --- HEADER --- */
+        header {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 2rem;
+            margin-bottom: 1rem;
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .header-sub {
+            font-family: 'Space Grotesk';
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: var(--accent-blue);
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .header-sub::before {
+            content: ''; display: block; width: 40px; height: 2px; background: var(--accent-blue);
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.1;
+            letter-spacing: -1px;
+            text-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+        }
+
+        /* --- GRID CONTENT --- */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.4fr; /* Left (Scope) vs Right (Capabilities) */
+            gap: 3rem;
+            height: 60vh;
+            min-height: 500px;
+        }
+
+        /* --- CARDS --- */
+        .card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 3rem;
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out 0.2s forwards;
+        }
+
+        .card:hover {
+            border-color: rgba(255,255,255,0.3);
+            transform: translateY(-8px) scale(1.01);
+            box-shadow: 0 30px 60px -15px rgba(0,0,0,0.6);
+        }
+
+        /* --- SCOPE (LEFT) --- */
+        .scope-card {
+            justify-content: center;
+            background: linear-gradient(145deg, rgba(59, 130, 246, 0.08) 0%, rgba(15, 23, 42, 0.8) 100%);
+        }
+
+        .scope-icon-wrapper {
+            width: 100px; height: 100px;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .scope-icon {
+            font-size: 4rem;
+            color: var(--accent-blue);
+            filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.6));
+        }
+
+        .card-label {
+            font-family: 'Space Grotesk';
+            font-size: 1rem;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+        }
+
+        .card-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+        }
+
+        .card-desc {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            line-height: 1.7;
+            max-width: 90%;
+        }
+
+        .card-desc strong { color: #fff; font-weight: 600; }
+
+        /* --- CAPABILITIES (RIGHT) --- */
+        .caps-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            height: 100%;
+        }
+
+        .cap-row {
+            flex: 1;
+            background: var(--glass-highlight);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            padding: 0 2.5rem;
+            gap: 2rem;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease-out forwards;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cap-row:nth-child(1) { animation-delay: 0.4s; }
+        .cap-row:nth-child(2) { animation-delay: 0.6s; }
+        .cap-row:nth-child(3) { animation-delay: 0.8s; }
+
+        .cap-row::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+            background: currentColor; opacity: 0.5;
+        }
+
+        .cap-row:hover {
+            background: rgba(255,255,255,0.08);
+            transform: translateX(10px);
+            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.3);
+        }
+
+        .cap-icon-box {
+            width: 70px; height: 70px;
+            border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.2rem;
+            background: rgba(0,0,0,0.3);
+            flex-shrink: 0;
+            transition: transform 0.3s ease;
+        }
+        
+        .cap-row:hover .cap-icon-box {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .cap-content h3 {
+            font-family: 'Space Grotesk';
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 8px;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .cap-content p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Specific Colors */
+        .c-auth { color: var(--accent-purple); }
+        .c-auth .cap-icon-box { color: var(--accent-purple); border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 0 20px rgba(139, 92, 246, 0.1); }
+        
+        .c-ai { color: var(--accent-blue); }
+        .c-ai .cap-icon-box { color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.3); box-shadow: 0 0 20px rgba(59, 130, 246, 0.1); }
+        
+        .c-sec { color: var(--accent-emerald); }
+        .c-sec .cap-icon-box { color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3); box-shadow: 0 0 20px rgba(16, 185, 129, 0.1); }
+
+        /* Watermark */
+        .watermark {
+            position: absolute; bottom: -40px; right: -40px;
+            font-size: 15rem; opacity: 0.03;
+            transform: rotate(-15deg); pointer-events: none;
+            transition: transform 0.5s ease;
+        }
+        
+        .card:hover .watermark {
+            transform: rotate(0deg) scale(1.1);
+            opacity: 0.05;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-gradient"></div>
+    <div class="bg-grid"></div>
+
+    <div class="container">
+        
+        <header>
+            <div class="header-sub">SentriZK Framework</div>
+            <h1>Project Scope & Capabilities</h1>
+        </header>
+
+        <div class="content-grid">
+            
+            <div class="card scope-card">
+                <div class="scope-icon-wrapper">
+                    <i class="ph-duotone ph-briefcase scope-icon"></i>
+                </div>
+                <div class="card-label">Target User</div>
+                <div class="card-title">SME Employees</div>
+                <div class="card-desc">
+                    Tailored for employees in <strong>Small and Medium Enterprises (SMEs)</strong> who require secure internal collaboration tools without the complexity of enterprise suites.
+                </div>
+                <i class="ph-duotone ph-users-three watermark"></i>
+            </div>
+
+            <div class="caps-stack">
+                
+                <div class="cap-row c-auth">
+                    <div class="cap-icon-box"><i class="ph-duotone ph-fingerprint"></i></div>
+                    <div class="cap-content">
+                        <h3>ZKP Authentication</h3>
+                        <p>Password-less login using <strong>Groth16 zk-SNARKs</strong>. Proves identity without sending secrets to the server.</p>
+                    </div>
+                </div>
+
+                <div class="cap-row c-ai">
+                    <div class="cap-icon-box"><i class="ph-duotone ph-brain"></i></div>
+                    <div class="cap-content">
+                        <h3>On-Device AI</h3>
+                        <p>Uses <strong>TensorFlow Lite</strong> (Isolation Forest) to detect behavioral anomalies locally, preserving privacy.</p>
+                    </div>
+                </div>
+
+                <div class="cap-row c-sec">
+                    <div class="cap-icon-box"><i class="ph-duotone ph-shield-check"></i></div>
+                    <div class="cap-content">
+                        <h3>Privacy & Encryption</h3>
+                        <p><strong>AES-256</strong> encryption with a non-custodial server architecture. The server acts only as a verifier.</p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>

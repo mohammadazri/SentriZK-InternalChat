@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Existing Solutions Comparison</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        :root {
+            --bg-dark: #030712;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            /* Status Colors */
+            --danger: #ef4444;  /* Red for Bad */
+            --warning: #f59e0b; /* Orange for Warning */
+            --success: #10b981; /* Green for SentriZK */
+            
+            --glass-bg: rgba(17, 24, 39, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-highlight: rgba(255, 255, 255, 0.05);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- BACKGROUND --- */
+        .bg-mesh {
+            position: absolute; inset: 0;
+            background: 
+                radial-gradient(circle at 50% -20%, rgba(59, 130, 246, 0.15) 0%, transparent 60%);
+            z-index: 0;
+            animation: pulseBg 10s ease-in-out infinite alternate;
+        }
+
+        .bg-grid {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: 1;
+            mask-image: radial-gradient(circle at center, black 80%, transparent 100%);
+        }
+
+        /* --- CONTAINER --- */
+        .container {
+            position: relative; z-index: 10;
+            width: 90vw;
+            height: 85vh;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* --- HEADER --- */
+        header {
+            text-align: center;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        .header-sub {
+            font-family: 'Space Grotesk';
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: #3b82f6;
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- COMPARISON TABLE GRID --- */
+        .comp-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr 1fr 1.1fr; /* Feature Label | Enterprise | E2EE | SentriZK */
+            gap: 1.5rem;
+            height: 100%;
+            padding: 0 2rem;
+        }
+
+        /* --- COLUMNS --- */
+        .col {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Headers */
+        .col-header {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .col-icon {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+        }
+
+        .col-title {
+            font-family: 'Space Grotesk';
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #fff;
+        }
+
+        /* Highlight SentriZK Header */
+        .col-sentrizk .col-header {
+            background: linear-gradient(180deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 78, 59, 0.4) 100%);
+            border-color: rgba(16, 185, 129, 0.3);
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.1);
+        }
+        .col-sentrizk .col-icon { color: var(--success); }
+
+        /* --- CELLS --- */
+        .cell {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            transition: 0.3s;
+            position: relative;
+        }
+        
+        /* Feature Label Column (Leftmost) */
+        .col-labels .cell {
+            align-items: flex-start;
+            text-align: left;
+            background: transparent;
+            border: none;
+            padding-left: 0;
+            justify-content: center;
+        }
+        
+        .label-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 0.3rem;
+        }
+        .label-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Status Indicators */
+        .status-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .bad { color: var(--danger); }
+        .warn { color: var(--warning); }
+        .good { color: var(--success); }
+
+        .cell-text {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .strong {
+            color: #fff;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* SentriZK Highlight Cells */
+        .col-sentrizk .cell {
+            background: rgba(16, 185, 129, 0.05);
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+        
+        .col-sentrizk .cell:hover {
+            transform: scale(1.05);
+            background: rgba(16, 185, 129, 0.1);
+            z-index: 5;
+            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.5);
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes pulseBg {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.05); opacity: 1; }
+        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-mesh"></div>
+    <div class="bg-grid"></div>
+
+    <div class="container">
+        
+        <header>
+            <div class="header-sub">Literature Review Synthesis</div>
+            <h1>Comparison with Existing Solutions</h1>
+        </header>
+
+        <div class="comp-grid">
+            
+            <div class="col col-labels">
+                <div class="cell" style="flex:0; height:100px;"></div> <div class="cell">
+                    <div class="label-title">Authentication</div>
+                    <div class="label-desc">How users verify identity </div>
+                </div>
+                
+                <div class="cell">
+                    <div class="label-title">Threat Detection</div>
+                    <div class="label-desc">Scanning for malware/insiders</div>
+                </div>
+                
+                <div class="cell">
+                    <div class="label-title">Privacy Model</div>
+                    <div class="label-desc">Data visibility trade-off </div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="col-header">
+                    <i class="ph-duotone ph-buildings col-icon"></i>
+                    <div class="col-title">Enterprise Apps</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Slack, Teams</div>
+                </div>
+
+                <div class="cell">
+                    <i class="ph-fill ph-x-circle status-icon bad"></i>
+                    <div class="cell-text">
+                        <span class="strong">Centralized</span>
+                        Stores password hashes. Vulnerable to database breaches.
+                    </div>
+                </div>
+
+                <div class="cell">
+                    <i class="ph-fill ph-check-circle status-icon good"></i>
+                    <div class="cell-text">
+                        <span class="strong">Server Scanning</span>
+                        Effective, but requires server to read messages.
+                    </div>
+                </div>
+
+                <div class="cell">
+                    <i class="ph-fill ph-warning-circle status-icon bad"></i>
+                    <div class="cell-text">
+                        <span class="strong">Low Privacy</span>
+                        Server has full visibility (or keys) to scan content.
+                    </div>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="col-header">
+                    <i class="ph-duotone ph-lock-key col-icon"></i>
+                    <div class="col-title">Standard E2EE</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Signal, WhatsApp</div>
+                </div>
+
+                <div class="cell">
+                    <i class="ph-fill ph-warning-circle status-icon warn"></i>
+                    <div class="cell-text">
+                        <span class="strong">Manual Verify</span>
+                        Relies on users checking keys. Prone to MITM attacks.
+                    </div>
+                </div>
+
+                <div class="cell">
+                    <i class="ph-fill ph-x-circle status-icon bad"></i>
+                    <div class="cell-text">
+                        <span class="strong">The "Blind Spot"</span>
+                        Cannot scan inside encryption. Malware passes undetected.
+                    </div>
+                </div>
+
+                <div class="cell">
+                    <i class="ph-fill ph-check-circle status-icon good"></i>
+                    <div class="cell-text">
+                        <span class="strong">High Privacy</span>
+                        Excellent data protection, but lacks intelligence.
+                    </div>
+                </div>
+            </div>
+
+            <div class="col col-sentrizk">
+                <div class="col-header">
+                    <i class="ph-duotone ph-shield-check col-icon"></i>
+                    <div class="col-title">SentriZK</div>
+                    <div style="font-size:0.75rem; color:#10b981; margin-top:4px;">Proposed Solution</div>
+                </div>
+
+                <div class="cell">
+                    <i class="ph-fill ph-fingerprint status-icon good"></i>
+                    <div class="cell-text">
+                        <span class="strong">ZKP Auth</span>
+                        Math-based verification. No credentials stored on server.
+                    </div>
+                </div>
+
+                <div class="cell">
+                    <i class="ph-fill ph-robot status-icon good"></i>
+                    <div class="cell-text">
+                        <span class="strong">On-Device AI</span>
+                        Scans for threats locally <em>before</em> encryption.
+                    </div>
+                </div>
+
+                <div class="cell">
+                    <i class="ph-fill ph-star status-icon good"></i>
+                    <div class="cell-text">
+                        <span class="strong">No Trade-Off</span>
+                        Achieves both detection and total privacy.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>

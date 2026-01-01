@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentriZK - Misuse Case Diagram</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        :root {
+            /* Theme Colors */
+            --bg-dark: #020617;
+            --lifeline: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            /* Security Specific Colors */
+            --c-threat: #f43f5e;   /* Red for Attackers */
+            --c-asset: #3b82f6;    /* Blue for Assets/Targets */
+            --c-defense: #10b981;  /* Green for Mitigations */
+            
+            --glass-bg: rgba(15, 23, 42, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            width: 100vw; height: 100vh;
+            overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* --- BACKGROUND MESH --- */
+        .bg-grid {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 50px 50px; z-index: 0;
+            mask-image: radial-gradient(circle at center, black 60%, transparent 100%);
+        }
+
+        /* --- MAIN LAYOUT (30% Left | 70% Right) --- */
+        .layout {
+            position: relative; z-index: 10;
+            width: 95vw; height: 90vh;
+            display: grid;
+            grid-template-columns: 30fr 70fr;
+            gap: 2rem;
+        }
+
+        /* --- LEFT SIDEBAR (Title & Legend) --- */
+        .sidebar {
+            display: flex; flex-direction: column;
+            justify-content: center;
+            gap: 2rem;
+            padding-right: 1rem;
+            border-right: 1px solid var(--lifeline);
+        }
+
+        .title-group h1 { 
+            font-family: 'Space Grotesk'; font-size: 2.5rem; line-height: 1.1; margin-top: 8px;
+            background: linear-gradient(to right, #f43f5e, #fff); /* Red to White gradient */
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle { 
+            font-family: 'JetBrains Mono'; color: var(--c-threat); 
+            font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 700;
+        }
+
+        .description {
+            color: var(--text-muted); line-height: 1.6; font-size: 0.95rem;
+            max-width: 90%;
+        }
+
+        /* Legend badges */
+        .legend { display: flex; flex-direction: column; gap: 0.8rem; align-items: flex-start; }
+        .badge {
+            display: flex; align-items: center; gap: 10px;
+            font-family: 'JetBrains Mono'; font-size: 0.8rem; 
+            padding: 8px 16px; border-radius: 8px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            width: fit-content;
+        }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color); box-shadow: 0 0 8px var(--color); }
+
+        /* --- RIGHT SIDE (Full Height Diagram) --- */
+        .diagram-viewport {
+            position: relative;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            
+            width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            padding: 1rem;
+            overflow: hidden;
+        }
+
+        .diagram-viewport img {
+            width: 100%; height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+        }
+
+        /* Decorative Corners (Red for Threat Theme) */
+        .corner {
+            position: absolute; width: 25px; height: 25px;
+            border: 2px solid var(--text-muted); opacity: 0.2;
+            transition: opacity 0.3s, border-color 0.3s;
+        }
+        .tl { top: 15px; left: 15px; border-right: 0; border-bottom: 0; }
+        .tr { top: 15px; right: 15px; border-left: 0; border-bottom: 0; }
+        .bl { bottom: 15px; left: 15px; border-right: 0; border-top: 0; }
+        .br { bottom: 15px; right: 15px; border-left: 0; border-top: 0; }
+
+        .diagram-viewport:hover .corner { opacity: 1; border-color: var(--c-threat); }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-grid"></div>
+
+    <div class="layout">
+        
+        <aside class="sidebar">
+            <div class="title-group">
+                <div class="subtitle">Threat Analysis</div>
+                <h1>Misuse Cases &<br>Defenses</h1>
+            </div>
+
+            <div class="description">
+                Visualizing the adversarial flow: from external attackers and malicious insiders (Top) to the system assets (Middle), and finally the security controls that mitigate them (Bottom).
+            </div>
+            
+            <div class="legend">
+                <div class="badge" style="--color: var(--c-threat);">
+                    <i class="ph-duotone ph-skull"></i> &nbsp;Threat Agents
+                </div>
+                <div class="badge" style="--color: var(--c-asset);">
+                    <span class="dot"></span> &nbsp;Assets (Targets)
+                </div>
+                <div class="badge" style="--color: var(--c-defense);">
+                    <i class="ph-duotone ph-shield-check"></i> &nbsp;Defenses
+                </div>
+            </div>
+        </aside>
+
+        <main class="diagram-viewport">
+            <div class="corner tl"></div>
+            <div class="corner tr"></div>
+            <div class="corner bl"></div>
+            <div class="corner br"></div>
+
+            <img src="diagram/misuse.png" alt="SentriZK Misuse Case Diagram">
+        </main>
+
+    </div>
+
+</body>
+</html>
