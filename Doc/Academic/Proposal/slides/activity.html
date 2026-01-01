@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detailed Logic Flowchart</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --grid-line: rgba(255, 255, 255, 0.03);
+            
+            /* Flowchart Colors */
+            --c-start: #22c55e;   /* Green: Start/End */
+            --c-proc: #3b82f6;    /* Blue: Process */
+            --c-data: #a855f7;    /* Purple: Input/Output */
+            --c-dec: #f59e0b;     /* Orange: Decision */
+            --c-err: #ef4444;     /* Red: Error */
+            
+            --glass: rgba(15, 23, 42, 0.6);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            font-family: 'Inter', sans-serif;
+            color: #fff;
+            width: 100vw; height: 100vh;
+            overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+
+        /* --- BACKGROUND --- */
+        .bg-grid {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(var(--grid-line) 1px, transparent 1px),
+                              linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 40px 40px; z-index: -1;
+        }
+
+        /* --- HEADER --- */
+        header {
+            padding: 1.5rem 2rem; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: flex-end;
+            background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+        h1 { font-family: 'Space Grotesk'; font-size: 1.5rem; line-height: 1; margin-bottom: 4px; }
+        .sub { font-family: 'JetBrains Mono'; font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* --- DIAGRAM CONTAINER --- */
+        .diagram-container {
+            flex-grow: 1; display: grid; grid-template-columns: 1fr 1fr;
+            gap: 2px; background: var(--border); overflow: hidden;
+        }
+
+        .flow-col {
+            background: var(--bg-dark); position: relative;
+            overflow-y: auto; padding: 3rem 0;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* --- STANDARD FLOWCHART SYMBOLS --- */
+        
+        /* 1. Terminal (Start/End) -> Pill Shape */
+        .sym-terminal {
+            width: 140px; height: 45px; border-radius: 50px;
+            background: rgba(34, 197, 94, 0.1); border: 2px solid var(--c-start);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 600; font-size: 0.9rem; letter-spacing: 0.5px;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+            z-index: 2;
+        }
+
+        /* 2. Process (Action) -> Rectangle */
+        .sym-process {
+            width: 220px; padding: 12px; background: var(--glass);
+            border: 1px solid var(--c-proc); border-radius: 8px;
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            position: relative; z-index: 2;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .sym-process::before { /* Accent Bar */
+            content:''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+            background: var(--c-proc); border-radius: 8px 0 0 8px;
+        }
+
+        /* 3. Input/Output (Data) -> Parallelogram */
+        .sym-io {
+            width: 200px; padding: 10px; background: rgba(168, 85, 247, 0.1);
+            border: 1px solid var(--c-data); transform: skew(-15deg);
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            z-index: 2; margin: 0 10px;
+        }
+        .io-content { transform: skew(15deg); } /* Un-skew text */
+
+        /* 4. Decision -> Diamond */
+        .sym-decision {
+            width: 120px; height: 120px; background: #1e293b;
+            border: 2px solid var(--c-dec); transform: rotate(45deg);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 2; margin: 10px 0;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+        }
+        .dec-content { transform: rotate(-45deg); text-align: center; font-size: 0.8rem; font-weight: bold; line-height: 1.2; }
+
+        /* --- TEXT STYLES --- */
+        .t-title { font-size: 0.85rem; font-weight: 600; color: #fff; margin-bottom: 2px; }
+        .t-detail { font-family: 'JetBrains Mono'; font-size: 0.65rem; color: #94a3b8; }
+        .t-file { 
+            font-family: 'JetBrains Mono'; font-size: 0.6rem; color: var(--c-proc);
+            background: rgba(59, 130, 246, 0.1); padding: 2px 6px; border-radius: 4px;
+            margin-top: 6px; display: inline-block;
+        }
+
+        /* --- CONNECTORS (ARROWS) --- */
+        .arrow {
+            width: 2px; height: 40px; background: rgba(255, 255, 255, 0.2);
+            position: relative; z-index: 1;
+        }
+        .arrow::after {
+            content: ''; position: absolute; bottom: 0; left: -3px;
+            border-left: 4px solid transparent; border-right: 4px solid transparent;
+            border-top: 6px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Branch Lines */
+        .branch-line-container {
+            position: absolute; width: 300px; height: 160px; pointer-events: none;
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+        }
+        
+        /* Yes/No Labels */
+        .label-yes { position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); font-size: 0.7rem; color: #22c55e; background: #020617; padding: 0 4px; }
+        .label-no { position: absolute; right: -40px; top: 50%; transform: translateY(-50%); font-size: 0.7rem; color: #ef4444; background: #020617; padding: 0 4px; }
+
+        /* Horizontal Line for No */
+        .line-no {
+            position: absolute; top: 50%; right: 0; width: 50%; height: 2px; background: #ef4444; z-index: 0;
+        }
+        .line-no-drop {
+            position: absolute; top: 50%; right: 0; width: 2px; height: 100px; background: #ef4444;
+        }
+
+        /* --- LEGEND --- */
+        .legend {
+            position: fixed; bottom: 20px; right: 20px; background: var(--glass);
+            padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border);
+            display: flex; gap: 15px; backdrop-filter: blur(10px);
+        }
+        .l-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-grid"></div>
+
+    <header>
+        <div>
+            <div class="sub">System Logic</div>
+            <h1>Functional Flowchart</h1>
+        </div>
+        <div class="sub">Algorithm: Groth16 ZKP</div>
+    </header>
+
+    <div class="diagram-container">
+
+        <div class="flow-col">
+            <div class="sub" style="margin-bottom: 2rem; color: var(--c-start);">function: registerUser()</div>
+
+            <div class="sym-terminal">START</div>
+            <div class="arrow"></div>
+
+            <div class="sym-process">
+                <span class="t-title">Request MAT Token</span>
+                <span class="t-detail">Verify Device ID</span>
+                <span class="t-file">server.js</span>
+            </div>
+            <div class="arrow"></div>
+
+            <div class="sym-io">
+                <div class="io-content">
+                    <span class="t-title">Input: Mnemonic</span>
+                    <span class="t-detail">Derive Salt & Secret</span>
+                    <span class="t-file">registerLogic.ts</span>
+                </div>
+            </div>
+            <div class="arrow"></div>
+
+            <div class="sym-process">
+                <span class="t-title">Calculate Hash</span>
+                <span class="t-detail">Poseidon(Secret, Salt)</span>
+                <span class="t-file">circomlibjs</span>
+            </div>
+            <div class="arrow"></div>
+
+            <div class="sym-process">
+                <span class="t-title">Generate Proof</span>
+                <span class="t-detail">snarkjs.fullProve()</span>
+                <span class="t-file">zkp.ts</span>
+            </div>
+            <div class="arrow"></div>
+
+            <div style="position: relative;">
+                <div class="sym-decision">
+                    <div class="dec-content">Proof<br>Valid?</div>
+                </div>
+                <div class="label-yes">Yes</div>
+                <div class="label-no" style="right: -60px;">No</div>
+                <div style="position: absolute; top: 50%; right: -100px; width: 100px; height: 2px; background: #ef4444;"></div> <div style="position: absolute; top: 50%; right: -100px; width: 2px; height: 60px; background: #ef4444;"></div> <div class="sym-terminal" style="position: absolute; top: 110px; right: -160px; border-color: #ef4444; width: 120px; font-size: 0.8rem; background: rgba(239,68,68,0.1);">Return 400</div>
+            </div>
+            
+            <div class="arrow"></div>
+
+            <div class="sym-process">
+                <span class="t-title">Store Commitment</span>
+                <span class="t-detail">Save to DB (No Secret)</span>
+                <span class="t-file">api.ts</span>
+            </div>
+            <div class="arrow"></div>
+
+            <div class="sym-terminal">END</div>
+
+        </div>
+
+        <div class="flow-col">
+            <div class="sub" style="margin-bottom: 2rem; color: var(--c-proc);">function: loginUser()</div>
+
+            <div class="sym-terminal">START</div>
+            <div class="arrow"></div>
+
+            <div class="sym-io" style="border-color: var(--c-proc); background: rgba(59, 130, 246, 0.1);">
+                <div class="io-content">
+                    <span class="t-title">Fetch Nonce</span>
+                    <span class="t-detail">GET /commitment/:user</span>
+                    <span class="t-file">api.ts</span>
+                </div>
+            </div>
+            <div class="arrow"></div>
+
+            <div class="sym-process">
+                <span class="t-title">Reconstruct Inputs</span>
+                <span class="t-detail">Decrypt Local Salt</span>
+                <span class="t-file">loginLogic.ts</span>
+            </div>
+            <div class="arrow"></div>
+
+            <div class="sym-process">
+                <span class="t-title">Calculate Witness</span>
+                <span class="t-detail">Input: Nonce + Secret</span>
+                <span class="t-file">login.circom</span>
+            </div>
+            <div class="arrow"></div>
+
+            <div style="position: relative;">
+                <div class="sym-decision">
+                    <div class="dec-content">Verify<br>Signal</div>
+                </div>
+                <div class="label-yes">Yes</div>
+                <div class="label-no" style="right: -60px;">No</div>
+                <div style="position: absolute; top: 50%; right: -100px; width: 100px; height: 2px; background: #ef4444;"></div>
+                <div style="position: absolute; top: 50%; right: -100px; width: 2px; height: 60px; background: #ef4444;"></div>
+                <div class="sym-terminal" style="position: absolute; top: 110px; right: -160px; border-color: #ef4444; width: 120px; font-size: 0.8rem; background: rgba(239,68,68,0.1);">Reject Login</div>
+            </div>
+
+            <div class="arrow"></div>
+
+            <div class="sym-process">
+                <span class="t-title">Create Session</span>
+                <span class="t-detail">Issue JWT Token</span>
+                <span class="t-file">db.sessions</span>
+            </div>
+            <div class="arrow"></div>
+
+            <div class="sym-terminal">END</div>
+
+        </div>
+
+    </div>
+
+    <div class="legend">
+        <div class="l-item"><div class="dot" style="background:var(--c-proc)"></div> Process</div>
+        <div class="l-item"><div class="dot" style="background:var(--c-data)"></div> I/O Data</div>
+        <div class="l-item"><div class="dot" style="background:var(--c-dec)"></div> Decision</div>
+        <div class="l-item"><div class="dot" style="background:var(--c-start)"></div> Terminal</div>
+    </div>
+
+</body>
+</html>
