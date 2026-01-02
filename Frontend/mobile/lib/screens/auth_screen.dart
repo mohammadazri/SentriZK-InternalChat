@@ -206,9 +206,14 @@ class _AuthScreenState extends State<AuthScreen>
           if (mounted) {
             setState(() {
               _mnemonicDisplay = result.mnemonic;
-              _isLoggedIn = true;
+              _isLoggedIn = false; // Stay on auth screen after signup
               _username = username;
             });
+            _updateStatus(
+              "Sign-up successful. Please log in after saving your mnemonic.",
+              Icons.check_circle,
+              Colors.greenAccent,
+            );
           }
 
           // Security: Clear sensitive data from memory
