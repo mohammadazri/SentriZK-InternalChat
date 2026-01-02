@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'chat_screen.dart';
+import 'auth_screen.dart';
 
 import '../services/user_service.dart';
+import '../services/auth_service.dart';
 
 class UserListScreen extends StatefulWidget {
   final String currentUserId;
@@ -16,6 +18,7 @@ class UserListScreen extends StatefulWidget {
 class _UserListScreenState extends State<UserListScreen>
     with WidgetsBindingObserver {
   final UserService _userService = UserService();
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
@@ -54,7 +57,24 @@ class _UserListScreenState extends State<UserListScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Chats')),
+      appBar: AppBar(
+        title: const Text('Chats'),
+        actions: [
+          IconButton(
+            tooltip: 'Logout',
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await _setOnlineStatus(false);
+              await _authService.logout();
+              if (!mounted) return;
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const AuthScreen()),
+                (route) => false,
+              );
+            },
+          ),
+        ],
+      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('users').snapshots(),
         builder: (context, snapshot) {

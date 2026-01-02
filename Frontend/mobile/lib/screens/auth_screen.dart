@@ -32,6 +32,7 @@ class _AuthScreenState extends State<AuthScreen>
   String? _username;
   bool _isLoading = false;
   bool _hasNavigatedToDashboard = false;
+  bool _isRedirecting = false;
   IconData _statusIcon = Icons.shield_outlined;
   Color _statusColor = Colors.white70;
 
@@ -87,12 +88,24 @@ class _AuthScreenState extends State<AuthScreen>
 
   void _navigateToDashboard() {
     if (_hasNavigatedToDashboard || !mounted || _username == null) return;
-    _hasNavigatedToDashboard = true;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => UserListScreen(currentUserId: _username!),
-      ),
-    );
+    setState(() {
+      _hasNavigatedToDashboard = true;
+      _isRedirecting = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context)
+          .pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => UserListScreen(currentUserId: _username!),
+            ),
+          )
+          .whenComplete(() {
+            if (mounted) {
+              setState(() => _isRedirecting = false);
+            }
+          });
+    });
   }
 
   void _updateStatus(String message, IconData icon, Color color) {
@@ -128,7 +141,7 @@ class _AuthScreenState extends State<AuthScreen>
         await _authService.refreshSession();
       } else {
         // Not valid — ensure UI reflects logged-out status
-        if (mounted) {
+        if (mounted && (_isLoggedIn || _username != null)) {
           setState(() {
             _isLoggedIn = false;
             _username = null;
@@ -1284,6 +1297,46 @@ class _AuthScreenState extends State<AuthScreen>
           SafeArea(
             child: _isLoggedIn ? _buildRedirectingView() : _buildLandingView(),
           ),
+
+          // Redirecting overlay
+          if (_isRedirecting)
+            Positioned.fill(
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                  ),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      SizedBox(
+                        width: 64,
+                        height: 64,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 6,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFF8B5CF6),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'Preparing your chats…',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
 
           // Loading overlay
           if (_isLoading)
