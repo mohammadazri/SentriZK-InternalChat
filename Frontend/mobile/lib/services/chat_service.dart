@@ -25,12 +25,15 @@ class ChatService {
     required String content,
     required String senderId,
     required String receiverId,
+    DateTime? timestamp,
     File? attachment,
   }) async {
     String? attachmentUrl;
+    final createdAt = timestamp ?? DateTime.now();
+
     if (attachment != null) {
       final ref = _storage.ref().child(
-        'attachments/${DateTime.now().millisecondsSinceEpoch}_${attachment.path.split('/').last}',
+        'attachments/${createdAt.millisecondsSinceEpoch}_${attachment.path.split('/').last}',
       );
       await ref.putFile(attachment);
       attachmentUrl = await ref.getDownloadURL();
@@ -40,7 +43,7 @@ class ChatService {
       content: content,
       senderId: senderId,
       receiverId: receiverId,
-      timestamp: DateTime.now(),
+      timestamp: createdAt,
       attachmentUrl: attachmentUrl,
       status: 'sent',
     );

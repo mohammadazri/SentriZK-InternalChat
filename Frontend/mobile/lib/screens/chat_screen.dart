@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../models/message.dart';
 import '../services/chat_service.dart';
@@ -26,105 +28,138 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final ChatService _chatService = ChatService();
   final TextEditingController _controller = TextEditingController();
+  Isar? _isar;
+  Stream<List<LocalMessage>>? _localMessagesStream;
+  StreamSubscription<List<Message>>? _incomingSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _initLocalStore();
+  }
+
+  Future<void> _initLocalStore() async {
+    final dir = await getApplicationDocumentsDirectory();
+    final isar = await Isar.open([LocalMessageSchema], directory: dir.path);
+
+    if (!mounted) {
+      await isar.close();
+      return;
+    }
+
+    _isar = isar;
+    _localMessagesStream = isar.localMessages.where().sortByTimestamp().watch(
+      fireImmediately: true,
+    );
+    _subscribeToIncoming();
+    setState(() {});
+  }
+
+  void _subscribeToIncoming() {
+    _incomingSub = _chatService
+        .getMessages(widget.username, widget.peerId)
+        .listen((messages) async {
+          for (final msg in messages) {
+            if (msg.status != 'seen') {
+              await _chatService.markMessageSeen(widget.username, msg.id);
+              await _saveMessageLocally(msg, status: 'seen');
+              await _chatService.deleteMessageAfterLocalSave(
+                widget.username,
+                msg.id,
+              );
+            }
+          }
+        });
+  }
+
+  Future<void> _saveMessageLocally(
+    Message msg, {
+    String status = 'sent',
+  }) async {
+    if (_isar == null || !_isar!.isOpen) return;
+
+    await _isar!.writeTxn(() async {
+      await _isar!.localMessages.put(
+        LocalMessage()
+          ..content = msg.content
+          ..senderId = msg.senderId
+          ..receiverId = msg.receiverId
+          ..timestamp = msg.timestamp
+          ..attachmentUrl = msg.attachmentUrl
+          ..status = status,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final localStream = _localMessagesStream;
+    if (localStream == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
       appBar: AppBar(title: Text('Chat with ${widget.peerName}')),
       body: Column(
         children: [
           Expanded(
-            child: StreamBuilder<List<Message>>(
-              stream: _chatService.getMessages(widget.username, widget.peerId),
+            child: StreamBuilder<List<LocalMessage>>(
+              stream: localStream,
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final received = snapshot.data ?? [];
-                return StreamBuilder<List<Message>>(
-                  stream: _chatService.getMessages(
-                    widget.peerId,
-                    widget.username,
-                  ),
-                  builder: (context, sentSnapshot) {
-                    final sent = sentSnapshot.data ?? [];
-                    final allMessages = [...received, ...sent];
-                    allMessages.sort(
-                      (a, b) => a.timestamp.compareTo(b.timestamp),
-                    );
-                    // Mark received messages as seen, save locally, then delete from Firestore
-                    for (final msg in received) {
-                      if (msg.status != 'seen') {
-                        _chatService.markMessageSeen(widget.username, msg.id);
-                        // Save to Isar local DB
-                        Future.microtask(() async {
-                          final dir = await getApplicationDocumentsDirectory();
-                          final isar = await Isar.open([
-                            LocalMessageSchema,
-                          ], directory: dir.path);
-                          await isar.writeTxn(() async {
-                            await isar.localMessages.put(
-                              LocalMessage()
-                                ..content = msg.content
-                                ..senderId = msg.senderId
-                                ..receiverId = msg.receiverId
-                                ..timestamp = msg.timestamp
-                                ..attachmentUrl = msg.attachmentUrl
-                                ..status = msg.status,
-                            );
-                          });
-                          await _chatService.deleteMessageAfterLocalSave(
-                            widget.username,
-                            msg.id,
-                          );
-                          await isar.close();
-                        });
-                      }
-                    }
-                    return ListView.builder(
-                      padding: const EdgeInsets.all(8),
-                      itemCount: allMessages.length,
-                      itemBuilder: (context, index) {
-                        final msg = allMessages[index];
-                        final isMe = msg.senderId == widget.username;
-                        return Align(
-                          alignment: isMe
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 2),
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: isMe ? Colors.blue[100] : Colors.grey[200],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(msg.content),
-                                if (msg.attachmentUrl != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: Text(
-                                      '[Attachment]',
-                                      style: TextStyle(color: Colors.blue),
-                                    ),
-                                  ),
-                                Text(
-                                  msg.timestamp.toLocal().toString().substring(
-                                    0,
-                                    16,
-                                  ),
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.grey,
-                                  ),
+                final messages =
+                    (snapshot.data ?? [])
+                        .where(
+                          (msg) =>
+                              (msg.senderId == widget.username &&
+                                  msg.receiverId == widget.peerId) ||
+                              (msg.senderId == widget.peerId &&
+                                  msg.receiverId == widget.username),
+                        )
+                        .toList()
+                      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(8),
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final msg = messages[index];
+                    final isMe = msg.senderId == widget.username;
+                    return Align(
+                      alignment: isMe
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 2),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: isMe ? Colors.blue[100] : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(msg.content),
+                            if (msg.attachmentUrl != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  '[Attachment]',
+                                  style: TextStyle(color: Colors.blue),
                                 ),
-                              ],
+                              ),
+                            Text(
+                              msg.timestamp.toLocal().toString().substring(
+                                0,
+                                16,
+                              ),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey,
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          ],
+                        ),
+                      ),
                     );
                   },
                 );
@@ -148,10 +183,23 @@ class _ChatScreenState extends State<ChatScreen> {
                   onPressed: () async {
                     final text = _controller.text.trim();
                     if (text.isNotEmpty) {
+                      final sentAt = DateTime.now();
                       await _chatService.sendMessage(
                         content: text,
                         senderId: widget.username,
                         receiverId: widget.peerId,
+                        timestamp: sentAt,
+                      );
+                      await _saveMessageLocally(
+                        Message(
+                          id: '',
+                          content: text,
+                          senderId: widget.username,
+                          receiverId: widget.peerId,
+                          timestamp: sentAt,
+                          attachmentUrl: null,
+                        ),
+                        status: 'sent',
                       );
                       _controller.clear();
                     }
@@ -168,6 +216,8 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _controller.dispose();
+    _incomingSub?.cancel();
+    _isar?.close();
     super.dispose();
   }
 }

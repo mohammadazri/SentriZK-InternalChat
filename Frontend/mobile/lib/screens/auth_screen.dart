@@ -31,6 +31,7 @@ class _AuthScreenState extends State<AuthScreen>
   bool _isLoggedIn = false;
   String? _username;
   bool _isLoading = false;
+  bool _hasNavigatedToDashboard = false;
   IconData _statusIcon = Icons.shield_outlined;
   Color _statusColor = Colors.white70;
 
@@ -75,12 +76,23 @@ class _AuthScreenState extends State<AuthScreen>
               Icons.verified_user,
               Colors.greenAccent,
             );
+            _navigateToDashboard();
           }
         });
       }
     } catch (e) {
       debugPrint('Error checking login status: $e');
     }
+  }
+
+  void _navigateToDashboard() {
+    if (_hasNavigatedToDashboard || !mounted || _username == null) return;
+    _hasNavigatedToDashboard = true;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => UserListScreen(currentUserId: _username!),
+      ),
+    );
   }
 
   void _updateStatus(String message, IconData icon, Color color) {
@@ -261,11 +273,7 @@ class _AuthScreenState extends State<AuthScreen>
               });
 
               // Navigate to UserListScreen after successful login
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => UserListScreen(currentUserId: username),
-                ),
-              );
+              _navigateToDashboard();
             }
 
             HapticFeedback.mediumImpact();
@@ -1269,7 +1277,7 @@ class _AuthScreenState extends State<AuthScreen>
 
           // Main content
           SafeArea(
-            child: _isLoggedIn ? _buildLoggedInView() : _buildLandingView(),
+            child: _isLoggedIn ? _buildRedirectingView() : _buildLandingView(),
           ),
 
           // Loading overlay
@@ -1373,97 +1381,22 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  Widget _buildLoggedInView() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-
-          // Profile card
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF6366F1).withOpacity(0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+  Widget _buildRedirectingView() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _navigateToDashboard());
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 12),
+            Text(
+              'Redirecting to chats…',
+              style: TextStyle(color: Colors.white70),
             ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    _username?.substring(0, 1).toUpperCase() ?? 'U',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _username ?? 'User',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.verified_user,
-                            color: Colors.greenAccent,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'ZK Verified',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Status card
-          _buildStatusCard(),
-
-          const SizedBox(height: 24), // Actions
-          _buildActionButton(
-            icon: Icons.logout,
-            label: 'Logout',
-            color: Colors.redAccent,
-            onTap: _logout,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
