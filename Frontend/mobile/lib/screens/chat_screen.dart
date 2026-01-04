@@ -3,10 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/message.dart';
 import '../services/chat_service.dart';
+import '../services/message_security_service.dart';
 
 import 'package:isar/isar.dart';
 import '../models/local_message.dart';
-import 'package:path_provider/path_provider.dart';
+// path_provider no longer required here; Isar instance is provided by MessageSecurityService
+
+// Security imports
+import '../widgets/secure_link_text.dart';
 
 // ...existing code...
 
@@ -39,8 +43,9 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _initLocalStore() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final isar = await Isar.open([LocalMessageSchema], directory: dir.path);
+    // Use the shared Isar instance from MessageSecurityService to avoid
+    // opening multiple instances (causes "Instance has already been opened" errors).
+    final isar = await MessageSecurityService.getInstance();
 
     if (!mounted) {
       await isar.close();
@@ -138,7 +143,17 @@ class _ChatScreenState extends State<ChatScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(msg.content),
+                            // Use SecureLinkText instead of Text for security
+                            SecureLinkText(
+                              text: msg.content,
+                              textStyle: const TextStyle(fontSize: 14),
+                              linkStyle: TextStyle(
+                                color: isMe
+                                    ? Colors.blue[800]
+                                    : Colors.blue[700],
+                                fontSize: 14,
+                              ),
+                            ),
                             if (msg.attachmentUrl != null)
                               Padding(
                                 padding: const EdgeInsets.only(top: 4),

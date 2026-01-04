@@ -1,0 +1,82 @@
+[
+  {
+    "domain": "paypal-secure.com",
+    "reason": "Impersonates PayPal"
+  },
+  {
+    "domain": "paypal-verify.com",
+    "reason": "Impersonates PayPal"
+  },
+  {
+    "domain": "paypal-account.com",
+    "reason": "Impersonates PayPal"
+  },
+  {
+    "domain": "amazon-security.com",
+    "reason": "Impersonates Amazon"
+  },
+  {
+    "domain": "amazon-account.com",
+    "reason": "Impersonates Amazon"
+  },
+  {
+    "domain": "apple-verification.com",
+    "reason": "Impersonates Apple"
+  },
+  {
+    "domain": "apple-secure.com",
+    "reason": "Impersonates Apple"
+  },
+  {
+    "domain": "microsoft-security.com",
+    "reason": "Impersonates Microsoft"
+  },
+  {
+    "domain": "microsoft-verify.com",
+    "reason": "Impersonates Microsoft"
+  },
+  {
+    "domain": "google-verify.com",
+    "reason": "Impersonates Google"
+  },
+  {
+    "domain": "google-security.com",
+    "reason": "Impersonates Google"
+  },
+  {
+    "domain": "facebook-security.com",
+    "reason": "Impersonates Facebook"
+  },
+  {
+    "domain": "whatsapp-verify.com",
+    "reason": "Impersonates WhatsApp"
+  },
+  {
+    "domain": "whatsapp-security.com",
+    "reason": "Impersonates WhatsApp"
+  },
+  {
+    "domain": "netflix-billing.com",
+    "reason": "Impersonates Netflix"
+  },
+  {
+    "domain": "bankofamerica-secure.com",
+    "reason": "Impersonates Bank of America"
+  },
+  {
+    "domain": "chase-secure.com",
+    "reason": "Impersonates Chase Bank"
+  },
+  {
+    "domain": "wellsfargo-verify.com",
+    "reason": "Impersonates Wells Fargo"
+  },
+  {
+    "domain": "dropbox-security.com",
+    "reason": "Impersonates Dropbox"
+  },
+  {
+    "domain": "linkedin-verify.com",
+    "reason": "Impersonates LinkedIn"
+  }
+]
