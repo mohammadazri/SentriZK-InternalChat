@@ -5,6 +5,13 @@
 #ignore daatset in ML projects
 ML/dataSet/
 
+#ignore tflite & model files
+ML/models/*.tflite
+ML/models/*.h5
+ML/models/*.pb
+ML/models/*.ckpt
+ML/models/*.joblib
+
 # --- Node.js ---
 node_modules/
 npm-debug.log*
