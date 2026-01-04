@@ -2,6 +2,8 @@
 # 🧠 SentriZK Unified .gitignore
 # Covers Node.js backend + Flutter mobile + docs + binaries
 # =========================================
+#ignore daatset in ML projects
+ML/dataSet/
 
 # --- Node.js ---
 node_modules/
