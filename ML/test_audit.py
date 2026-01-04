@@ -1,82 +1,61 @@
 import os
-import torch
-import joblib
+import pickle
 import numpy as np
+import tensorflow as tf
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 from rich.console import Console
 from rich.table import Table
-from training import SentriZKAutoencoder 
 
 console = Console()
 
-def run_calibration_audit():
-    # 1. SETUP PATHS
+def run_test():
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     MODELS_DIR = os.path.join(BASE_DIR, "models")
     
-    vectorizer_path = os.path.join(MODELS_DIR, 'sentrizk_vectorizer.joblib')
-    model_path = os.path.join(MODELS_DIR, 'sentrizk_model.pth')
+    # Load Tokenizer
+    with open(os.path.join(MODELS_DIR, 'sentrizk_tokenizer.pickle'), 'rb') as handle:
+        tokenizer = pickle.load(handle)
+        
+    # Load Model (TFLite or Keras, here we use Interpreter to simulate Mobile)
+    interpreter = tf.lite.Interpreter(model_path=os.path.join(MODELS_DIR, 'sentrizk_model.tflite'))
+    interpreter.allocate_tensors()
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
 
-    # 2. LOAD AI COMPONENTS
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    vectorizer = joblib.load(vectorizer_path)
-    
-    model = SentriZKAutoencoder(input_dim=700).to(device) # Matches your 700 features
-    model.load_state_dict(torch.load(model_path))
-    model.eval()
-
-    # 3. DEFINE BENCHMARK MESSAGES
-    safe_benchmarks = [
+    # Test Cases
+    test_cases = [
+        "Hey bro, lunch at 1pm?",
         "Please send the report by EOD.",
-        "Meeting moved to Room 4B.",
-        "Thanks for the update on the project.",
-        "Can we discuss the budget tomorrow morning?",
-        "Lunch at 1pm?"
-    ]
-    
-    threat_benchmarks = [
-        "URGENT: Your password expires in 2 hours. Reset here: http://bit.ly/secure-login",
-        "Final Warning: Account suspension. Login to verify identity.",
-        "You won a gift card! Claim it at lucky-draw-site.com",
-        "Hey, check out this attachment for the invoice: malware.zip.exe"
+        "URGENT: Payroll suspended. Login to verify: bit.ly/fake",
+        "Your account password expires today. Click here to reset.",
+        "I will be late for the meeting, traffic is bad."
     ]
 
-    # 4. CALIBRATION PHASE (Find the Dynamic Threshold)
-    console.print("[bold yellow]Step 1: Calibrating System Baseline...[/bold yellow]")
-    safe_scores = []
-    with torch.no_grad():
-        for msg in safe_benchmarks:
-            vec = vectorizer.transform([msg]).toarray().astype('float32')
-            vec_t = torch.from_numpy(vec).to(device)
-            recon = model(vec_t)
-            mse = torch.mean((vec_t - recon)**2).item()
-            safe_scores.append(mse)
-    
-    # We set the threshold at the 95th percentile of safe traffic
-    # This minimizes False Positives
-    DYNAMIC_THRESHOLD = np.percentile(safe_scores, 95)
-    console.print(f"[*] Computed Dynamic Threshold: [bold green]{DYNAMIC_THRESHOLD:.6f}[/bold green]\n")
+    table = Table(title="SentriZK Supervised Classification Audit")
+    table.add_column("Message", style="dim", width=50)
+    table.add_column("Threat Probability", justify="right")
+    table.add_column("Verdict", justify="center")
 
-    # 5. AUDIT PHASE
-    table = Table(title="SentriZK Final Security Audit")
-    table.add_column("Message Content", style="dim", width=55)
-    table.add_column("Threat Score", justify="right")
-    table.add_column("Detection", justify="center")
-
-    all_test = [(m, "SAFE") for m in safe_benchmarks] + [(m, "THREAT") for m in threat_benchmarks]
-    
-    with torch.no_grad():
-        for msg, expected in all_test:
-            vec = vectorizer.transform([msg]).toarray().astype('float32')
-            vec_t = torch.from_numpy(vec).to(device)
-            recon = model(vec_t)
-            mse = torch.mean((vec_t - recon)**2).item()
-            
-            is_anomaly = mse > DYNAMIC_THRESHOLD
-            status = "[bold red]⚠️ THREAT[/bold red]" if is_anomaly else "[bold green]✅ SAFE[/bold green]"
-            
-            table.add_row(msg[:53], f"{mse:.6f}", status)
+    for msg in test_cases:
+        # Preprocess exactly like training
+        seq = tokenizer.texts_to_sequences([msg])
+        padded = pad_sequences(seq, maxlen=100, padding='post', truncating='post').astype(np.float32)
+        
+        # Run Inference
+        interpreter.set_tensor(input_details[0]['index'], padded)
+        interpreter.invoke()
+        output_data = interpreter.get_tensor(output_details[0]['index'])
+        
+        score = output_data[0][0]
+        
+        # High Accuracy Threshold strategy
+        # If probability > 80%, it is a threat.
+        is_threat = score > 0.8
+        status = "[bold red]⚠️ THREAT[/bold red]" if is_threat else "[bold green]✅ SAFE[/bold green]"
+        
+        table.add_row(msg, f"{score:.4f}", status)
 
     console.print(table)
 
 if __name__ == "__main__":
-    run_calibration_audit()
+    run_test()
