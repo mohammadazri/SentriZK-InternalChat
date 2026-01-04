@@ -19,6 +19,8 @@ class _UserListScreenState extends State<UserListScreen>
     with WidgetsBindingObserver {
   final UserService _userService = UserService();
   final AuthService _authService = AuthService();
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -31,6 +33,7 @@ class _UserListScreenState extends State<UserListScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _setOnlineStatus(false);
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -57,12 +60,22 @@ class _UserListScreenState extends State<UserListScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Chats'),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        title: const Text(
+          'Chats',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 22,
+          ),
+        ),
         actions: [
           IconButton(
             tooltip: 'Logout',
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout_rounded),
             onPressed: () async {
               await _setOnlineStatus(false);
               await _authService.logout();
@@ -75,49 +88,312 @@ class _UserListScreenState extends State<UserListScreen>
           ),
         ],
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('users').snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final users = snapshot.data?.docs ?? [];
-          final filtered = users
-              .where((u) => u['id'] != widget.currentUserId)
-              .toList();
-          if (filtered.isEmpty) {
-            return const Center(child: Text('No users found.'));
-          }
-          return ListView.builder(
-            itemCount: filtered.length,
-            itemBuilder: (context, index) {
-              final user = filtered[index];
-              final isOnline = user['activityStatus'] == 'Online';
-              return ListTile(
-                leading: CircleAvatar(
-                  child: Icon(
-                    isOnline ? Icons.circle : Icons.circle_outlined,
-                    color: isOnline ? Colors.green : Colors.grey,
-                  ),
-                ),
-                title: Text(user['username'] ?? user['id'] ?? ''),
-                subtitle: Text(isOnline ? 'Online' : 'Offline'),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChatScreen(
-                        username: widget.currentUserId,
-                        peerId: user['id'],
-                        peerName: user['username'] ?? user['id'],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0F172A), Color(0xFF0B1224)],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final docs = snapshot.data?.docs ?? [];
+                final users = docs
+                    .map((d) => d.data() as Map<String, dynamic>)
+                    .where((u) => u['id'] != widget.currentUserId)
+                    .toList();
+
+                final onlineCount = users
+                    .where((u) => u['activityStatus'] == 'Online')
+                    .length;
+
+                final filtered = users.where((u) {
+                  final search = _searchQuery.trim().toLowerCase();
+                  if (search.isEmpty) return true;
+                  final name = (u['username'] ?? u['id'] ?? '')
+                      .toString()
+                      .toLowerCase();
+                  return name.contains(search);
+                }).toList();
+
+                if (filtered.isEmpty) {
+                  return Column(
+                    children: [
+                      _HeaderCard(onlineCount: onlineCount),
+                      const SizedBox(height: 16),
+                      _SearchField(
+                        controller: _searchController,
+                        onChanged: (value) =>
+                            setState(() => _searchQuery = value),
+                      ),
+                      const Spacer(),
+                      const Text(
+                        'No users found',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      const Spacer(),
+                    ],
+                  );
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _HeaderCard(onlineCount: onlineCount),
+                    const SizedBox(height: 16),
+                    _SearchField(
+                      controller: _searchController,
+                      onChanged: (value) =>
+                          setState(() => _searchQuery = value),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: ListView.separated(
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          final user = filtered[index];
+                          final isOnline = user['activityStatus'] == 'Online';
+                          final displayName =
+                              user['username'] ?? user['id'] ?? '';
+                          final initials = displayName.isNotEmpty
+                              ? displayName
+                                    .trim()
+                                    .split(' ')
+                                    .map((e) => e.isNotEmpty ? e[0] : '')
+                                    .join()
+                                    .toUpperCase()
+                              : '?';
+
+                          return _UserCard(
+                            name: displayName,
+                            status: isOnline ? 'Online' : 'Offline',
+                            isOnline: isOnline,
+                            initials: initials,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ChatScreen(
+                                    username: widget.currentUserId,
+                                    peerId: user['id'],
+                                    peerName: displayName,
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
                       ),
                     ),
-                  );
-                },
-              );
-            },
-          );
-        },
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderCard extends StatelessWidget {
+  final int onlineCount;
+  const _HeaderCard({required this.onlineCount});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1D4ED8), Color(0xFF7C3AED)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.25),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Secure Chats',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '$onlineCount online now',
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+            ],
+          ),
+          const Icon(Icons.lock_outline_rounded, color: Colors.white, size: 28),
+        ],
+      ),
+    );
+  }
+}
+
+class _SearchField extends StatelessWidget {
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  const _SearchField({required this.controller, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        style: const TextStyle(color: Colors.white),
+        decoration: const InputDecoration(
+          hintText: 'Search teammates',
+          hintStyle: TextStyle(color: Colors.white60),
+          prefixIcon: Icon(Icons.search, color: Colors.white70),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        ),
+      ),
+    );
+  }
+}
+
+class _UserCard extends StatelessWidget {
+  final String name;
+  final String status;
+  final bool isOnline;
+  final String initials;
+  final VoidCallback onTap;
+
+  const _UserCard({
+    required this.name,
+    required this.status,
+    required this.isOnline,
+    required this.initials,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.35),
+              blurRadius: 12,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Stack(
+              children: [
+                CircleAvatar(
+                  radius: 26,
+                  backgroundColor: isOnline
+                      ? const Color(0xFF16A34A)
+                      : const Color(0xFF334155),
+                  child: Text(
+                    initials,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    height: 12,
+                    width: 12,
+                    decoration: BoxDecoration(
+                      color: isOnline ? const Color(0xFF22C55E) : Colors.grey,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFF0F172A),
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    status,
+                    style: TextStyle(
+                      color: isOnline
+                          ? const Color(0xFF22C55E)
+                          : Colors.white70,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Tap to start a secure chat',
+                    style: TextStyle(color: Colors.white60, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.keyboard_arrow_right_rounded,
+              color: Colors.white70,
+            ),
+          ],
+        ),
       ),
     );
   }
