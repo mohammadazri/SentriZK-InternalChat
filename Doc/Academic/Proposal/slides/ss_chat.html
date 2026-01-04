@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentriZK - Chat Interface</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <link rel="stylesheet" href="phone.css">
+
+    <style>
+        /* --- SLIDE 4 SPECIFIC LAYOUT --- */
+        .chat-grid {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 4rem; /* Wide gap for 2 phones */
+            margin-top: 1rem; /* Reduced margin to pull up */
+            height: 100%;
+            width: 100%;
+        }
+
+        .step-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            flex: 1;
+        }
+
+        /* --- ANDROID FRAME OVERRIDES --- */
+        .android-wrapper {
+            position: relative;
+            width: 260px; /* Matching width of Auth slide */
+            height: 520px; /* Reduced height to fit screen perfectly */
+            background: #121212; 
+            border-radius: 24px; /* Slightly sharper corners */
+            box-shadow: 0 0 0 2px #2a2a2a, 0 0 0 5px #121212, 0 30px 60px -15px rgba(0,0,0,0.8);
+            padding: 8px; 
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .android-wrapper:hover { transform: translateY(-10px) scale(1.02); }
+
+        .android-screen {
+            width: 100%; height: 100%;
+            background: #000;
+            border-radius: 18px; 
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Active Glow Ring */
+        .active-ring {
+            box-shadow: 0 0 0 2px #2a2a2a, 0 0 0 5px #121212, 0 0 0 8px rgba(139, 92, 246, 0.4), 0 30px 60px -15px rgba(0,0,0,0.8);
+        }
+
+        /* --- ARROW & HIGHLIGHTS --- */
+        .flow-arrow {
+            position: absolute;
+            top: 42%; /* Adjusted for new height */
+            right: -2.5rem;
+            font-size: 2.5rem;
+            color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-50%);
+            z-index: 0;
+        }
+        
+        .highlight-p {
+            background: rgba(139, 92, 246, 0.12);
+            color: var(--accent-purple);
+            padding: 0.15rem 0.4rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-left: 0.25rem;
+        }
+
+        .fade-1 { animation-delay: 0.1s; }
+        .fade-2 { animation-delay: 0.3s; }
+    </style>
+</head>
+<body>
+
+    <div class="grid-lines"></div>
+    <div class="glow-spot" style="left: 50%; top: -30%; transform: translateX(-50%); background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);"></div>
+
+    <div class="container">
+        
+        <header>
+            <div>
+                <div class="h-sub" style="color:var(--accent-purple)">Chat Area</div>
+                <div class="h-main" style="font-size: 2.5rem;">Main Page</div>
+            </div>
+            <div class="status-pill" style="color:var(--accent-purple); border-color:rgba(139, 92, 246, 0.3); background:rgba(139, 92, 246, 0.1);">
+                <div class="pulse-dot" style="background:var(--accent-purple); box-shadow:0 0 10px var(--accent-purple);"></div>
+                Live Connection
+            </div>
+        </header>
+
+        <div class="chat-grid">
+
+            <div class="step-container fade-1">
+                <div class="android-wrapper">
+                    <div class="android-screen">
+                        <div class="glare"></div>
+                        <img src="./diagram/ss/chat/chat_main.png" class="ss-img" alt="Chat List">
+                    </div>
+                </div>
+                <div class="step-label">
+                    <div class="sl-num" style="color:var(--accent-purple)">View 01</div>
+                    <div class="sl-title">Conversation List</div>
+                    <div class="sl-desc">Real-time status updates via <span class="highlight-p">Firebase</span>.</div>
+                </div>
+                <i class="ph-bold ph-arrow-right flow-arrow"></i>
+            </div>
+
+            <div class="step-container fade-2">
+                <div class="android-wrapper active-ring">
+                    <div class="android-screen">
+                        <div class="glare"></div>
+                        <img src="./diagram/ss/chat/chatting.png" class="ss-img" alt="Active Chat">
+                    </div>
+                </div>
+                <div class="step-label">
+                    <div class="sl-num" style="color:var(--accent-purple)">View 02</div>
+                    <div class="sl-title">Active Session</div>
+                    <div class="sl-desc">E2EE messaging with one-on-one <span class="highlight-p">encryption</span>.</div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>

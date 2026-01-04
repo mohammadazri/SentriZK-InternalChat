@@ -1,0 +1,218 @@
+/* =========================================
+   1. GLOBAL VARIABLES & THEME
+   ========================================= */
+:root {
+    /* Color Palette */
+    --bg-deep: #020617;       /* Main Background */
+    --bg-card: #0f172a;       /* Panels/Cards */
+    
+    --accent-blue: #3b82f6;   /* Primary Actions */
+    --accent-green: #10b981;  /* Success/Status */
+    --accent-gold: #f59e0b;   /* Auth/Security */
+    --accent-purple: #8b5cf6; /* Chat/Features */
+    
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    
+    /* Effects */
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-highlight: rgba(255, 255, 255, 0.03);
+    --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* =========================================
+   2. RESET & BASE LAYOUT
+   ========================================= */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background-color: var(--bg-deep);
+    color: var(--text-main);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Typography Defaults */
+h1, h2, .h-main, .sl-title { font-family: 'Space Grotesk', sans-serif; }
+
+/* =========================================
+   3. BACKGROUND EFFECTS
+   ========================================= */
+.grid-lines {
+    position: fixed; inset: 0; z-index: -1; opacity: 0.3;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+}
+
+.glow-spot {
+    position: absolute; top: -20%; right: -10%; width: 60vw; height: 60vw;
+    background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%);
+    filter: blur(80px); z-index: -1; pointer-events: none;
+}
+
+/* =========================================
+   4. MAIN CONTAINER & HEADER
+   ========================================= */
+.container {
+    position: relative; z-index: 10;
+    width: 90%; max-width: 1500px;
+    height: 90vh; /* Keeps content centered */
+    display: flex; flex-direction: column;
+}
+
+header {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 2rem; padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.h-sub { 
+    font-family: 'Space Grotesk'; font-size: 0.9rem; font-weight: 700;
+    color: var(--accent-blue); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 5px; 
+}
+.h-main { font-size: 3rem; font-weight: 800; line-height: 1; color: #fff; }
+
+/* Status Pill (Top Right Badge) */
+.status-pill {
+    background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);
+    color: var(--accent-green); padding: 8px 16px; border-radius: 100px;
+    font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;
+}
+.pulse-dot { 
+    width: 8px; height: 8px; background: var(--accent-green); 
+    border-radius: 50%; box-shadow: 0 0 10px var(--accent-green); 
+    animation: pulse 2s infinite; 
+}
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+/* =========================================
+   5. REALISTIC PHONE MOCKUP (The Core Design)
+   ========================================= */
+.device-wrapper {
+    position: relative;
+    width: 300px; height: 600px;
+    background: #101010; /* Dark Bezel */
+    border-radius: 50px;
+    /* Layered shadows for 3D depth */
+    box-shadow: 
+        0 0 0 2px #3a3a3a, /* Outer Grey Rim */
+        0 0 0 6px #101010, /* Main Bezel Thickness */
+        0 30px 60px -15px rgba(0,0,0,0.8); /* Drop Shadow */
+    padding: 12px; /* Inner bezel spacing */
+    transition: transform 0.4s var(--ease-out-back);
+}
+
+.device-wrapper:hover { transform: translateY(-15px) scale(1.02); }
+
+/* Physical Buttons */
+.device-wrapper::before { /* Power Button */
+    content: ''; position: absolute; top: 160px; right: -10px;
+    width: 4px; height: 50px; background: #2a2a2a; border-radius: 0 4px 4px 0;
+}
+.device-wrapper::after { /* Volume Buttons */
+    content: ''; position: absolute; top: 120px; left: -10px;
+    width: 4px; height: 80px; background: #2a2a2a; border-radius: 4px 0 0 4px;
+    box-shadow: 0 50px 0 #2a2a2a; /* Second volume button trick */
+}
+
+/* Screen Area */
+.device-screen {
+    width: 100%; height: 100%;
+    background: #000;
+    border-radius: 38px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 0 20px rgba(255,255,255,0.05); /* Inner Depth */
+}
+
+/* Dynamic Island */
+.dynamic-island {
+    position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+    width: 90px; height: 28px;
+    background: #000; border-radius: 20px; z-index: 20;
+    box-shadow: 0 0 0 1px #1a1a1a;
+}
+.dynamic-island::after { /* Camera Lens */
+    content: ''; position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    width: 8px; height: 8px; background: #1a1b26; border-radius: 50%;
+    box-shadow: inset 0 0 2px rgba(255,255,255,0.3);
+}
+
+/* Screen Glare/Reflection */
+.glare {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(120deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.04) 40%, rgba(255,255,255,0) 50%);
+    pointer-events: none; z-index: 10; border-radius: 38px;
+}
+
+/* The Screenshot Image */
+.ss-img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+}
+
+/* =========================================
+   6. SLIDE SPECIFIC LAYOUTS
+   ========================================= */
+
+/* --- SLIDE 1 (Split) --- */
+.split-layout {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; 
+    align-items: center; height: 100%; width: 100%;
+}
+.visual-block-s1 { position: relative; height: 100%; display: flex; align-items: center; justify-content: center; }
+
+/* Slide 1 Phone Positioning */
+.phone-main { z-index: 2; transform: rotate(-5deg); }
+.phone-sec { 
+    position: absolute; right: 20px; top: 10%; z-index: 1; opacity: 0.6; 
+    transform: rotate(10deg) scale(0.9); pointer-events: none;
+}
+
+/* --- SLIDE 2 (Flow Grid) --- */
+.showcase-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem;
+    height: 100%; align-items: center; justify-items: center;
+}
+
+/* Step Labels under phones */
+.step-label {
+    margin-top: 2rem; text-align: center; opacity: 0;
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+.col-1 .step-label { animation-delay: 0.2s; }
+.col-2 .step-label { animation-delay: 0.4s; }
+.col-3 .step-label { animation-delay: 0.6s; }
+
+.sl-num { 
+    font-family: 'Space Grotesk'; font-size: 0.8rem; color: var(--accent-blue); 
+    text-transform: uppercase; letter-spacing: 2px; font-weight: 700; margin-bottom: 5px; 
+}
+.sl-title { font-size: 1.2rem; font-weight: 700; color: #fff; margin-bottom: 5px; }
+.sl-desc { font-size: 0.85rem; color: var(--text-muted); max-width: 250px; margin: 0 auto; line-height: 1.5; }
+
+/* Arrows between steps */
+.arrow-flow {
+    position: absolute; top: 40%; right: -2rem; 
+    font-size: 2rem; color: rgba(255,255,255,0.1); transform: translateY(-50%);
+}
+
+/* =========================================
+   7. ANIMATIONS
+   ========================================= */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideRight {
+    from { opacity: 0; transform: translateX(-50px); }
+    to { opacity: 1; transform: translateX(0); }
+}

@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SentriZK - Financial Blueprint</title>
+    <title>SentriZK - Budget & Resources</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;800&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
-    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-icons-font@v13/font/simple-icons.min.css">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <style>
         :root {
-            /* Theme Variables from your Cover Slide */
             --bg-dark: #030712;
             --primary: #3b82f6;   /* Blue */
-            --accent: #10b981;    /* Green/Success */
-            --cost: #f59e0b;      /* Orange/Cost */
-            
+            --accent: #10b981;    /* Green */
+            --highlight: #f59e0b; /* Amber */
+            --firebase: #FFCA28;  /* Firebase Amber */
             --text-main: #f9fafb;
             --text-muted: #9ca3af;
             
@@ -38,11 +37,11 @@
             justify-content: center;
         }
 
-        /* --- BACKGROUND FX --- */
-        .bg-gradient {
-            position: absolute; width: 800px; height: 800px;
-            background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(0,0,0,0) 70%);
-            top: -200px; right: -200px; z-index: 0; filter: blur(100px);
+        /* --- BACKGROUND --- */
+        .bg-glow {
+            position: absolute; width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(0,0,0,0) 70%);
+            top: -100px; left: -100px; z-index: 0; filter: blur(120px);
         }
         
         .bg-grid {
@@ -50,224 +49,220 @@
             background-image: 
                 linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 60px 60px; z-index: 0;
+            background-size: 50px 50px; z-index: 0;
         }
 
-        /* --- MAIN CONTAINER --- */
+        /* --- LAYOUT --- */
         .container {
             position: relative; z-index: 10;
-            width: 95%; max-width: 1600px; height: 90vh;
-            display: grid; grid-template-rows: auto 1fr;
-            gap: 2rem;
+            width: 100%; max-width: 100%; height: 100vh;
+            display: block; padding: 0.5rem 1rem; margin: 0;
         }
 
         /* --- HEADER --- */
         header {
             display: flex; justify-content: space-between; align-items: flex-end;
-            padding-bottom: 1.5rem; border-bottom: 1px solid var(--glass-border);
+            padding: 1.5rem 0 2.6rem; border-bottom: 1px solid var(--glass-border);
         }
-        .header-titles h2 { font-family: 'Space Grotesk'; font-size: 1rem; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; }
-        .header-titles h1 { font-size: 3rem; font-weight: 800; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header-left h2 { font-family: 'Space Grotesk'; font-size: 1rem; color: var(--primary); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 5px; }
+        .header-left h1 { font-size: 3rem; font-weight: 800; color: #fff; }
         
-        .badge {
-            display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px;
+        .badge-arch {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 20px; border-radius: 50px;
             background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 100px; color: var(--primary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase;
+            color: var(--primary); font-weight: 600; font-size: 0.9rem;
         }
 
-        /* --- CONTENT GRID --- */
-        .grid-layout {
-            display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;
-            height: 100%; overflow: hidden;
+        /* --- CONTENT --- */
+        .content-grid {
+            display: flex; gap: 1rem; width: 100%; align-items: flex-start;
+            height: calc(100vh - 120px);
         }
 
-        /* --- PANELS --- */
-        .panel {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            backdrop-filter: blur(20px);
-            display: flex; flex-direction: column; overflow: hidden;
+        /* 70/30 split */
+        .resource-list { flex: 0 0 70%; max-height: calc(100vh - 160px); overflow-y: auto; padding: 0.2rem 0.5rem; display: flex; flex-direction: column; gap: 8px; }
+        .panel { flex: 0 0 30%; max-height: calc(100vh - 160px); overflow-y: auto; background: transparent; border: none; border-radius: 0; overflow: visible; }
+
+        .panel-head { padding: 0.4rem 0; background: transparent; border-bottom: none; font-family: 'Space Grotesk'; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
+
+        /* --- LIST STYLES --- */
+        .r-item {
+            display: grid; grid-template-columns: 50px 2fr 1.5fr 1.5fr 1fr;
+            align-items: center; padding: 16px; border-radius: 16px;
+            background: rgba(255,255,255,0.03); border: 1px solid transparent;
+            transition: 0.3s ease;
         }
+        .r-item:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
 
-        .panel-header {
-            padding: 1.5rem; border-bottom: 1px solid var(--glass-border);
-            display: flex; align-items: center; gap: 10px; font-family: 'Space Grotesk'; font-weight: 700; color: #fff;
-        }
-
-        /* --- TABLE AREA (Left) --- */
-        .scroll-area { padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-
-        .item-card {
-            display: grid; grid-template-columns: 50px 2fr 2fr 1.5fr 1fr; align-items: center;
-            padding: 15px; border-radius: 12px;
-            background: rgba(255,255,255,0.02); border: 1px solid transparent; transition: 0.3s;
-        }
-        .item-card:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); transform: translateX(5px); }
-
-        .ic-icon { 
-            width: 40px; height: 40px; border-radius: 10px; 
-            background: rgba(255,255,255,0.05); color: var(--text-main); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+        .r-icon {
+            width: 40px; height: 40px; border-radius: 10px;
+            background: rgba(255,255,255,0.05); color: #fff;
+            display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
         }
         
-        .ic-details h4 { font-size: 1rem; font-weight: 600; margin-bottom: 3px; }
-        .ic-details span { font-size: 0.8rem; color: var(--text-muted); }
-        .ic-specs { font-family: 'Space Grotesk'; font-size: 0.8rem; color: var(--text-muted); }
-        
-        .tag { padding: 5px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; display: inline-block; }
-        .tag-owned { background: rgba(16, 185, 129, 0.1); color: var(--accent); border: 1px solid rgba(16, 185, 129, 0.2); }
-        .tag-cost { background: rgba(245, 158, 11, 0.1); color: var(--cost); border: 1px solid rgba(245, 158, 11, 0.2); }
-        
-        .ic-price { font-family: 'Space Grotesk'; font-weight: 700; font-size: 1.1rem; text-align: right; }
-        .price-zero { opacity: 0.5; text-decoration: line-through; }
-
-        .section-label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin: 15px 0 5px 0; padding-left: 5px; }
-
-        /* --- SUMMARY AREA (Right) --- */
-        .summary-container { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; height: 100%; }
-
-        .kpi-card {
-            background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border);
-            padding: 1.5rem; border-radius: 16px; position: relative; overflow: hidden;
+        /* Brand Icon Styling */
+        .brand-icon {
+            font-size: 1.5rem;
         }
-        .kpi-label { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
-        .kpi-val { font-family: 'Space Grotesk'; font-size: 2.5rem; font-weight: 700; color: #fff; }
-        .kpi-sub { font-size: 0.85rem; color: var(--text-muted); margin-top: 5px; }
 
-        .highlight-orange { border-color: rgba(245, 158, 11, 0.3); background: radial-gradient(circle at top right, rgba(245, 158, 11, 0.1), transparent 70%); }
-        .highlight-orange .kpi-val { color: var(--cost); }
+        .r-main h4 { font-size: 1rem; color: #fff; margin-bottom: 2px; }
+        .r-main span { font-size: 0.8rem; color: var(--text-muted); }
 
-        /* Chart */
-        .chart-box { margin-top: auto; }
-        .bar-wrap { height: 12px; width: 100%; background: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; display: flex; margin-bottom: 15px; }
-        .segment { height: 100%; }
-        
-        .legend { display: flex; gap: 20px; font-size: 0.8rem; color: var(--text-muted); }
-        .l-item { display: flex; align-items: center; gap: 8px; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .r-desc { font-size: 0.85rem; color: var(--text-muted); font-family: 'Space Grotesk'; }
+
+        .tag {
+            padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; text-align: center; width: fit-content;
+        }
+        .t-asset { background: rgba(59, 130, 246, 0.15); color: var(--primary); }
+        .t-free { background: rgba(16, 185, 129, 0.15); color: var(--accent); }
+        .t-paid { background: rgba(245, 158, 11, 0.15); color: var(--highlight); }
+
+        .r-cost { text-align: right; font-family: 'Space Grotesk'; font-weight: 700; color: #fff; }
+        .zero-cost { opacity: 0.4; }
+        .strike { text-decoration: line-through; opacity: 0.6; font-weight: 600; margin-right: 8px; color: #f3f4f6; }
+
+        .category-header {
+            margin-top: 15px; margin-bottom: 5px; font-size: 0.8rem; font-weight: 700;
+            color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding-left: 10px;
+        }
+
+        /* --- SUMMARY RIGHT --- */
+        .summary-box { padding: 1rem; display: flex; flex-direction: column; gap: 1rem; height: 100%; }
+
+        .cost-hero {
+            text-align: center; padding: 2rem; border-radius: 20px;
+            background: radial-gradient(circle at center, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        .cost-hero h3 { font-size: 0.9rem; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+        .cost-hero .amount { font-family: 'Space Grotesk'; font-size: 2.4rem; font-weight: 800; color: #fff; line-height: 1; }
+        .cost-hero p { margin-top: 10px; font-size: 0.9rem; color: var(--text-muted); }
+
+        .spec-list { display: flex; flex-direction: column; gap: 15px; }
+        .spec-row { display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--glass-border); }
+        .spec-label { font-size: 0.9rem; color: var(--text-muted); }
+        .spec-val { font-family: 'Space Grotesk'; font-weight: 600; color: #fff; }
+
+        .arch-note {
+            margin-top: auto; background: rgba(59, 130, 246, 0.05); border-left: 3px solid var(--primary);
+            padding: 15px; border-radius: 0 10px 10px 0; font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;
+        }
+        .arch-note strong { color: var(--primary); }
 
     </style>
 </head>
 <body>
 
     <div class="bg-grid"></div>
-    <div class="bg-gradient"></div>
+    <div class="bg-glow"></div>
 
     <div class="container">
         
         <header>
-            <div class="header-titles">
-                <h2>RESEARCH METHODOLOGY</h2>
-                <h1>Budget and Costing</h1>
+            <div class="header-left">
+                <h2>Project Resources</h2>
+                <h1>Budget & Costing</h1>
             </div>
-            <div class="badge">Self-Funded Project</div>
+            <div class="badge-arch">
+                <i class="ph-duotone ph-house-line"></i> 100% Self-Hosted Architecture
+            </div>
         </header>
 
-        <div class="grid-layout">
+        <div class="content-grid">
             
-            <div class="panel">
-                <div class="panel-header">
-                    <i class="ph-duotone ph-list-dashes"></i> Itemized Budget
-                </div>
-
-                <div class="scroll-area">
+            <div class="resource-list">
                     
-                    <div class="section-label" style="color:var(--accent)">Existing Resources (No Cost)</div>
-
-                    <div class="item-card">
-                        <div class="ic-icon"><i class="ph-duotone ph-laptop"></i></div>
-                        <div class="ic-details"><h4>Workstation</h4><span>Laptop</span></div>
-                        <div class="ic-specs">Intel i7 / 16GB RAM</div>
-                        <div class="ic-status"><span class="tag tag-owned">Owned</span></div>
-                        <div class="ic-price price-zero">RM 3,800</div>
+                    <div class="category-header" style="color:var(--primary)">Infrastructure (Private Cloud)</div>
+                    
+                    <div class="r-item">
+                        <div class="r-icon" style="background:rgba(220, 20, 60, 0.1); color:#C51A4A;"><i class="si si-raspberrypi brand-icon"></i></div>
+                        <div class="r-main"><h4>Raspberry Pi 5</h4><span>Primary Server Node</span></div>
+                        <div class="r-desc">8GB RAM / Quad-core</div>
+                        <div class="tag t-asset">Asset</div>
+                        <div class="r-cost"><span class="strike">RM 400.00</span><span class="zero-cost">RM 0</span></div>
                     </div>
 
-                    <div class="item-card">
-                        <div class="ic-icon"><i class="ph-duotone ph-device-mobile"></i></div>
-                        <div class="ic-details"><h4>Test Device</h4><span>Android</span></div>
-                        <div class="ic-specs">Physical Unit</div>
-                        <div class="ic-status"><span class="tag tag-owned">Owned</span></div>
-                        <div class="ic-price price-zero">RM 1,200</div>
+                    <div class="r-item">
+                        <div class="r-icon" style="background:rgba(244, 129, 32, 0.1); color:#F38020;"><i class="si si-cloudflare brand-icon"></i></div>
+                        <div class="r-main"><h4>Cloudflare</h4><span>Network Tunnel</span></div>
+                        <div class="r-desc">Zero Trust Tunnel / DNS</div>
+                        <div class="tag t-free">Free Tier</div>
+                        <div class="r-cost zero-cost">RM 0</div>
                     </div>
 
-                    <div class="item-card">
-                        <div class="ic-icon"><i class="ph-duotone ph-code"></i></div>
-                        <div class="ic-details"><h4>Dev Tools</h4><span>Software</span></div>
-                        <div class="ic-specs">VS Code, Docker, Git</div>
-                        <div class="ic-status"><span class="tag tag-owned">Open Source</span></div>
-                        <div class="ic-price price-zero">RM 0</div>
+                    <div class="r-item">
+                        <div class="r-icon" style="background:rgba(255, 202, 40, 0.1); color:#FFCA28;"><i class="si si-firebase brand-icon"></i></div>
+                        <div class="r-main"><h4>Firebase</h4><span>Backend Services</span></div>
+                        <div class="r-desc">Spark Plan (Auth/DB)</div>
+                        <div class="tag t-free">Free Tier</div>
+                        <div class="r-cost zero-cost">RM 0</div>
                     </div>
 
-                    <div class="section-label" style="color:var(--cost); margin-top:20px;">Project Expenses (Funding Required)</div>
+                    <div class="category-header">Development Hardware</div>
 
-                    <div class="item-card">
-                        <div class="ic-icon" style="color:var(--cost)"><i class="ph-duotone ph-cloud"></i></div>
-                        <div class="ic-details"><h4>Cloud VM</h4><span>Infrastructure</span></div>
-                        <div class="ic-specs">3 Nodes x 3 Mos</div>
-                        <div class="ic-status"><span class="tag tag-cost">Est. Cost</span></div>
-                        <div class="ic-price">RM 800</div>
+                    <div class="r-item">
+                        <div class="r-icon" style="background:rgba(255, 255, 255, 0.05); color:#E2231A;"><i class="si si-lenovo brand-icon"></i></div>
+                        <div class="r-main"><h4>Lenovo Legion</h4><span>Dev Environment</span></div>
+                        <div class="r-desc">Code / Build</div>
+                        <div class="tag t-asset">Asset</div>
+                        <div class="r-cost"><span class="strike">RM 4,500.00</span><span class="zero-cost">RM 0</span></div>
                     </div>
 
-                    <div class="item-card">
-                        <div class="ic-icon" style="color:var(--cost)"><i class="ph-duotone ph-globe"></i></div>
-                        <div class="ic-details"><h4>Domain & SSL</h4><span>Security</span></div>
-                        <div class="ic-specs">1 Year Reg</div>
-                        <div class="ic-status"><span class="tag tag-cost">Est. Cost</span></div>
-                        <div class="ic-price">RM 200</div>
+                    <div class="r-item">
+                        <div class="r-icon"><i class="ph-duotone ph-device-mobile"></i></div>
+                        <div class="r-main"><h4>Android Phone</h4><span>Test Device 1</span></div>
+                        <div class="r-desc">Physical Unit</div>
+                        <div class="tag t-asset">Asset</div>
+                        <div class="r-cost"><span class="strike">RM 800.00</span><span class="zero-cost">RM 0</span></div>
                     </div>
 
-                    <div class="item-card">
-                        <div class="ic-icon" style="color:var(--cost)"><i class="ph-duotone ph-google-play-logo"></i></div>
-                        <div class="ic-details"><h4>Play Console</h4><span>License</span></div>
-                        <div class="ic-specs">Dev Account</div>
-                        <div class="ic-status"><span class="tag tag-cost">One-time</span></div>
-                        <div class="ic-price">RM 120</div>
+                    <div class="category-header" style="color:var(--highlight)">Expenditure (Cash Out)</div>
+
+                    <div class="r-item">
+                        <div class="r-icon" style="color:var(--highlight)"><i class="ph-duotone ph-globe"></i></div>
+                        <div class="r-main"><h4>Domain Name</h4><span>Web Identity</span></div>
+                        <div class="r-desc">1 Year Registration</div>
+                        <div class="tag t-paid">One-Time</div>
+                        <div class="r-cost">RM 80.00</div>
                     </div>
 
-                    <div class="item-card">
-                        <div class="ic-icon" style="color:var(--cost)"><i class="ph-duotone ph-database"></i></div>
-                        <div class="ic-details"><h4>Firebase</h4><span>Services</span></div>
-                        <div class="ic-specs">Blaze Plan Buffer</div>
-                        <div class="ic-status"><span class="tag tag-cost">Buffer</span></div>
-                        <div class="ic-price">RM 100</div>
+                    <div class="r-item">
+                        <div class="r-icon" style="color:var(--highlight)"><i class="ph-duotone ph-lock-key"></i></div>
+                        <div class="r-main"><h4>SSL Certificate</h4><span>Encryption</span></div>
+                        <div class="r-desc">Cloudflare Edge Cert</div>
+                        <div class="tag t-free">Included</div>
+                        <div class="r-cost zero-cost">RM 0</div>
                     </div>
 
                 </div>
-            </div>
 
             <div class="panel">
-                <div class="panel-header">
-                    <i class="ph-duotone ph-chart-pie-slice"></i> Summary
+                <div class="panel-head">
+                    <i class="ph-duotone ph-calculator"></i> Financial Summary
                 </div>
-
-                <div class="summary-container">
+                
+                <div class="summary-box">
                     
-                    <div class="kpi-card">
-                        <div class="kpi-label">Total Asset Value</div>
-                        <div class="kpi-val" style="color:var(--text-muted); opacity:0.8;">RM 6,220</div>
-                        <div class="kpi-sub">Includes owned hardware value.</div>
+                    <div class="cost-hero">
+                        <h3>Total Project Cost</h3>
+                        <div class="amount">RM 80</div>
+                        <p>One-time expenditure</p>
                     </div>
 
-                    <div class="kpi-card highlight-orange">
-                        <div class="kpi-label" style="color:var(--cost)">Required Funding</div>
-                        <div class="kpi-val">RM 1,220</div>
-                        <div class="kpi-sub" style="color:var(--cost)">Net Cash Required</div>
-                    </div>
-
-                    <div class="chart-box">
-                        <div class="kpi-label" style="margin-bottom:15px;">Cost Breakdown</div>
-                        <div class="bar-wrap">
-                            <div class="segment" style="width:65%; background:var(--primary)"></div>
-                            <div class="segment" style="width:35%; background:var(--cost)"></div>
+                    <div class="spec-list">
+                        <div class="spec-row">
+                            <span class="spec-label">OpEx (Monthly)</span>
+                            <span class="spec-val" style="color:var(--accent)">RM 0.00</span>
                         </div>
-                        <div class="legend">
-                            <div class="l-item"><div class="dot" style="background:var(--primary)"></div> Infra (RM 800)</div>
-                            <div class="l-item"><div class="dot" style="background:var(--cost)"></div> Fees (RM 420)</div>
+                        <div class="spec-row">
+                            <span class="spec-label">Server Cost</span>
+                            <span class="spec-val">Self-Hosted</span>
                         </div>
-                    </div>
-
-                    <div style="margin-top:auto; padding-top:15px; border-top:1px solid var(--glass-border); font-size:0.75rem; color:var(--text-muted); line-height:1.5;">
-                        * Cloud costs based on AWS/Google pricing for 3-month development duration. Hardware value estimated at current market rate.
+                        <div class="spec-row">
+                            <span class="spec-label">Software Licenses</span>
+                            <span class="spec-val">Open Source</span>
+                        </div>
                     </div>
 
                 </div>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentriZK - Conclusion</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <link rel="stylesheet" href="phone.css">
+
+    <style>
+        /* --- SLIDE 5 ADVANCED STYLING --- */
+        
+        /* Main Layout Grid */
+        .conclusion-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2.5rem;
+            margin-top: 2rem;
+            width: 100%;
+            perspective: 1000px;
+        }
+
+        /* --- HOLOGRAPHIC CARDS --- */
+        .holo-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2.5rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Hover Effects: Lift & Glow */
+        .holo-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            background: rgba(255, 255, 255, 0.04);
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+        }
+
+        /* Mouse-follow Glow Effect (via CSS pseudo-element for static fallback) */
+        .holo-card::before {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.06), transparent 40%);
+            opacity: 0; transition: opacity 0.5s; pointer-events: none;
+        }
+        .holo-card:hover::before { opacity: 1; }
+
+        /* --- CONTENT STYLING --- */
+        
+        /* Animated Icon Container */
+        .icon-hex {
+            width: 64px; height: 64px;
+            border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+        
+        /* Spinning Ring Animation */
+        .icon-hex::after {
+            content:''; position: absolute; inset: -5px;
+            border-radius: 20px; border: 2px solid currentColor;
+            opacity: 0.3; animation: spin 10s linear infinite;
+        }
+
+        .card-title {
+            font-family: 'Space Grotesk'; font-size: 1.4rem; font-weight: 700; color: #fff;
+            line-height: 1.2;
+        }
+
+        .card-desc {
+            font-size: 1rem; color: var(--text-muted); line-height: 1.6;
+        }
+
+        /* Bottom Badge */
+        .stat-badge {
+            margin-top: auto;
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+            padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* --- THEME COLORS --- */
+        
+        /* 1. SECURITY (Gold) */
+        .c-gold { --theme: var(--accent-gold); }
+        .c-gold:hover { border-color: var(--theme); box-shadow: 0 0 30px rgba(245, 158, 11, 0.15); }
+        .c-gold .icon-hex { background: rgba(245, 158, 11, 0.1); color: var(--theme); }
+        .c-gold .stat-badge { color: var(--theme); }
+
+        /* 2. PRIVACY (Purple) */
+        .c-purple { --theme: var(--accent-purple); }
+        .c-purple:hover { border-color: var(--theme); box-shadow: 0 0 30px rgba(139, 92, 246, 0.15); }
+        .c-purple .icon-hex { background: rgba(139, 92, 246, 0.1); color: var(--theme); }
+        .c-purple .stat-badge { color: var(--theme); }
+
+        /* 3. IMPACT (Green) */
+        .c-green { --theme: var(--accent-green); }
+        .c-green:hover { border-color: var(--theme); box-shadow: 0 0 30px rgba(16, 185, 129, 0.15); }
+        .c-green .icon-hex { background: rgba(16, 185, 129, 0.1); color: var(--theme); }
+        .c-green .stat-badge { color: var(--theme); }
+
+        /* --- FOOTER --- */
+        .final-box {
+            margin-top: 4rem; text-align: center; position: relative;
+            animation: fadeInUp 1s 0.8s forwards; opacity: 0;
+        }
+        .final-text { font-size: 1.5rem; color: #fff; font-weight: 500; }
+        .highlight-text {
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #10b981);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        /* Staggered Animations */
+        .anim-delay-1 { animation: fadeInUp 0.6s 0.2s forwards; opacity: 0; }
+        .anim-delay-2 { animation: fadeInUp 0.6s 0.4s forwards; opacity: 0; }
+        .anim-delay-3 { animation: fadeInUp 0.6s 0.6s forwards; opacity: 0; }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="grid-lines"></div>
+    <div class="glow-spot" style="left: 50%; top: 50%; transform: translate(-50%, -50%); width: 80vw; height: 80vw; background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 60%);"></div>
+
+    <div class="container">
+        
+        <header>
+            <div>
+                <div class="h-sub">Project Summary</div>
+                <div class="h-main" style="font-size: 2.8rem;">Conclusion & Impact</div>
+            </div>
+            <div class="status-pill" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #fff;">
+                <i class="ph-bold ph-check-circle" style="color:var(--accent-green)"></i>
+                Success
+            </div>
+        </header>
+
+        <div class="conclusion-grid">
+
+            <div class="holo-card c-gold anim-delay-1">
+                <div class="icon-hex">
+                    <i class="ph-fill ph-shield-check"></i>
+                </div>
+                <div class="card-title">Credential Theft<br>Eliminated</div>
+                <div class="card-desc">
+                    By implementing <strong>Groth16 ZK-Proofs</strong>, the system successfully authenticates users without ever storing passwords or hashes on the server.
+                </div>
+                <div class="stat-badge">
+                    <i class="ph-bold ph-lock-key"></i> Zero-Knowledge
+                </div>
+            </div>
+
+            <div class="holo-card c-purple anim-delay-2">
+                <div class="icon-hex">
+                    <i class="ph-fill ph-brain"></i>
+                </div>
+                <div class="card-title">"Blind Spot"<br>Resolved</div>
+                <div class="card-desc">
+                    The <strong>On-Device AI</strong> effectively detects malicious behavioral patterns locally. This ensures threat visibility without breaking End-to-End Encryption.
+                </div>
+                <div class="stat-badge">
+                    <i class="ph-bold ph-eye-slash"></i> Privacy Preserved
+                </div>
+            </div>
+
+            <div class="holo-card c-green anim-delay-3">
+                <div class="icon-hex">
+                    <i class="ph-fill ph-buildings"></i>
+                </div>
+                <div class="card-title">Enterprise Security<br>for SMEs</div>
+                <div class="card-desc">
+                    SentriZK proves that high-grade security does not require complex infrastructure. The <strong>Lightweight Architecture</strong> is fully optimized for standard mobile hardware.
+                </div>
+                <div class="stat-badge">
+                    <i class="ph-bold ph-check-square"></i> Feasibility Proven
+                </div>
+            </div>
+
+        </div>
+
+        <div class="final-box">
+            <div class="final-text">
+                SentriZK successfully delivers a <span class="highlight-text">Secure, Private, and Intelligent</span><br>
+                communication framework ready for the modern threat landscape.
+            </div>
+            
+            <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 20px;">
+                <i class="ph-duotone ph-star-four" style="color:rgba(255,255,255,0.3); font-size: 1.5rem; animation: pulse 2s infinite;"></i>
+                <i class="ph-duotone ph-star-four" style="color:rgba(255,255,255,0.3); font-size: 1.5rem; animation: pulse 2s infinite 0.5s;"></i>
+                <i class="ph-duotone ph-star-four" style="color:rgba(255,255,255,0.3); font-size: 1.5rem; animation: pulse 2s infinite 1s;"></i>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.querySelectorAll('.holo-card').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
+    </script>
+
+</body>
+</html>

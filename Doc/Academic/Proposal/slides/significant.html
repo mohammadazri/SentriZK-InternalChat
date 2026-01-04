@@ -168,6 +168,13 @@
             flex-grow: 1; /* Pushes bottom element down */
         }
 
+        /* Larger emphasis text for key descriptions */
+        .large-text {
+            font-size: 1.25rem; /* increased from 1.1rem */
+            line-height: 1.7;
+            color: var(--text-muted);
+        }
+
         /* Bottom Impact Tag */
         .impact-tag {
             margin-top: 2rem;
@@ -223,7 +230,7 @@
                 </div>
                 <div class="card-title">Eliminates Credential Theft</div>
                 <p class="card-desc">
-                    By implementing ZKP, the system proves identity mathematically without the server ever knowing or storing the user's password.
+                    <span class="large-text">By implementing ZKP, the system proves identity mathematically without the server ever knowing or storing the user's password.</span>
                 </p>
                 <div class="impact-tag">Prevents Data Breaches</div>
             </div>
@@ -234,7 +241,7 @@
                 </div>
                 <div class="card-title">Privacy-Preserving Threat Detection</div>
                 <p class="card-desc">
-                    Organizations no longer have to choose between encryption and security. Edge AI detects threats locally, ensuring compliance with laws like GDPR.
+                    <span class="large-text">Organizations no longer have to choose between encryption and security. Edge AI detects threats locally, ensuring compliance with laws like GDPR.</span>
                 </p>
                 <div class="impact-tag">Solves "Blind Spot"</div>
             </div>
@@ -245,7 +252,7 @@
                 </div>
                 <div class="card-title">Cost-Effective Solution for SMEs</div>
                 <p class="card-desc">
-                    Utilizes open-source tools (SnarkJS, TensorFlow Lite) to provide enterprise-grade security on standard hardware, making it accessible to smaller companies.
+                    <span class="large-text">Utilizes open-source tools (SnarkJS, TensorFlow Lite) to provide enterprise-grade security on standard hardware, making it accessible to smaller companies.</span>
                 </p>
                 <div class="impact-tag">High Access, Low Cost</div>
             </div>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentriZK - Sign In Flow</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <link rel="stylesheet" href="phone.css">
+
+    <style>
+        /* --- SLIDE 3 SPECIFIC LAYOUT --- */
+        .auth-grid {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 2.5rem; /* Slightly wider gap since there are only 3 phones */
+            margin-top: 1.5rem;
+            height: 100%;
+            width: 100%;
+        }
+
+        /* Container for each step */
+        .step-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            flex: 1; 
+        }
+
+        /* Phone Size (Standard) */
+        .phone-auth {
+            width: 260px; /* Standard width for 3-column layout */
+            height: 560px;
+        }
+
+        /* Connector Arrows */
+        .flow-arrow {
+            position: absolute;
+            top: 45%; 
+            right: -2rem;
+            font-size: 2rem;
+            color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-50%);
+            z-index: 0;
+        }
+        
+        /* Staggered Animations */
+        .fade-1 { animation-delay: 0.1s; }
+        .fade-2 { animation-delay: 0.25s; }
+        .fade-3 { animation-delay: 0.4s; }
+
+        /* Highlight for important words (Gold version) */
+        .highlight {
+            background: rgba(245, 158, 11, 0.12);
+            color: var(--accent-gold);
+            padding: 0.15rem 0.4rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-left: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="grid-lines"></div>
+    <div class="glow-spot" style="right: -10%; left: auto; background: radial-gradient(circle, rgba(245, 158, 11, 0.12) 0%, transparent 70%);"></div>
+
+    <div class="container">
+        
+        <header>
+            <div>
+                <div class="h-sub" style="color:var(--accent-gold)">Authentication Protocol</div>
+                <div class="h-main" style="font-size: 2.5rem;">Proof of Identity</div>
+            </div>
+            <div class="status-pill" style="color:var(--accent-gold); border-color:rgba(245, 158, 11, 0.3); background:rgba(245, 158, 11, 0.1);">
+                <div class="pulse-dot" style="background:var(--accent-gold); box-shadow:0 0 10px var(--accent-gold);"></div>
+                Groth16 Verification
+            </div>
+        </header>
+
+        <div class="auth-grid">
+
+            <div class="step-container fade-1">
+                <div class="device-wrapper phone-auth">
+                    <div class="device-screen">
+                        <div class="dynamic-island"></div>
+                        <div class="glare"></div>
+                        <img src="./diagram/ss/Signin/signin_info.png" class="ss-img" alt="Login Challenge">
+                    </div>
+                </div>
+                <div class="step-label">
+                    <div class="sl-num" style="color:var(--accent-gold)">Step 01</div>
+                    <div class="sl-title">Identify</div>
+                    <div class="sl-desc">Server issues a random <span class="highlight">nonce</span> (challenge) to the device.</div>
+                </div>
+                <i class="ph-bold ph-arrow-right flow-arrow"></i>
+            </div>
+
+            <div class="step-container fade-2">
+                <div class="device-wrapper phone-auth">
+                    <div class="device-screen">
+                        <div class="dynamic-island"></div>
+                        <div class="glare"></div>
+                        <img src="./diagram/ss/Signin/password.png" class="ss-img" alt="Password Input">
+                    </div>
+                </div>
+                <div class="step-label">
+                    <div class="sl-num" style="color:var(--accent-gold)">Step 02</div>
+                    <div class="sl-title">Calculate Proof</div>
+                    <div class="sl-desc">Input used locally to generate <span class="highlight">ZK-Proof</span>. Password never sent.</div>
+                </div>
+                <i class="ph-bold ph-arrow-right flow-arrow"></i>
+            </div>
+
+            <div class="step-container fade-3">
+                <div class="device-wrapper phone-auth">
+                    <div class="device-screen">
+                        <div class="dynamic-island"></div>
+                        <div class="glare"></div>
+                        <img src="./diagram/ss/Signin/successfull.png" class="ss-img" alt="Login Success">
+                    </div>
+                </div>
+                <div class="step-label">
+                    <div class="sl-num" style="color:var(--accent-gold)">Step 03</div>
+                    <div class="sl-title">Access Granted</div>
+                    <div class="sl-desc">Server verifies the math. <span class="highlight">Session Token</span> issued.</div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>

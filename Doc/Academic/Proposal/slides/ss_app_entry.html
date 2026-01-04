@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentriZK - App Entry</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <link rel="stylesheet" href="phone.css">
+
+    <style>
+        /* Specific positioning for the two phones in Slide 1 */
+        
+        /* The Visual Container */
+        .visual-block-s1 {
+            position: relative;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Phone 1: Front and Center */
+        .phone-main {
+            z-index: 10; /* Bring to front */
+            transform: rotate(-5deg); /* Slight tilt */
+            /* We override the width/height slightly to fit the split layout perfectly */
+            width: 300px;
+            height: 620px;
+        }
+
+        /* Phone 2: Tucked Behind */
+        .phone-sec {
+            position: absolute;
+            right: 10px;
+            top: 50px;
+            z-index: 1; /* Send to back */
+            opacity: 0.6; /* Fade it out slightly */
+            transform: rotate(10deg) scale(0.9); /* Tilt opposite way and shrink */
+            width: 300px;
+            height: 620px;
+            pointer-events: none;
+        }
+
+        /* Text Entry Animation */
+        .content-block { animation: slideInLeft 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        @keyframes slideInLeft { from { opacity:0; transform:translateX(-50px); } to { opacity:1; transform:translateX(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="grid-lines"></div>
+    <div class="glow-spot"></div>
+
+    <div class="container">
+        
+        <header>
+            <div>
+                <div class="h-sub">Screenshot</div>
+                <div class="h-main" style="font-size: 2.5rem;">Mobile Apk</div>
+            </div>
+            <div class="status-pill">
+                <div class="pulse-dot"></div>
+                30% Prototype
+            </div>
+        </header>
+
+        <div class="split-layout">
+            
+            <div class="content-block" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <div>
+                    <h1 style="font-size: 3.5rem; font-weight: 700; line-height: 1.1; margin-bottom: 0.5rem;"> System Entry Point <br><span style="color:var(--accent-blue)">Initialization</span></h1>
+                    <div style="height: 4px; width: 60px; background: var(--accent-blue); border-radius: 2px;"></div>
+                </div>
+                
+                <p style="font-size: 1.1rem; color: var(--text-muted); line-height: 1.6; max-width: 500px;">
+                   Main home screen where users can create a new identity or log in to an existing one using secure methods
+                </p>
+
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <div style="padding: 8px 16px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; display: flex; align-items: center; gap: 8px;">
+                        <i class="ph-bold ph-android-logo" style="color:var(--accent-blue)"></i> Flutter
+                    </div>
+                    <div style="padding: 8px 16px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; display: flex; align-items: center; gap: 8px;">
+                        <i class="ph-bold ph-wallet" style="color:var(--accent-blue)"></i> Web3 Wallet
+                    </div>
+                </div>
+            </div>
+
+            <div class="visual-block-s1">
+                
+                <div class="device-wrapper phone-main">
+                    <div class="device-screen">
+                        <div class="dynamic-island"></div>
+                        <div class="glare"></div>
+                        <img src="./diagram/ss/Create_Account/main.png" class="ss-img" alt="Main Landing">
+                    </div>
+                </div>
+
+                <div class="device-wrapper phone-sec">
+                    <div class="device-screen">
+                        <div class="dynamic-island"></div>
+                        <div class="glare"></div>
+                        <img src="./diagram/ss/Create_Account/connect_wallet.png" class="ss-img" alt="Connect Wallet">
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
