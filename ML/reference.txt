@@ -1,0 +1,2 @@
+https://www.kaggle.com/datasets/julian3833/jigsaw-multilingual-toxic-comment-classification
+https://www.kaggle.com/datasets/uciml/sms-spam-collection-dataset
