@@ -1,0 +1,50 @@
+flowchart TB
+    %% --- STYLE DEFINITIONS ---
+    classDef mobile fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
+    classDef decision fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,color:#000
+    classDef warning fill:#ffccbc,stroke:#ff5722,stroke-width:2px,color:#000
+    classDef danger fill:#ffcdd2,stroke:#c62828,stroke-width:2px,color:#000
+
+    Y["Receiver Gets Alert"]
+    Y --> Z["Fetch from Firestore"]
+
+    %% --- PART 2: RECEIVER LOGIC STARTS ---
+    Z --> AA{"Has URL Links?"}
+    
+    AA -- No --> BB["Proceed to Decrypt"]
+    AA -- Yes --> CC["Layer 1: Homograph Check"]
+    
+    CC --> DD{"Unicode Tricks Found?"}
+    DD -- Yes --> EE["Tag Orange Warning"]
+    DD -- No --> FF["Layer 2: Local DB Check"]
+    
+    EE --> BB
+    
+    FF --> GG{"In Phishing DB?"}
+    GG -- Yes --> HH["Tag Red Warning"]
+    GG -- No --> II["Layer 3: Active Check"]
+    
+    HH --> BB
+    
+    II --> OO{"User Clicks URL?"}
+    OO -- No --> BB
+    OO -- Yes --> PP["Query Safe Browsing"]
+    
+    PP --> QQ{"API Safe Result?"}
+    QQ -- Yes --> RR["Allow URL Open"]
+    QQ -- No --> SS["Block URL"]
+    
+    RR --> BB
+    SS --> BB
+    
+    BB --> JJ["Decrypt Message"]
+    JJ --> KK["Display to User"]
+    KK --> LL["Store in Local DB"]
+    LL --> MM["Delete from Firestore"]
+    MM --> NN(["Message Local Only"])
+
+    %% --- APPLY CLASSES ---
+    class W,X,Y,Z,BB,CC,FF,II,PP,RR,JJ,KK,LL,MM,NN mobile
+    class AA,DD,GG,OO,QQ decision
+    class EE warning
+    class HH,SS danger

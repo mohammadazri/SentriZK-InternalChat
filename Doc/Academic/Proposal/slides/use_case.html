@@ -16,9 +16,10 @@
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             
-            /* Brand Colors for Legend */
-            --c-mobile: #3b82f6;
-            --c-server: #10b981;
+            /* Legend Accent Colors */
+            --c-actor: #f472b6;  /* Pink for Actors */
+            --c-scope: #3b82f6;  /* Blue for Boundary */
+            --c-arrow: #10b981;  /* Emerald for Relationships */
             
             --glass-bg: rgba(15, 23, 42, 0.6);
             --glass-border: rgba(255, 255, 255, 0.1);
@@ -69,7 +70,7 @@
         }
         
         .subtitle { 
-            font-family: 'JetBrains Mono'; color: var(--c-mobile); 
+            font-family: 'JetBrains Mono'; color: var(--c-scope); 
             font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 700;
         }
 
@@ -80,24 +81,36 @@
 
         /* Legend badges stacked vertically on the left */
         .legend { display: flex; flex-direction: column; gap: 0.8rem; align-items: flex-start; }
+        
         .badge {
-            display: flex; align-items: center; gap: 10px;
+            display: flex; align-items: center; gap: 12px;
             font-family: 'JetBrains Mono'; font-size: 0.8rem; 
-            padding: 8px 16px; border-radius: 8px;
+            padding: 10px 16px; border-radius: 8px;
             background: rgba(255,255,255,0.03);
             border: 1px solid var(--glass-border);
-            width: fit-content;
+            width: 100%; /* Make them equal width in column */
+            max-width: 280px;
+            color: var(--text-muted);
+            transition: border-color 0.3s ease;
         }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color); box-shadow: 0 0 8px var(--color); }
+        
+        .badge:hover {
+            border-color: var(--color);
+            color: var(--text-main);
+        }
+
+        .badge i {
+            font-size: 1.2rem;
+            color: var(--color);
+        }
 
         /* --- RIGHT SIDE (Full Height Diagram) --- */
         .diagram-viewport {
             position: relative;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
+            background: #ffffff; /* switched to white */
+            border: 1px solid rgba(0,0,0,0.08);
             border-radius: 16px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.12);
             
             /* Full fill */
             width: 100%; height: 100%;
@@ -109,13 +122,14 @@
         .diagram-viewport img {
             width: 100%; height: 100%;
             object-fit: contain; /* Ensures entire image is visible */
-            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+            filter: none; /* natural image on white background */
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
         }
 
         /* Decorative Corners */
         .corner {
             position: absolute; width: 25px; height: 25px;
-            border: 2px solid var(--text-muted); opacity: 0.2;
+            border: 2px solid rgba(0,0,0,0.12); opacity: 0.35;
             transition: opacity 0.3s, border-color 0.3s;
         }
         .tl { top: 15px; left: 15px; border-right: 0; border-bottom: 0; }
@@ -123,7 +137,7 @@
         .bl { bottom: 15px; left: 15px; border-right: 0; border-top: 0; }
         .br { bottom: 15px; right: 15px; border-left: 0; border-top: 0; }
 
-        .diagram-viewport:hover .corner { opacity: 1; border-color: var(--c-mobile); }
+        .diagram-viewport:hover .corner { opacity: 1; border-color: var(--c-scope); }
 
     </style>
 </head>
@@ -135,24 +149,31 @@
         
         <aside class="sidebar">
             <div class="title-group">
-                <div class="subtitle">System Architecture</div>
-                <h1>Use Case<br>Overview</h1>
+                <div class="subtitle">Figure 3.1</div>
+                <h1>Use Case<br>Diagram</h1>
             </div>
 
             <div class="description">
-                This diagram outlines the interaction flow between local mobile actors, the Zero-Knowledge authentication module, and the secure messaging backend.
+                A visual representation of the SentriZK system requirements, This Use Case Diagram illustrates how users interact with the system and the main functionalities provided.
             </div>
             
             <div class="legend">
-                <div class="badge" style="--color: var(--text-main);">
-                    <i class="ph-duotone ph-user"></i> &nbsp;Primary Actors
+                
+                <div class="badge" style="--color: var(--c-actor);">
+                    <i class="ph-duotone ph-user"></i>
+                    <span>Actors (Employee / AI)</span>
                 </div>
-                <div class="badge" style="--color: var(--c-mobile);">
-                    <span class="dot"></span> &nbsp;Client Environment
+
+                <div class="badge" style="--color: var(--c-scope);">
+                    <i class="ph-duotone ph-rectangle"></i>
+                    <span>System Boundary</span>
                 </div>
-                <div class="badge" style="--color: var(--c-server);">
-                    <span class="dot"></span> &nbsp;Remote Backend
+
+                <div class="badge" style="--color: var(--c-arrow);">
+                    <i class="ph-duotone ph-arrow-right"></i>
+                    <span>Relationships (Flow)</span>
                 </div>
+
             </div>
         </aside>
 
@@ -162,7 +183,7 @@
             <div class="corner bl"></div>
             <div class="corner br"></div>
 
-            <img src="diagram/use_case.png" alt="SentriZK Use Case Diagram">
+            <img src="diagram/use_case_diagram.png" alt="SentriZK Use Case Diagram">
         </main>
 
     </div>

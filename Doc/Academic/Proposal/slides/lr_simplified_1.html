@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentriZK - Literature Review Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #030712;
+            --primary: #3b82f6; /* Blue */
+            --accent: #10b981;  /* Green/Success */
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --table-header-bg: rgba(59, 130, 246, 0.1);
+            --row-hover: rgba(255, 255, 255, 0.05);
+        }
+
+        /* --- RESET --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            overflow-x: hidden;
+            width: 100vw;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 5rem;
+        }
+
+        /* --- BACKGROUND FX --- */
+        .bg-gradient {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(0,0,0,0) 70%);
+            top: -100px;
+            right: -100px;
+            z-index: 0;
+            filter: blur(80px);
+            pointer-events: none;
+        }
+
+        .bg-grid {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* --- CONTAINER --- */
+        .container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 1800px; /* Wider container for 6 columns */
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* --- HEADER --- */
+        header {
+            margin-bottom: 4rem;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 2rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 100px;
+            color: var(--accent);
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        h2.domain-title {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 2.1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            justify-content: center;
+            text-align: center;
+        }
+
+        /* Color psychology for each domain */
+        /* 1. ZKP (Purple/Blue) */
+        .domain-section:nth-of-type(1) .domain-title {
+            color: #8b5cf6; 
+            text-shadow: 0 2px 16px rgba(139, 92, 246, 0.15);
+        }
+        /* 2. E2EE (Orange/Amber) */
+        .domain-section:nth-of-type(2) .domain-title {
+            color: #fb923c; 
+            text-shadow: 0 2px 16px rgba(251,146,60,0.15);
+        }
+        /* 3. AI (Green) */
+        .domain-section:nth-of-type(3) .domain-title {
+            color: #22c55e; 
+            text-shadow: 0 2px 16px rgba(34,197,94,0.15);
+        }
+
+        h2.domain-title span {
+            font-size: 3rem;
+            opacity: 1;
+            font-weight: 900;
+            filter: brightness(1.7) drop-shadow(0 2px 8px rgba(37,99,235,0.18));
+        }
+
+        /* --- DOMAIN SECTIONS --- */
+        .domain-section {
+            margin-bottom: 5rem;
+            animation: fadeIn 1s ease-out;
+        }
+
+        /* --- TABLE STYLING --- */
+        .table-wrapper {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            overflow: hidden; 
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            table-layout: fixed; /* Enforce column widths */
+        }
+
+        th {
+            background: var(--table-header-bg);
+            text-align: left;
+            padding: 1rem;
+            font-weight: 600;
+            color: var(--primary);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--glass-border);
+            vertical-align: middle;
+        }
+
+        td {
+            padding: 1.2rem 1rem;
+            border-bottom: 1px solid var(--glass-border);
+            vertical-align: top;
+            color: var(--text-muted);
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: var(--row-hover);
+        }
+
+        /* Specific Column Widths (Total 100%) */
+        .col-ref { width: 18%; color: var(--text-main); font-weight: 500; font-size: 0.85rem;}
+        .col-focus { width: 18%; }
+        /* Highlighting the Method Column for better visibility */
+        .col-method { width: 12%; color: #fff; font-weight: 600; background: rgba(255,255,255,0.02); } 
+        .col-find { width: 18%; }
+        .col-str { width: 17%; border-left: 1px solid rgba(255,255,255,0.05); }
+        .col-fut { width: 17%; }
+
+        /* Highlight helpers */
+        .highlight-green { color: var(--accent); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; display: block; margin-bottom: 4px; }
+        .highlight-red { color: #f87171; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; display: block; margin-top: 8px; margin-bottom: 4px; }
+        
+        strong { color: var(--text-main); }
+        
+        .citation-box {
+            font-style: italic;
+            opacity: 0.9;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- MOBILE --- */
+        @media (max-width: 1200px) {
+            .container { padding: 1rem; }
+            table { table-layout: auto; }
+            th, td { display: block; width: 100%; }
+            th { display: none; } /* Hide headers on mobile */
+            tr { display: block; margin-bottom: 2rem; border: 1px solid var(--glass-border); border-radius: 12px; padding: 1rem; background: rgba(0,0,0,0.2); }
+            td { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0.8rem 0; }
+            td:last-child { border-bottom: none; }
+            .col-str { border-left: none; }
+            
+            /* Labels for mobile */
+            td::before {
+                content: attr(data-label);
+                display: block;
+                font-size: 0.7rem;
+                text-transform: uppercase;
+                color: var(--primary);
+                margin-bottom: 6px;
+                font-weight: 700;
+                letter-spacing: 1px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-grid"></div>
+    <div class="bg-gradient"></div>
+
+    <div class="container">
+        <header>
+            <div class="badge">BCSS Final Year Project</div>
+            <h1>Literature Review Matrix</h1>
+            <p style="color: var(--text-muted); max-width: 600px; margin-top: 1rem;">
+                A comprehensive 6-column analysis covering Zero-Knowledge Authentication, E2EE Protocols, and On-Device AI.
+            </p>
+        </header>
+
+        <div class="domain-section">
+            <h2 class="domain-title"><span>01</span> Zero-Knowledge Authentication</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="col-ref">Reference</th>
+                            <th class="col-focus">Focus & Problem Statement</th>
+                            <th class="col-method">Technical Approach</th>
+                            <th class="col-find">Findings</th>
+                            <th class="col-str">Strength / Weakness</th>
+                            <th class="col-fut">Future Direction</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-ref" data-label="Reference">
+                                <div class="citation-box">
+                                    Bhattacharya, S., et al. (2024). Enhancing digital privacy: The application of zero-knowledge proofs in authentication systems.
+                                </div>
+                            </td>
+                            <td class="col-focus" data-label="Focus & Problem">
+                                <strong>Focus:</strong> ZKPs (SNARKs vs STARKs).<br><br>
+                                <strong>Problem:</strong> Centralized password databases create single points of failure.
+                            </td>
+                            <td class="col-method" data-label="Technical Approach">zk-SNARKs & zk-STARKs</td>
+                            <td class="col-find" data-label="Findings">ZKPs verify users without data transmission. STARKs avoid "trusted setup" but have larger proof sizes.</td>
+                            <td class="col-str" data-label="Strength/Weakness">
+                                <span class="highlight-green">Strength</span> Distinguishes zk-SNARK vs zk-STARK.
+                                <span class="highlight-red">Weakness</span> High complexity barriers.
+                            </td>
+                            <td class="col-fut" data-label="Future Direction">Developing user-friendly frameworks.</td>
+                        </tr>
+                        <tr>
+                            <td class="col-ref" data-label="Reference">
+                                <div class="citation-box">
+                                    Chen, Z., et al. (2023). A survey on zero-knowledge authentication for Internet of Things. <em>Electronics</em>.
+                                </div>
+                            </td>
+                            <td class="col-focus" data-label="Focus & Problem">
+                                <strong>Focus:</strong> ZKP on weak devices (Mobile/IoT).<br><br>
+                                <strong>Problem:</strong> Standard ZKP is too heavy for devices with low battery.
+                            </td>
+                            <td class="col-method" data-label="Technical Approach">Lightweight ZKP (Groth16)</td>
+                            <td class="col-find" data-label="Findings">Non-interactive ZKP and zk-SNARKs (Groth16) are best for low-power environments.</td>
+                            <td class="col-str" data-label="Strength/Weakness">
+                                <span class="highlight-green">Strength</span> Validates lightweight ZKP.
+                                <span class="highlight-red">Weakness</span> Focuses mainly on sensors.
+                            </td>
+                            <td class="col-fut" data-label="Future Direction">Optimizing the "Setup Phase".</td>
+                        </tr>
+                        <tr>
+                            <td class="col-ref" data-label="Reference">
+                                <div class="citation-box">
+                                    Luong, D. A., & Park, J. H. (2023). Privacy-preserving identity management system on blockchain using zk-SNARK.
+                                </div>
+                            </td>
+                            <td class="col-focus" data-label="Focus & Problem">
+                                <strong>Focus:</strong> Self-Sovereign Identity.<br><br>
+                                <strong>Problem:</strong> "Log in with Google" tracks user activity; users lose privacy.
+                            </td>
+                            <td class="col-method" data-label="Technical Approach">Blockchain + zk-SNARKs</td>
+                            <td class="col-find" data-label="Findings">Verified users without storing passwords. Computation was heavy on client side.</td>
+                            <td class="col-str" data-label="Strength/Weakness">
+                                <span class="highlight-green">Strength</span> Practical implementation details.
+                                <span class="highlight-red">Weakness</span> Blockchain fees/cost.
+                            </td>
+                            <td class="col-fut" data-label="Future Direction">Reducing proof generation cost.</td>
+                        </tr>
+                        <tr>
+                            <td class="col-ref" data-label="Reference">
+                                <div class="citation-box">
+                                    [Authored Group]. (2025). A secure framework for privacy-preserving analytics in healthcare records.
+                                </div>
+                            </td>
+                            <td class="col-focus" data-label="Focus & Problem">
+                                <strong>Focus:</strong> ZKP for sensitive records.<br><br>
+                                <strong>Problem:</strong> Privacy laws (GDPR) make sharing data for analysis difficult.
+                            </td>
+                            <td class="col-method" data-label="Technical Approach">Privacy-Preserving Framework</td>
+                            <td class="col-find" data-label="Findings">ZKP allows "Auditability without Visibility"—checking math without seeing data.</td>
+                            <td class="col-str" data-label="Strength/Weakness">
+                                <span class="highlight-green">Strength</span> High-stakes trust model.
+                                <span class="highlight-red">Weakness</span> Complex multi-party setup.
+                            </td>
+                            <td class="col-fut" data-label="Future Direction">Integration with Federated Learning.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="domain-section">
+            <h2 class="domain-title"><span>02</span> End-to-End Encryption (E2EE) Protocols</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="col-ref">Reference</th>
+                            <th class="col-focus">Focus & Problem Statement</th>
+                            <th class="col-method">Technical Approach</th>
+                            <th class="col-find">Findings</th>
+                            <th class="col-str">Strength / Weakness</th>
+                            <th class="col-fut">Future Direction</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-ref" data-label="Reference">
+                                <div class="citation-box">
+                                    Alatawi, M., & Saxena, N. (2023). SoK: An analysis of end-to-end encryption and authentication ceremonies.
+                                </div>
+                            </td>
+                            <td class="col-focus" data-label="Focus & Problem">
+                                <strong>Focus:</strong> Signal Protocol & Key Verification.<br><br>
+                                <strong>Problem:</strong> Encryption works, but users fail to verify keys (QR codes) manually.
+                            </td>
+                            <td class="col-method" data-label="Technical Approach">Signal Protocol & Double Ratchet</td>
+                            <td class="col-find" data-label="Findings">Double Ratchet Algorithm is robust, but "Authentication Ceremonies" are the weak link.</td>
+                            <td class="col-str" data-label="Strength/Weakness">
+                                <span class="highlight-green">Strength</span> Identifies human error in E2EE.
+                                <span class="highlight-red">Weakness</span> No technical fix proposed.
+                            </td>
+                            <td class="col-fut" data-label="Future Direction">Automated authentication ceremonies.</td>
+                        </tr>
+                        <tr>
+                            <td class="col-ref" data-label="Reference">
+                                <div class="citation-box">
+                                    Ilesanmi, M. (2025). Threat modeling for enterprise secure messaging applications. <em>Journal of Cybersecurity</em>.
+                                </div>
+                            </td>
+                            <td class="col-focus" data-label="Focus & Problem">
+                                <strong>Focus:</strong> Attack surfaces in Slack/Teams.<br><br>
+                                <strong>Problem:</strong> Metadata (who talks to whom) is often not encrypted, even if messages are.
+                            </td>
+                            <td class="col-method" data-label="Technical Approach">STRIDE Threat Modeling</td>
+                            <td class="col-find" data-label="Findings">E2EE protects transit, but endpoint security and metadata remain vulnerable.</td>
+                            <td class="col-str" data-label="Strength/Weakness">
+                                <span class="highlight-green">Strength</span> Specific to chat domain.
+                                <span class="highlight-red">Weakness</span> Theoretical modeling only.
+                            </td>
+                            <td class="col-fut" data-label="Future Direction">Minimizing metadata collection.</td>
+                        </tr>
+                        <tr>
+                            <td class="col-ref" data-label="Reference">
+                                <div class="citation-box">
+                                    Barnes, R., et al. (2023). The Messaging Layer Security (MLS) Protocol (RFC 9420). <em>IETF Standards Track</em>.
+                                </div>
+                            </td>
+                            <td class="col-focus" data-label="Focus & Problem">
+                                <strong>Focus:</strong> Scaling E2EE for Groups.<br><br>
+                                <strong>Problem:</strong> Signal Protocol (Double Ratchet) is inefficient (slow) for large group chats.
+                            </td>
+                            <td class="col-method" data-label="Technical Approach">TreeKEM (Group Key Agreement)</td>
+                            <td class="col-find" data-label="Findings">Uses binary trees to manage group keys, reducing cost from linear O(n) to logarithmic O(log n).</td>
+                            <td class="col-str" data-label="Strength/Weakness">
+                                <span class="highlight-green">Strength</span> High Scalability.
+                                <span class="highlight-red">Weakness</span> New/Complex to implement.
+                            </td>
+                            <td class="col-fut" data-label="Future Direction">Interoperability (MIMI IETF).</td>
+                        </tr>
+                        <tr>
+                            <td class="col-ref" data-label="Reference">
+                                <div class="citation-box">
+                                    [Research Group]. (2025). Implementation of Secure E2EE Chat Application in Microservice Architecture. <em>MDPI</em>.
+                                </div>
+                            </td>
+                            <td class="col-focus" data-label="Focus & Problem">
+                                <strong>Focus:</strong> Full Stack Implementation.<br><br>
+                                <strong>Problem:</strong> Integrating encryption keys securely between client and server APIs.
+                            </td>
+                            <td class="col-method" data-label="Technical Approach">AES-256 & Diffie-Hellman</td>
+                            <td class="col-find" data-label="Findings">Successfully integrated DH Key Exchange for shared secrets and AES-256 for message payload encryption.</td>
+                            <td class="col-str" data-label="Strength/Weakness">
+                                <span class="highlight-green">Strength</span> Practical Dev Guide.
+                                <span class="highlight-red">Weakness</span> Standard architecture (not novel).
+                            </td>
+                            <td class="col-fut" data-label="Future Direction">Adding Post-Quantum layers.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="domain-section">
+            <h2 class="domain-title"><span>03</span> Current Machine-Learning Anomaly Detection (On-Device)</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="col-ref">Reference</th>
+                            <th class="col-focus">Focus & Problem Statement</th>
+                            <th class="col-method">Technical Approach</th>
+                            <th class="col-find">Findings</th>
+                            <th class="col-str">Strength / Weakness</th>
+                            <th class="col-fut">Future Direction</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-ref" data-label="Reference">
+                                <div class="citation-box">
+                                    Srinivasan, K., et al. (2025). Insider threat detection and secure data transfer leveraging bidirectional LSTM.
+                                </div>
+                            </td>
+                            <td class="col-focus" data-label="Focus & Problem">
+                                <strong>Focus:</strong> Insider Threat Detection.<br><br>
+                                <strong>Problem:</strong> Standard rules miss subtle behavioral changes in authorized users.
+                            </td>
+                            <td class="col-method" data-label="Technical Approach">Bi-Directional LSTM (Deep Learning)</td>
+                            <td class="col-find" data-label="Findings">Used Bi-LSTM to understand "context" of user actions, achieving higher accuracy than static rules.</td>
+                            <td class="col-str" data-label="Strength/Weakness">
+                                <span class="highlight-green">Strength</span> High accuracy on time-series.
+                                <span class="highlight-red">Weakness</span> Computationally heavy.
+                            </td>
+                            <td class="col-fut" data-label="Future Direction"> optimizing for edge devices.</td>
+                        </tr>
+                        <tr>
+                            <td class="col-ref" data-label="Reference">
+                                <div class="citation-box">
+                                    Gaurav, A., et al. (2025). AI-driven smishing detection in Android devices using TinyBERT.
+                                </div>
+                            </td>
+                            <td class="col-focus" data-label="Focus & Problem">
+                                <strong>Focus:</strong> On-Device Smishing (SMS Phishing).<br><br>
+                                <strong>Problem:</strong> Standard BERT models are too big for phones.
+                            </td>
+                            <td class="col-method" data-label="Technical Approach">TinyBERT (Lightweight AI)</td>
+                            <td class="col-find" data-label="Findings">TinyBERT achieved 96.8% accuracy on Android with low battery impact.</td>
+                            <td class="col-str" data-label="Strength/Weakness">
+                                <span class="highlight-green">Strength</span> Tailored for Android OS.
+                                <span class="highlight-red">Weakness</span> Limited to text analysis.
+                            </td>
+                            <td class="col-fut" data-label="Future Direction">Real-time prevention systems.</td>
+                        </tr>
+                        <tr>
+                            <td class="col-ref" data-label="Reference">
+                                <div class="citation-box">
+                                    Bispo, G. D., et al. (2025). PHILDER: Lightweight framework for intelligent phishing detection on resource-limited devices.
+                                </div>
+                            </td>
+                            <td class="col-focus" data-label="Focus & Problem">
+                                <strong>Focus:</strong> Edge Computing Detection.<br><br>
+                                <strong>Problem:</strong> Cloud detection causes latency and privacy risks (URL leakage).
+                            </td>
+                            <td class="col-method" data-label="Technical Approach">Edge AI (ARM Architecture)</td>
+                            <td class="col-find" data-label="Findings">Proved that Edge AI can detect threats in <100ms without sending data to the cloud.</td>
+                            <td class="col-str" data-label="Strength/Weakness">
+                                <span class="highlight-green">Strength</span> Validates local privacy.
+                                <span class="highlight-red">Weakness</span> Limited to URL detection.
+                            </td>
+                            <td class="col-fut" data-label="Future Direction">Expanding to QR codes.</td>
+                        </tr>
+                        <tr>
+                            <td class="col-ref" data-label="Reference">
+                                <div class="citation-box">
+                                    Natha, S. (2022). A systematic review of anomaly detection using machine and deep learning techniques.
+                                </div>
+                            </td>
+                            <td class="col-focus" data-label="Focus & Problem">
+                                <strong>Focus:</strong> ML vs Deep Learning.<br><br>
+                                <strong>Problem:</strong> Static algorithms (like SVM) fail when anomalies change nature.
+                            </td>
+                            <td class="col-method" data-label="Technical Approach">Deep Learning vs. SVM</td>
+                            <td class="col-find" data-label="Findings">Deep Learning outperforms ML on high-dimensional data but requires more resources.</td>
+                            <td class="col-str" data-label="Strength/Weakness">
+                                <span class="highlight-green">Strength</span> Critiques One-Class SVM.
+                                <span class="highlight-red">Weakness</span> High computational cost.
+                            </td>
+                            <td class="col-fut" data-label="Future Direction">Resource-constrained ML.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

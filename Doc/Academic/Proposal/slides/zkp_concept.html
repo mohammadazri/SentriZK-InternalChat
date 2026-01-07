@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core Concept | ZKP</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+
+    <style>
+        :root {
+            --bg-void: #050505;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            
+            /* ZKP Theme Color (Violet) */
+            --accent: #8b5cf6; 
+            --accent-glow: rgba(139, 92, 246, 0.4);
+            
+            --glass: rgba(255, 255, 255, 0.02);
+            --border: rgba(255, 255, 255, 0.08);
+
+            /* Sizing */
+            --h1-size: clamp(2rem, 4vw, 3.5rem);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-void);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- BACKGROUND --- */
+        .fog {
+            position: absolute;
+            width: 100vw; height: 100vh;
+            background: radial-gradient(circle at 50% 10%, rgba(139, 92, 246, 0.08), transparent 50%);
+            z-index: 0;
+            filter: blur(60px);
+        }
+
+        .bg-grid {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 1;
+            mask-image: radial-gradient(circle at center, black 60%, transparent 100%);
+        }
+
+        /* --- CONTAINER --- */
+        .container {
+            position: relative;
+            z-index: 10;
+            width: 90%;
+            height: 90vh;
+            max-width: 1400px;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            gap: 2vh;
+        }
+
+        /* --- HEADER --- */
+        header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .eyebrow {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        h1 {
+            font-size: var(--h1-size);
+            font-weight: 700;
+            background: linear-gradient(to right, #fff, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.1;
+        }
+
+        /* --- MAIN LAYOUT (Diagram + Explanation) --- */
+        .content-area {
+            display: grid;
+            grid-template-rows: 2fr 1fr; /* Diagram gets more space */
+            gap: 1.5rem;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* --- 1. DIAGRAM BOX --- */
+        .diagram-container {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Label for the box */
+        .box-label {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            font-family: 'Space Grotesk';
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: rgba(0,0,0,0.3);
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+
+        /* Mermaid Styling Overrides */
+        .mermaid {
+            width: 90%;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* --- 2. EXPLANATION CARDS --- */
+        .explanation-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .exp-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        .exp-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px -5px rgba(0,0,0,0.5);
+        }
+
+        .card-icon {
+            font-size: 1.8rem;
+            color: var(--accent);
+            margin-bottom: 0.8rem;
+        }
+
+        .card-title {
+            font-family: 'Space Grotesk';
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-text {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* --- ANIMATION --- */
+        .diagram-container { animation: slideUp 0.8s ease-out; }
+        .exp-card:nth-child(1) { animation: slideUp 0.8s ease-out 0.2s backwards; }
+        .exp-card:nth-child(2) { animation: slideUp 0.8s ease-out 0.3s backwards; }
+        .exp-card:nth-child(3) { animation: slideUp 0.8s ease-out 0.4s backwards; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="fog"></div>
+    <div class="bg-grid"></div>
+
+    <div class="container">
+        
+        <header>
+            <div>
+                <div class="eyebrow">SentriZK Core Concepts</div>
+                <h1>What is Zero-Knowledge Proof?</h1>
+            </div>
+            </header>
+
+        <div class="content-area">
+            
+            <div class="diagram-container">
+                <div class="box-label">Figure 1.0: Authentication Classification</div>
+                
+                <div class="mermaid">
+                    %%{
+                      init: {
+                        'theme': 'dark',
+                        'themeVariables': {
+                          'primaryColor': '#1e293b',
+                          'primaryTextColor': '#fff',
+                          'primaryBorderColor': '#334155',
+                          'lineColor': '#64748b',
+                          'secondaryColor': '#006100',
+                          'tertiaryColor': '#fff'
+                        }
+                      }
+                    }%%
+                    graph TD
+                        A[Authentication] --> B[Traditional]
+                        A --> C[Biometric]
+                        B --> D[Knowledge-Based <br/>'What you know?']
+                        B --> E[Object-Based <br/>'What you have?']
+                        D --> F[Text-based Password]
+                        D --> G[Picture-based Password]
+                        D --> H(Zero-Knowledge Proof <br/>'ZKP - Groth16')
+                        E --> I[Token]
+                        C --> J[Physiological <br/>'What you are?']
+                        J --> L[Face Recognition]
+                        J --> M[Finger Print]
+                        J --> N[Iris Recognition]
+                        
+                        style H fill:#4c1d95,stroke:#8b5cf6,stroke-width:3px,color:#fff
+                        style A fill:#334155,stroke:#475569,color:#fff
+                        linkStyle default stroke:#64748b,stroke-width:2px;
+                </div>
+            </div>
+
+            <div class="explanation-grid">
+                
+                <div class="exp-card">
+                    <div class="card-icon"><i class="ph-fill ph-tree-structure"></i></div>
+                    <div class="card-title">Where it Fits</div>
+                    <p class="card-text">
+                        ZKP is an evolution of <strong>Knowledge-Based</strong> authentication. It relies on "what you know" (like a password) but changes <em>how</em> that knowledge is verified.
+                    </p>
+                </div>
+
+                <div class="exp-card">
+                    <div class="card-icon"><i class="ph-fill ph-lock-key-open"></i></div>
+                    <div class="card-title">The Core Difference</div>
+                    <p class="card-text">
+                        Unlike passwords where you <strong>give</strong> the secret to the server, ZKP allows you to <strong>prove</strong> you know the secret without ever sending it.
+                    </p>
+                </div>
+
+                <div class="exp-card">
+                    <div class="card-icon"><i class="ph-fill ph-shield-check"></i></div>
+                    <div class="card-title">Why It Matters</div>
+                    <p class="card-text">
+                        Total privacy. The server verifies your identity mathematically (using Groth16), but your actual data never leaves your device.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
