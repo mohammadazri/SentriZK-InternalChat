@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:146.0) Gecko/20100101 Firefox/146.0" version="29.2.10">
   <diagram name="Page-1" id="l5mMUGhg3lc9wP_iDpxk">
-    <mxGraphModel dx="1202" dy="692" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="1489" dy="873" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -13,16 +13,16 @@
         <mxCell id="oNQRB6AQn2kd-FmXS8Z4-6" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;strokeColor=light-dark(#000000,#CC0000);" value="Malicious Insider" vertex="1">
           <mxGeometry height="60" width="30" x="115" y="580" as="geometry" />
         </mxCell>
-        <mxCell id="oNQRB6AQn2kd-FmXS8Z4-7" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e51400;fontColor=#ffffff;strokeColor=#B20000;gradientColor=none;" value="Database Breach" vertex="1">
+        <mxCell id="oNQRB6AQn2kd-FmXS8Z4-7" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;fontColor=#000000;strokeColor=#B20000;gradientColor=none;" value="Database Breach" vertex="1">
           <mxGeometry height="70" width="140" x="285" y="200" as="geometry" />
         </mxCell>
-        <mxCell id="oNQRB6AQn2kd-FmXS8Z4-8" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e51400;fontColor=#ffffff;strokeColor=#B20000;gradientColor=none;" value="Credential Sniffing" vertex="1">
+        <mxCell id="oNQRB6AQn2kd-FmXS8Z4-8" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;fontColor=#000000;strokeColor=#B20000;gradientColor=none;" value="Credential Sniffing" vertex="1">
           <mxGeometry height="70" width="140" x="285" y="340" as="geometry" />
         </mxCell>
-        <mxCell id="oNQRB6AQn2kd-FmXS8Z4-9" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e51400;fontColor=#ffffff;strokeColor=#B20000;gradientColor=none;" value="Replay Authentication Proof" vertex="1">
+        <mxCell id="oNQRB6AQn2kd-FmXS8Z4-9" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;fontColor=#000000;strokeColor=#B20000;gradientColor=none;" value="Replay Authentication Proof" vertex="1">
           <mxGeometry height="70" width="140" x="285" y="500" as="geometry" />
         </mxCell>
-        <mxCell id="oNQRB6AQn2kd-FmXS8Z4-10" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e51400;fontColor=#ffffff;strokeColor=#B20000;gradientColor=none;" value="Send Malicious Link" vertex="1">
+        <mxCell id="oNQRB6AQn2kd-FmXS8Z4-10" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;fontColor=#000000;strokeColor=#B20000;gradientColor=none;" value="Send Malicious Link" vertex="1">
           <mxGeometry height="70" width="140" x="285" y="660" as="geometry" />
         </mxCell>
         <mxCell id="oNQRB6AQn2kd-FmXS8Z4-11" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="Store Identity Credential" vertex="1">
@@ -34,16 +34,16 @@
         <mxCell id="oNQRB6AQn2kd-FmXS8Z4-13" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="Send Encrypted Message" vertex="1">
           <mxGeometry height="70" width="140" x="595" y="610" as="geometry" />
         </mxCell>
-        <mxCell id="oNQRB6AQn2kd-FmXS8Z4-14" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#6d8764;fontColor=#ffffff;strokeColor=#3A5431;" value="One way Identity commitment (Poseidon)" vertex="1">
+        <mxCell id="oNQRB6AQn2kd-FmXS8Z4-14" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;fontColor=#006600;strokeColor=#3A5431;" value="One way Identity commitment (Poseidon)" vertex="1">
           <mxGeometry height="70" width="140" x="575" y="210" as="geometry" />
         </mxCell>
-        <mxCell id="oNQRB6AQn2kd-FmXS8Z4-15" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#6d8764;fontColor=#ffffff;strokeColor=#3A5431;" value="&lt;div&gt;Zero Knowledge Proof&lt;/div&gt;&lt;div&gt;(Groth 16)&lt;/div&gt;" vertex="1">
+        <mxCell id="oNQRB6AQn2kd-FmXS8Z4-15" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;fontColor=#006600;strokeColor=#3A5431;" value="&lt;div&gt;Zero Knowledge Proof&lt;/div&gt;&lt;div&gt;(Groth 16)&lt;/div&gt;" vertex="1">
           <mxGeometry height="70" width="140" x="585" y="310" as="geometry" />
         </mxCell>
-        <mxCell id="oNQRB6AQn2kd-FmXS8Z4-16" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#6d8764;fontColor=#ffffff;strokeColor=#3A5431;" value="Nonce based ZKP Challenge" vertex="1">
+        <mxCell id="oNQRB6AQn2kd-FmXS8Z4-16" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;fontColor=#006600;strokeColor=#3A5431;" value="Nonce based ZKP Challenge" vertex="1">
           <mxGeometry height="70" width="140" x="585" y="510" as="geometry" />
         </mxCell>
-        <mxCell id="oNQRB6AQn2kd-FmXS8Z4-17" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#6d8764;fontColor=#ffffff;strokeColor=#3A5431;" value="On device AI Threat Detection" vertex="1">
+        <mxCell id="oNQRB6AQn2kd-FmXS8Z4-17" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;fontColor=#006600;strokeColor=#3A5431;" value="On device AI Threat Detection" vertex="1">
           <mxGeometry height="70" width="140" x="595" y="720" as="geometry" />
         </mxCell>
         <mxCell id="oNQRB6AQn2kd-FmXS8Z4-18" edge="1" parent="1" source="oNQRB6AQn2kd-FmXS8Z4-7" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="oNQRB6AQn2kd-FmXS8Z4-11" value="">
@@ -143,7 +143,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="oNQRB6AQn2kd-FmXS8Z4-40" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeWidth=2;" value="" vertex="1">
-          <mxGeometry height="770" width="550" x="220" y="70" as="geometry" />
+          <mxGeometry height="770" width="550" x="240" y="70" as="geometry" />
         </mxCell>
         <mxCell id="oNQRB6AQn2kd-FmXS8Z4-41" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=#001DBC;fillColor=#0050ef;align=center;verticalAlign=middle;rounded=0;fontColor=#ffffff;" value="SentriZK Application Scope" vertex="1">
           <mxGeometry height="30" width="250" x="380" y="70" as="geometry" />

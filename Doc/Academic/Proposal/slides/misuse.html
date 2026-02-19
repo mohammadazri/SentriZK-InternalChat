@@ -108,10 +108,10 @@
         /* --- RIGHT SIDE (Full Height Diagram) --- */
         .diagram-viewport {
             position: relative;
-            background: var(--glass-bg); /* dark, glass-like panel */
+            background: #ffffff; /* White background for diagram only */
             border: 1px solid var(--glass-border);
             border-radius: 16px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
             width: 100%; height: 100%;
             display: flex; justify-content: center; align-items: center;
             padding: 1rem;
@@ -121,13 +121,14 @@
         .diagram-viewport img {
             width: 100%; height: 100%;
             object-fit: contain;
-            filter: drop-shadow(0 12px 30px rgba(0,0,0,0.7));
+            /* subtle shadow for white on white if image is white-bg */
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));
         }
 
-        /* Decorative Corners */
+        /* Decorative Corners (Darker for white background) */
         .corner {
             position: absolute; width: 25px; height: 25px;
-            border: 2px solid rgba(255,255,255,0.06); opacity: 0.2;
+            border: 2px solid rgba(0,0,0,0.1); opacity: 0.2;
             transition: opacity 0.3s, border-color 0.3s;
         }
         .tl { top: 15px; left: 15px; border-right: 0; border-bottom: 0; }
@@ -181,7 +182,7 @@
             <div class="corner bl"></div>
             <div class="corner br"></div>
 
-            <img src="diagram/misuse_case_diagram.svg" alt="SentriZK Misuse Case Diagram">
+            <img src="diagram/misuse_case_diagram.png" alt="SentriZK Misuse Case Diagram">
         </main>
 
     </div>

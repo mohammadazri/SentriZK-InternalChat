@@ -11,12 +11,14 @@ class SecureLinkText extends StatefulWidget {
   final String text;
   final TextStyle? textStyle;
   final TextStyle? linkStyle;
+  final bool enableSecurity;
 
   const SecureLinkText({
     Key? key,
     required this.text,
     this.textStyle,
     this.linkStyle,
+    this.enableSecurity = true,
   }) : super(key: key);
 
   @override
@@ -42,7 +44,13 @@ class _SecureLinkTextState extends State<SecureLinkText> {
   }
 
   Future<void> _analyzeText() async {
-    if (!UrlExtractor.containsUrl(widget.text)) return;
+    if (!widget.enableSecurity || !UrlExtractor.containsUrl(widget.text)) {
+      setState(() {
+        _securityResult = null;
+        _isAnalyzing = false;
+      });
+      return;
+    }
 
     print('\n🔷 [Widget] Starting analysis for message: "${widget.text}"');
     setState(() => _isAnalyzing = true);
@@ -162,6 +170,11 @@ class _SecureLinkTextState extends State<SecureLinkText> {
   }
 
   Future<void> _handleLinkTap(String url, UrlAnalysis? analysis) async {
+    if (!widget.enableSecurity) {
+      await _launchUrl(url);
+      return;
+    }
+
     if (analysis == null) {
       // No analysis yet, perform quick check
       final result = await MessageSecurityService.quickAnalyze(url);

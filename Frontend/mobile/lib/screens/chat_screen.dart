@@ -53,7 +53,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     _isar = isar;
-    _localMessagesStream = isar.localMessages.where().sortByTimestamp().watch(
+    _localMessagesStream = isar.localMessages.where().watch(
       fireImmediately: true,
     );
     _subscribeToIncoming();
@@ -121,7 +121,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   msg.receiverId == widget.username),
                         )
                         .toList()
-                      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+                      ..sort((a, b) => a.id.compareTo(b.id));
 
                 return ListView.builder(
                   padding: const EdgeInsets.all(8),
@@ -147,6 +147,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             SecureLinkText(
                               text: msg.content,
                               textStyle: const TextStyle(fontSize: 14),
+                              enableSecurity: !isMe,
                               linkStyle: TextStyle(
                                 color: isMe
                                     ? Colors.blue[800]
