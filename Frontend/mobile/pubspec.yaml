@@ -50,4 +50,5 @@ flutter:
   assets:
     - assets/
     - assets/security/
+    - assets/models/
 
