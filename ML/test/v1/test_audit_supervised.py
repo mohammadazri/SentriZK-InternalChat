@@ -17,18 +17,15 @@ def run_audit():
     DATA_PATH = os.path.join(BASE_DIR, "../../DataSet", "train_ready.csv")
     MODELS_DIR = os.path.join(BASE_DIR, "../../models")
     
-    # 1. LOAD ARTIFACTS
+    # 1. LOAD ARTIFACTS (Switched to Native Keras to fix Windows Flex Error)
     try:
         # Load Tokenizer
         with open(os.path.join(MODELS_DIR, 'sentrizk_tokenizer.pickle'), 'rb') as handle:
             tokenizer = pickle.load(handle)
         
-        # Load TFLite Model
-        interpreter = tf.lite.Interpreter(model_path=os.path.join(MODELS_DIR, 'sentrizk_model.tflite'))
-        interpreter.allocate_tensors()
-        
-        input_details = interpreter.get_input_details()
-        output_details = interpreter.get_output_details()
+        # Load Native Keras Model 
+        # (This bypasses the tf.lite.Interpreter completely for the local audit)
+        model = tf.keras.models.load_model(os.path.join(MODELS_DIR, 'sentrizk_model.keras'))
         
     except Exception as e:
         console.print(f"[bold red]Error loading models:[/bold red] {e}")
@@ -58,12 +55,14 @@ def run_audit():
         ("Please send the monthly report by 5pm.", 0, "Custom (Work)"),
         ("URGENT: Payroll suspended. Login to verify: bit.ly/fake", 1, "Custom (Phishing)"),
         ("Your account password expires today. Click here to reset.", 1, "Custom (Social Eng)"),
-        ("I'm on leave tomorrow, please contact Sarah.", 0, "Custom (OOO)")
+        ("I'm on leave tomorrow, please contact Sarah.", 0, "Custom (OOO)"),
+        ("Can you send me the CEO's private mobile number? It's an emergency.", 1, "Custom (Insider)"),
+        ("Hey IT, I forgot my admin password, can you bypass the system for me?", 1, "Custom (Bypass)")
     ]
     test_cases.extend(custom_cases)
 
     # 3. RUN AUDIT
-    table = Table(title="SentriZK Supervised Model Audit")
+    table = Table(title="SentriZK Bi-LSTM Native Audit")
     table.add_column("Message snippet", style="dim", width=40)
     table.add_column("Type", style="cyan", width=15)
     table.add_column("Threat Score", justify="right")
@@ -74,20 +73,19 @@ def run_audit():
     total_count = len(test_cases)
     
     # Threshold: Above 0.5 (50%) = Threat
-    # Since we used Sigmoid activation, the output is between 0 and 1.
     THRESHOLD = 0.5
+
+    console.print("\n[bold yellow]Running Bi-LSTM Inference...[/bold yellow]")
 
     for text, expected_label, source in test_cases:
         # Preprocess
         seq = tokenizer.texts_to_sequences([str(text)])
-        padded = pad_sequences(seq, maxlen=100, padding='post', truncating='post').astype(np.float32)
-
-        # Inference
-        interpreter.set_tensor(input_details[0]['index'], padded)
-        interpreter.invoke()
-        output_data = interpreter.get_tensor(output_details[0]['index'])
         
-        score = output_data[0][0]
+        # Keep maxlen at 120
+        padded = pad_sequences(seq, maxlen=120, padding='post', truncating='post')
+
+        # Inference (Using standard model.predict instead of interpreter)
+        score = model.predict(padded, verbose=0)[0][0]
         prediction_label = 1 if score > THRESHOLD else 0
         
         # UI Logic

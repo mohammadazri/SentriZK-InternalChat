@@ -8,22 +8,20 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 from rich.prompt import Prompt
-from rich.layout import Layout
 
 console = Console()
 
 class SentriZKTester:
     def __init__(self):
         self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-        self.MODELS_DIR = os.path.join(self.BASE_DIR, "../../models")
+        # CRITICAL FIX: Go up two levels (../../) to reach the main ML folder
+        self.MODELS_DIR = os.path.abspath(os.path.join(self.BASE_DIR, "../../models")) 
         self.tokenizer = None
-        self.interpreter = None
-        self.input_details = None
-        self.output_details = None
-        self.MAX_LEN = 100
+        self.model = None 
+        self.MAX_LEN = 120
         
     def load_engine(self):
-        """Loads the TFLite model and Tokenizer"""
+        """Loads the Native Keras model and Tokenizer"""
         try:
             with console.status("[bold cyan]Initializing SentriZK Engine..."):
                 # Load Tokenizer
@@ -31,15 +29,11 @@ class SentriZKTester:
                 with open(token_path, 'rb') as handle:
                     self.tokenizer = pickle.load(handle)
                 
-                # Load Model
-                model_path = os.path.join(self.MODELS_DIR, 'sentrizk_model.tflite')
-                self.interpreter = tf.lite.Interpreter(model_path=model_path)
-                self.interpreter.allocate_tensors()
+                # Load Native Keras Model (Bypasses Windows TFLite Flex Delegate Error)
+                model_path = os.path.join(self.MODELS_DIR, 'sentrizk_model.keras')
+                self.model = tf.keras.models.load_model(model_path)
                 
-                self.input_details = self.interpreter.get_input_details()
-                self.output_details = self.interpreter.get_output_details()
-                
-                # Warmup inference
+                # Warmup inference (Gets the TF graph ready so the first scan isn't slow)
                 self._predict("warmup")
                 
             console.print(Panel("[bold green]✔ System Online[/bold green]\nReady for interactive testing.", border_style="green"))
@@ -50,14 +44,13 @@ class SentriZKTester:
             return False
 
     def _predict(self, text):
-        """Internal prediction logic"""
+        """Internal prediction logic using Native Keras"""
         seq = self.tokenizer.texts_to_sequences([str(text)])
         padded = pad_sequences(seq, maxlen=self.MAX_LEN, padding='post', truncating='post').astype(np.float32)
         
-        self.interpreter.set_tensor(self.input_details[0]['index'], padded)
-        self.interpreter.invoke()
-        output_data = self.interpreter.get_tensor(self.output_details[0]['index'])
-        return output_data[0][0]
+        # Simple prediction call
+        score = self.model.predict(padded, verbose=0)[0][0]
+        return score
 
     def start_session(self):
         """Main Interactive Loop"""
