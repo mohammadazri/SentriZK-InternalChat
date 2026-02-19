@@ -3,359 +3,375 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FYP1 Gantt Chart - Semester 1</title>
+    <title>SentriZK - Professional Daily Schedule</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
     <style>
+        /* --- PROFESSIONAL LIGHT THEME VARIABLES --- */
+        :root {
+            --bg-body: #f8fafc;
+            --bg-surface: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --grid-line: #f1f5f9;
+            --primary: #2563eb;     /* Professional Blue */
+            --success: #10b981;     /* Success Green */
+            --warning: #f59e0b;     /* Break Orange */
+            --purple: #8b5cf6;      /* Construction Purple */
+            --cell-w: 24px;         /* Width of one day column */
+            --row-h: 44px;          /* Height of one task row */
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* App-like feel */
         }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+
+        /* --- HEADER --- */
+        header {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 20;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
         }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e9ecef;
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .logo-box { 
+            width: 36px; height: 36px; background: var(--primary); border-radius: 8px; 
+            display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700;
         }
-        .header h1 {
-            color: #2c3e50;
-            margin: 0 0 10px 0;
-            font-size: 24px;
-        }
-        .header .subtitle {
-            color: #7f8c8d;
-            font-size: 16px;
-        }
-        .gantt-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .gantt-table th {
-            background: #34495e;
-            color: white;
-            padding: 12px 8px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 12px;
-        }
-        .gantt-table td {
-            padding: 10px 8px;
-            border-bottom: 1px solid #e9ecef;
-            font-size: 13px;
-        }
-        .task-name {
-            font-weight: 500;
-            color: #2c3e50;
-        }
-        .task-duration {
-            color: #7f8c8d;
-            font-size: 11px;
-        }
-        .timeline-row {
-            height: 35px;
-        }
-        .week-marker {
-            width: 3.5%;
-            text-align: center;
-            font-size: 10px;
-            color: #7f8c8d;
-            font-weight: 500;
-        }
-        .gantt-bar {
-            height: 20px;
-            border-radius: 3px;
+        h1 { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+        .meta { font-size: 0.8rem; color: var(--text-secondary); display: flex; gap: 20px; }
+        .meta-item { display: flex; align-items: center; gap: 6px; }
+        
+        /* --- MAIN LAYOUT --- */
+        .gantt-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
             position: relative;
-            margin: 2px 0;
         }
-        .task-bar {
-            height: 100%;
-            border-radius: 3px;
-            min-width: 5px;
+
+        /* --- LEFT PANEL: TASK LIST --- */
+        .task-panel {
+            width: 320px;
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 10;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.02);
         }
-        .milestone-marker {
-            width: 12px;
-            height: 12px;
-            background: #9b59b6;
-            border-radius: 50%;
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
+        
+        .panel-header {
+            height: 60px; border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; padding: 0 1.5rem;
+            font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);
+            background: #fdfdfd;
+        }
+
+        .task-list { overflow-y: auto; flex: 1; }
+        .task-row {
+            height: var(--row-h);
+            border-bottom: 1px solid var(--grid-line);
+            display: flex; align-items: center; padding: 0 1.5rem;
+            font-size: 0.85rem; color: var(--text-primary);
+            transition: background 0.2s;
+        }
+        .task-row:hover { background: #f8fafc; }
+        .task-row.section { 
+            background: #f1f5f9; color: var(--text-primary); font-weight: 700; 
+            text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;
+        }
+
+        /* --- RIGHT PANEL: TIMELINE GRID --- */
+        .timeline-wrapper {
+            flex: 1;
+            overflow: auto; /* Scrollable in both directions */
+            background: var(--bg-surface);
+            position: relative;
+        }
+
+        .chart-content {
+            position: relative;
+            /* Width determined by JS based on days */
+        }
+
+        /* Grid Headers */
+        .time-header {
+            position: sticky; top: 0; z-index: 5;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .month-row { display: flex; height: 30px; }
+        .month-block {
+            border-right: 1px solid var(--border-color);
+            padding: 0 10px; display: flex; align-items: center;
+            font-size: 0.75rem; font-weight: 700; color: var(--text-primary);
+            background: #f8fafc; text-transform: uppercase;
+        }
+        .day-row { display: flex; height: 30px; border-bottom: 1px solid var(--border-color); }
+        .day-block {
+            width: var(--cell-w); flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.65rem; color: var(--text-secondary);
+            border-right: 1px solid var(--grid-line);
+        }
+        .day-block.weekend { background: #fcfcfc; color: #cbd5e1; }
+
+        /* Grid Body */
+        .grid-body { position: relative; }
+        .grid-row {
+            height: var(--row-h);
+            border-bottom: 1px solid var(--grid-line);
+            background-size: var(--cell-w) var(--cell-w);
+            background-image: linear-gradient(to right, var(--grid-line) 1px, transparent 1px);
+        }
+        .grid-row.section { background: #f1f5f9; border-bottom: 1px solid var(--border-color); }
+
+        /* --- GANTT BARS --- */
+        .bar {
+            position: absolute; top: 8px; height: 28px;
+            border-radius: 6px;
+            display: flex; align-items: center; padding: 0 10px;
+            font-size: 0.75rem; color: #fff; font-weight: 500;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        .bar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             z-index: 10;
         }
-        .category-header {
-            background: #2c3e50;
-            color: white;
-            font-weight: 600;
-            padding: 8px 12px;
-            font-size: 13px;
+
+        /* Color Themes */
+        .b-blue { background: #3b82f6; border: 1px solid #2563eb; }
+        .b-purple { background: #8b5cf6; border: 1px solid #7c3aed; }
+        .b-green { background: #10b981; border: 1px solid #059669; }
+        .b-orange { background: repeating-linear-gradient(45deg, #f59e0b, #f59e0b 10px, #d97706 10px, #d97706 20px); }
+        .b-dark { background: #334155; }
+
+        /* Milestone Diamond */
+        .milestone {
+            position: absolute; top: 10px; width: 24px; height: 24px;
+            background: #ef4444; transform: rotate(45deg);
+            border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 5;
         }
-        .progress-bar {
-            width: 60px;
-            height: 6px;
-            background: #ecf0f1;
-            border-radius: 3px;
-            overflow: hidden;
+
+        /* Tooltip */
+        .tooltip {
+            position: fixed; background: #1e293b; color: #fff;
+            padding: 8px 12px; border-radius: 6px; font-size: 0.75rem;
+            pointer-events: none; opacity: 0; transition: opacity 0.2s;
+            z-index: 1000; box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
-        .progress-fill {
-            height: 100%;
-            background: #27ae60;
-            border-radius: 3px;
-        }
+
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>FYP1: PROJECT PLANNING & PROTOTYPE DEVELOPMENT</h1>
-            <div class="subtitle">Semester 1 Timeline (14 Weeks)</div>
-        </div>
 
-        <table class="gantt-table">
-            <thead>
-                <tr>
-                    <th style="width: 25%">TASK</th>
-                    <th style="width: 10%">DURATION</th>
-                    <th style="width: 10%">PROGRESS</th>
-                    <th colspan="14">TIMELINE (WEEKS 1-14)</th>
-                </tr>
-                <tr>
-                    <th colspan="3"></th>
-                    <th class="week-marker">1</th>
-                    <th class="week-marker">2</th>
-                    <th class="week-marker">3</th>
-                    <th class="week-marker">4</th>
-                    <th class="week-marker">5</th>
-                    <th class="week-marker">6</th>
-                    <th class="week-marker">7</th>
-                    <th class="week-marker">8</th>
-                    <th class="week-marker">9</th>
-                    <th class="week-marker">10</th>
-                    <th class="week-marker">11</th>
-                    <th class="week-marker">12</th>
-                    <th class="week-marker">13</th>
-                    <th class="week-marker">14</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Research & Planning -->
-                <tr class="category-header">
-                    <td colspan="17">RESEARCH & PLANNING PHASE</td>
-                </tr>
-                <tr class="timeline-row">
-                    <td class="task-name">Project Kickoff & Scope</td>
-                    <td class="task-duration">3 days</td>
-                    <td>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 100%"></div>
-                        </div>
-                    </td>
-                    <td colspan="14">
-                        <div class="gantt-bar">
-                            <div class="task-bar" style="background: #4A6FA5; width: 2%; margin-left: 0%"></div>
-                        </div>
-                    </td>
-                </tr>
-                <tr class="timeline-row">
-                    <td class="task-name">Literature Review - ZKP</td>
-                    <td class="task-duration">10 days</td>
-                    <td>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 100%"></div>
-                        </div>
-                    </td>
-                    <td colspan="14">
-                        <div class="gantt-bar">
-                            <div class="task-bar" style="background: #4A6FA5; width: 14%; margin-left: 0%"></div>
-                        </div>
-                    </td>
-                </tr>
-                <tr class="timeline-row">
-                    <td class="task-name">Literature Review - AI</td>
-                    <td class="task-duration">10 days</td>
-                    <td>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 100%"></div>
-                        </div>
-                    </td>
-                    <td colspan="14">
-                        <div class="gantt-bar">
-                            <div class="task-bar" style="background: #4A6FA5; width: 14%; margin-left: 7%"></div>
-                        </div>
-                    </td>
-                </tr>
-                <tr class="timeline-row">
-                    <td class="task-name">System Architecture Design</td>
-                    <td class="task-duration">7 days</td>
-                    <td>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 100%"></div>
-                        </div>
-                    </td>
-                    <td colspan="14">
-                        <div class="gantt-bar">
-                            <div class="task-bar" style="background: #4A6FA5; width: 10%; margin-left: 21%"></div>
-                        </div>
-                    </td>
-                </tr>
-                <tr class="timeline-row">
-                    <td class="task-name">Proposal Drafting</td>
-                    <td class="task-duration">7 days</td>
-                    <td>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 80%"></div>
-                        </div>
-                    </td>
-                    <td colspan="14">
-                        <div class="gantt-bar">
-                            <div class="task-bar" style="background: #4A6FA5; width: 10%; margin-left: 28%"></div>
-                        </div>
-                    </td>
-                </tr>
-                <tr class="timeline-row">
-                    <td class="task-name">Proposal Revision</td>
-                    <td class="task-duration">3 days</td>
-                    <td>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 60%"></div>
-                        </div>
-                    </td>
-                    <td colspan="14">
-                        <div class="gantt-bar">
-                            <div class="task-bar" style="background: #4A6FA5; width: 4%; margin-left: 35%"></div>
-                        </div>
-                    </td>
-                </tr>
-
-                <!-- Milestone -->
-                <tr class="timeline-row">
-                    <td class="task-name" style="color: #9b59b6; font-weight: 600;">Proposal Defense</td>
-                    <td class="task-duration">1 day</td>
-                    <td>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 100%"></div>
-                        </div>
-                    </td>
-                    <td colspan="14">
-                        <div class="gantt-bar">
-                            <div class="milestone-marker" style="left: 50%;"></div>
-                        </div>
-                    </td>
-                </tr>
-
-                <!-- Development Phase -->
-                <tr class="category-header">
-                    <td colspan="17">PROTOTYPE DEVELOPMENT PHASE</td>
-                </tr>
-                <tr class="timeline-row">
-                    <td class="task-name">Backend Prototype</td>
-                    <td class="task-duration">10 days</td>
-                    <td>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 60%"></div>
-                        </div>
-                    </td>
-                    <td colspan="14">
-                        <div class="gantt-bar">
-                            <div class="task-bar" style="background: #56A36C; width: 14%; margin-left: 50%"></div>
-                        </div>
-                    </td>
-                </tr>
-                <tr class="timeline-row">
-                    <td class="task-name">Frontend Prototype</td>
-                    <td class="task-duration">7 days</td>
-                    <td>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 40%"></div>
-                        </div>
-                    </td>
-                    <td colspan="14">
-                        <div class="gantt-bar">
-                            <div class="task-bar" style="background: #56A36C; width: 10%; margin-left: 64%"></div>
-                        </div>
-                    </td>
-                </tr>
-                <tr class="timeline-row">
-                    <td class="task-name">System Integration</td>
-                    <td class="task-duration">7 days</td>
-                    <td>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 30%"></div>
-                        </div>
-                    </td>
-                    <td colspan="14">
-                        <div class="gantt-bar">
-                            <div class="task-bar" style="background: #56A36C; width: 10%; margin-left: 71%"></div>
-                        </div>
-                    </td>
-                </tr>
-
-                <!-- Testing & Documentation -->
-                <tr class="category-header">
-                    <td colspan="17">TESTING & DOCUMENTATION</td>
-                </tr>
-                <tr class="timeline-row">
-                    <td class="task-name">Prototype Testing</td>
-                    <td class="task-duration">7 days</td>
-                    <td>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 20%"></div>
-                        </div>
-                    </td>
-                    <td colspan="14">
-                        <div class="gantt-bar">
-                            <div class="task-bar" style="background: #E67E22; width: 10%; margin-left: 78%"></div>
-                        </div>
-                    </td>
-                </tr>
-                <tr class="timeline-row">
-                    <td class="task-name">FYP1 Documentation</td>
-                    <td class="task-duration">10 days</td>
-                    <td>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 10%"></div>
-                        </div>
-                    </td>
-                    <td colspan="14">
-                        <div class="gantt-bar">
-                            <div class="task-bar" style="background: #95A5A6; width: 14%; margin-left: 85%"></div>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-
-        <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
-            <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <div style="width: 16px; height: 16px; background: #4A6FA5; border-radius: 3px;"></div>
-                    <span style="font-size: 12px; color: #2c3e50;">Research & Planning</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <div style="width: 16px; height: 16px; background: #56A36C; border-radius: 3px;"></div>
-                    <span style="font-size: 12px; color: #2c3e50;">Development</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <div style="width: 16px; height: 16px; background: #E67E22; border-radius: 3px;"></div>
-                    <span style="font-size: 12px; color: #2c3e50;">Testing</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <div style="width: 16px; height: 16px; background: #95A5A6; border-radius: 3px;"></div>
-                    <span style="font-size: 12px; color: #2c3e50;">Documentation</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <div class="milestone-marker" style="position: static; transform: none;"></div>
-                    <span style="font-size: 12px; color: #2c3e50;">Milestones</span>
-                </div>
+    <header>
+        <div class="brand">
+            <div class="logo-box">SZ</div>
+            <div>
+                <h1>SentriZK Project Schedule</h1>
+                <div style="font-size:0.8rem; color:var(--text-secondary)">RAD Methodology • 2026 Academic Session</div>
             </div>
         </div>
+        <div class="meta">
+            <div class="meta-item"><div style="width:10px; height:10px; border-radius:50%; background:#3b82f6"></div> Design</div>
+            <div class="meta-item"><div style="width:10px; height:10px; border-radius:50%; background:#8b5cf6"></div> Construction</div>
+            <div class="meta-item"><div style="width:10px; height:10px; border-radius:50%; background:#f59e0b"></div> Break</div>
+            <div class="meta-item"><div style="width:10px; height:10px; border-radius:50%; background:#10b981"></div> Cutover</div>
+        </div>
+    </header>
+
+    <div class="gantt-container">
+        
+        <div class="task-panel" id="taskPanel">
+            <div class="panel-header">ACTIVITY / MODULE</div>
+            </div>
+
+        <div class="timeline-wrapper" id="timelineWrapper">
+            <div class="chart-content" id="chartContent">
+                <div class="time-header" id="timeHeader">
+                    </div>
+                <div class="grid-body" id="gridBody">
+                    </div>
+            </div>
+        </div>
+
     </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const START_DATE = new Date("2026-01-05"); // FYP 1 Start
+        const TOTAL_WEEKS = 32; 
+        const DAYS_TO_RENDER = TOTAL_WEEKS * 7;
+        const CELL_W = 24;
+
+        // --- DATASET: SENTRIZK RAD SCHEDULE ---
+        const tasks = [
+            // FYP 1
+            { type: 'section', name: 'FYP 1: Foundation & Design' },
+            { name: 'Requirements & Scope', start: 0, days: 14, color: 'b-blue', desc: 'Identify "Blind Spot" & ZKP Integration points' },
+            { name: 'Stakeholder Interview', start: 14, days: 10, color: 'b-blue', desc: 'Nisha Sutera Enterprise Requirements' },
+            { name: 'System Architecture Design', start: 28, days: 14, color: 'b-blue', desc: 'Privacy-First Architecture & STRIDE Model' },
+            { name: 'UI/UX Prototyping (Figma)', start: 42, days: 14, color: 'b-blue', desc: 'Login Flow & Chat Interface Design' },
+            { name: 'Dev Env Setup & Defense', start: 56, days: 14, color: 'b-purple', desc: 'Flutter, Node.js, RPi Config' },
+            { name: 'Prototype: Auth Shell', start: 70, days: 14, color: 'b-purple', desc: 'Basic App Shell + Firebase Signaling' },
+            { name: 'Documentation (Chap 1-3)', start: 84, days: 14, color: 'b-green', desc: 'Finalize Interim Report' },
+            { type: 'milestone', name: 'FYP 1 Submission', day: 98 },
+
+            // SEMESTER BREAK
+            { type: 'section', name: 'Semester Break (Skill Upgrading)' },
+            { name: 'ZKP Circuit Optimization', start: 98, days: 10, color: 'b-orange', desc: 'Self-Paced: Groth16 Logic' },
+            { name: 'AI Model Training', start: 108, days: 14, color: 'b-orange', desc: 'Train Isolation Forest on Datasets' },
+            { name: 'Server Configuration', start: 122, days: 6, color: 'b-orange', desc: 'Cloudflare Tunnels & API Setup' },
+
+            // FYP 2
+            { type: 'section', name: 'FYP 2: Implementation' },
+            { name: 'Module A: ZKP Integration', start: 130, days: 14, color: 'b-purple', desc: 'Connect Flutter to Circom Logic' },
+            { name: 'Module B: E2EE Implementation', start: 144, days: 14, color: 'b-purple', desc: 'Signal Protocol & AES-256' },
+            { name: 'Module C: AI & Logic', start: 158, days: 14, color: 'b-purple', desc: 'Embed TFLite & Threat Scoring' },
+            { name: 'Full System Integration', start: 172, days: 14, color: 'b-purple', desc: 'Merge all modules into single APK' },
+            { name: 'Security Audits & Pentest', start: 186, days: 14, color: 'b-green', desc: 'Replay Attacks & Breach Simulation' },
+            { name: 'User Acceptance Test (UAT)', start: 200, days: 7, color: 'b-green', desc: 'Feedback from Nisha Sutera' },
+            { name: 'Final Report & VIVA Prep', start: 207, days: 14, color: 'b-dark', desc: 'Thesis & Presentation Slides' },
+            { type: 'milestone', name: 'Final VIVA', day: 224 }
+        ];
+
+        // --- RENDER ENGINE ---
+        const taskPanel = document.getElementById('taskPanel');
+        const timeHeader = document.getElementById('timeHeader');
+        const gridBody = document.getElementById('gridBody');
+        const chartContent = document.getElementById('chartContent');
+        const tooltip = document.getElementById('tooltip');
+
+        // 1. Set Chart Width
+        chartContent.style.width = `${DAYS_TO_RENDER * CELL_W}px`;
+
+        // 2. Generate Calendar Header
+        function generateCalendar() {
+            let monthHtml = '<div class="month-row">';
+            let dayHtml = '<div class="day-row">';
+            
+            let currentDate = new Date(START_DATE);
+            let currentMonth = currentDate.getMonth();
+            let monthWidth = 0;
+            let monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+            for (let i = 0; i < DAYS_TO_RENDER; i++) {
+                // Day Block
+                let isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6;
+                dayHtml += `<div class="day-block ${isWeekend ? 'weekend' : ''}">${currentDate.getDate()}</div>`;
+
+                // Month Logic
+                if (currentDate.getMonth() !== currentMonth) {
+                    monthHtml += `<div class="month-block" style="width:${monthWidth * CELL_W}px">${monthNames[currentMonth]} ${currentDate.getFullYear()}</div>`;
+                    currentMonth = currentDate.getMonth();
+                    monthWidth = 0;
+                }
+                monthWidth++;
+                
+                // Increment Date
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            // Close last month
+            monthHtml += `<div class="month-block" style="width:${monthWidth * CELL_W}px">${monthNames[currentMonth]}</div>`;
+            
+            monthHtml += '</div>';
+            dayHtml += '</div>';
+            
+            timeHeader.innerHTML = monthHtml + dayHtml;
+        }
+
+        // 3. Generate Grid & Tasks
+        function generateGrid() {
+            tasks.forEach(task => {
+                // Left Panel Item
+                const taskDiv = document.createElement('div');
+                taskDiv.className = `task-row ${task.type === 'section' ? 'section' : ''}`;
+                taskDiv.innerText = task.name;
+                taskPanel.appendChild(taskDiv);
+
+                // Right Panel Row
+                const rowDiv = document.createElement('div');
+                rowDiv.className = `grid-row ${task.type === 'section' ? 'section' : ''}`;
+                
+                if (task.type !== 'section') {
+                    if (task.type === 'milestone') {
+                        // Render Milestone
+                        const diamond = document.createElement('div');
+                        diamond.className = 'milestone';
+                        diamond.style.left = `${(task.day * CELL_W) - 12}px`;
+                        
+                        // Tooltip logic
+                        diamond.onmouseenter = (e) => showTooltip(e, `${task.name}`);
+                        diamond.onmouseleave = hideTooltip;
+                        
+                        rowDiv.appendChild(diamond);
+                    } else {
+                        // Render Bar
+                        const bar = document.createElement('div');
+                        bar.className = `bar ${task.color}`;
+                        bar.style.left = `${task.start * CELL_W}px`;
+                        bar.style.width = `${task.days * CELL_W}px`;
+                        bar.innerText = task.days > 5 ? task.name : ''; // Hide text if bar too small
+                        
+                        // Dates for tooltip
+                        let sDate = new Date(START_DATE); sDate.setDate(sDate.getDate() + task.start);
+                        let eDate = new Date(START_DATE); eDate.setDate(eDate.getDate() + task.start + task.days);
+                        let dateStr = `${sDate.toLocaleDateString()} - ${eDate.toLocaleDateString()}`;
+
+                        // Tooltip events
+                        bar.onmouseenter = (e) => showTooltip(e, `<b>${task.name}</b><br>${task.desc}<br><span style="opacity:0.7">${dateStr}</span>`);
+                        bar.onmouseleave = hideTooltip;
+
+                        rowDiv.appendChild(bar);
+                    }
+                }
+                gridBody.appendChild(rowDiv);
+            });
+        }
+
+        // Tooltip Functions
+        function showTooltip(e, html) {
+            tooltip.innerHTML = html;
+            tooltip.style.opacity = 1;
+            tooltip.style.left = e.clientX + 15 + 'px';
+            tooltip.style.top = e.clientY + 15 + 'px';
+        }
+        function hideTooltip() {
+            tooltip.style.opacity = 0;
+        }
+
+        // Sync Scroll (Vertical)
+        const timelineWrapper = document.getElementById('timelineWrapper');
+        
+        // Initialize
+        generateCalendar();
+        generateGrid();
+
+    </script>
 </body>
 </html>

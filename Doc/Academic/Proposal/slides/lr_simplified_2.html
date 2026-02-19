@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Literature Review - Secure Messaging</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #030712;
+            --primary: #3b82f6; /* Blue Theme */
+            --accent: #60a5fa;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --table-header-bg: rgba(59, 130, 246, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 2rem;
+        }
+
+        /* --- BACKGROUND FX --- */
+        .bg-gradient {
+            position: fixed;
+            width: 800px; height: 800px;
+            background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, rgba(0,0,0,0) 60%);
+            top: -200px; right: -200px;
+            z-index: -1; filter: blur(80px);
+        }
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: -1;
+        }
+
+        /* --- LAYOUT --- */
+        .container {
+            width: 100%; max-width: 1600px; margin: 0 auto;
+            height: 100%; display: flex; flex-direction: column;
+        }
+
+        /* --- HEADER UPDATED --- */
+        header {
+            margin-bottom: 2rem;
+            border-left: 5px solid var(--primary);
+            padding-left: 1.5rem;
+            display: flex;
+            justify-content: space-between; /* Pushes items to left and right */
+            align-items: flex-end;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        .header-content h2 { 
+            font-family: 'Space Grotesk'; font-size: 1.2rem; color: var(--primary); 
+            letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem;
+        }
+        
+        .header-content h1 { 
+            font-size: 3rem; font-weight: 700; margin: 0; 
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); 
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+        }
+
+        .header-right {
+            font-family: 'Space Grotesk';
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            line-height: 1;
+        }
+
+        /* --- TABLE --- */
+        .table-wrapper {
+            flex-grow: 1;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            margin-bottom: 1.5rem;
+            animation: fadeIn 1s ease-out;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        
+        th {
+            background: var(--table-header-bg);
+            text-align: left; padding: 1.2rem;
+            color: var(--accent); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        td {
+            padding: 1.5rem 1.2rem;
+            border-bottom: 1px solid var(--glass-border);
+            vertical-align: top;
+            color: var(--text-muted);
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .col-method { width: 20%; color: #fff; font-family: 'Space Grotesk'; font-size: 1.2rem; font-weight: 700; }
+        .col-findings { width: 50%; }
+        .col-verdict { width: 30%; }
+
+        tr.selected-row { background: rgba(16, 185, 129, 0.04); }
+        tr.selected-row td { color: #f1f5f9; border-bottom: none; }
+        tr.selected-row .col-method { color: #10b981; }
+
+        .badge-reject {
+            display: inline-block; padding: 6px 12px; border-radius: 8px;
+            background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2);
+            font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem;
+        }
+        .badge-select {
+            display: inline-block; padding: 6px 12px; border-radius: 8px;
+            background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2);
+            font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+        }
+
+        .citation-tag {
+            display: block; margin-top: 0.8rem;
+            font-size: 0.85rem; color: var(--primary); font-style: italic; opacity: 0.8;
+        }
+
+        .ref-footer {
+            height: 140px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        .ref-header { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 0.5rem; display: block; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.3rem;}
+        .ref-item { font-size: 0.8rem; color: #64748b; margin-bottom: 0.5rem; padding-left: 0.8rem; border-left: 2px solid var(--glass-border); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="bg-grid"></div>
+    <div class="bg-gradient"></div>
+
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h2>Domain 02</h2>
+                <h1>Secure Messaging & Insider Threats</h1>
+            </div>
+            <div class="header-right">Literature Review</div>
+        </header>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-method">Approach</th>
+                        <th class="col-findings">Literature Findings</th>
+                        <th class="col-verdict">Comparative Verdict</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="col-method">Method A:<br>Manual Verification</td>
+                        <td>
+                            Standard practice (QR codes/Safety Numbers). Analysis of 17 apps shows users consistently ignore these "ceremonies," leaving encryption vulnerable to active MitM attacks.
+                            <span class="citation-tag">Alatawi & Saxena (2023)</span>
+                        </td>
+                        <td>
+                            <span class="badge-reject">REJECTED</span><br>
+                            Relies heavily on human diligence, which is the weakest link in security.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="col-method">Method B:<br>Server-Side Deep Learning</td>
+                        <td>
+                            Uses Bi-LSTM networks to scan user logs. While highly accurate, it requires centralized data processing, which inherently violates user privacy.
+                            <span class="citation-tag">Srinivasan et al. (2025); Alzaabi (2024)</span>
+                        </td>
+                        <td>
+                            <span class="badge-reject">REJECTED</span><br>
+                            Compromises privacy by requiring a central server to analyze behavior.
+                        </td>
+                    </tr>
+                    <tr class="selected-row">
+                        <td class="col-method">Method C:<br>Automated Endpoint Security</td>
+                        <td>
+                            Focuses on securing the device (endpoint) itself. Threat modeling proves the endpoint is the primary attack surface, even if transmission is encrypted.
+                            <span class="citation-tag">Ilesanmi (2025)</span>
+                        </td>
+                        <td>
+                            <span class="badge-select">SELECTED (SentriZK)</span><br>
+                            Moves defense away from the user (automation) and away from the server (privacy).
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="ref-footer">
+            <span class="ref-header">References Used</span>
+            <div class="ref-item">Alatawi, M., & Saxena, N. (2023). SoK: An analysis of end-to-end encryption and authentication ceremonies in secure messaging systems. <em>ACM Asia Conference on Computer and Communications Security</em>.</div>
+            <div class="ref-item">Srinivasan, K., et al. (2025). Insider threat detection and secure data transfer leveraging bidirectional LSTM. <em>IEEE Access</em>.</div>
+            <div class="ref-item">Alzaabi, F. R., & Mehmood, A. (2024). A review of recent advances, challenges, and opportunities in malicious insider threat detection using machine learning methods. <em>IEEE Access</em>.</div>
+            <div class="ref-item">Ilesanmi, M. (2025). Threat modeling for enterprise secure messaging applications. <em>Journal of Cybersecurity and Privacy</em>.</div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,32 @@
+(function() {
+    let output = "FULL COURSE STRUCTURE EXPORT\n============================\n";
+    const sections = document.querySelectorAll('.section.main');
+
+    sections.forEach((section) => {
+        const sectionTitle = section.querySelector('.sectionname')?.innerText.trim() || "Unnamed Section";
+        output += `\n[ SECTION: ${sectionTitle} ]\n`;
+        
+        // Find all unique activity links
+        const items = section.querySelectorAll('.activity-item, .activityinstance');
+        let seenNames = new Set();
+
+        items.forEach((item) => {
+            const nameElement = item.querySelector('.instancename, .activityname');
+            if (nameElement) {
+                let name = nameElement.innerText.replace('Page', '').replace('Folder', '').trim();
+                const link = item.querySelector('a')?.href || "No link";
+                
+                // Remove the "duplicated" text Moodle adds for screen readers
+                if (!seenNames.has(name + link)) {
+                    output += `  - ${name} \n    URL: ${link}\n`;
+                    seenNames.add(name + link);
+                }
+            }
+        });
+    });
+
+    // Open in a new window to prevent console truncation
+    const win = window.open("", "CourseExport", "width=800,height=600");
+    win.document.body.innerHTML = `<pre>${output}</pre>`;
+    console.log("Export complete! Check the popup window.");
+})();

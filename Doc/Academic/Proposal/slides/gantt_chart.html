@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentriZK - Gantt Chart Slide</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.08);
+            --glass: rgba(15, 23, 42, 0.6);
+            --accent: #3b82f6; /* Blue for general UI */
+            
+            /* RAD Loop Colors for Legend */
+            --c-loop1: #06b6d4;  /* Cyan */
+            --c-break: #64748b;  /* Slate */
+            --c-loop2: #8b5cf6;  /* Violet */
+            --c-loop3: #10b981;  /* Green */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            height: 100vh; width: 100vw;
+            overflow: hidden;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* --- BACKGROUND EFFECTS --- */
+        .bg-grid {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 50px 50px; z-index: -1;
+            mask-image: radial-gradient(circle at center, black 50%, transparent 100%);
+        }
+
+        .glow-spot {
+            position: absolute; width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: -1; pointer-events: none;
+        }
+
+        /* --- HEADER --- */
+        header {
+            width: 90%; max-width: 1400px;
+            margin-top: 2rem; margin-bottom: 1.5rem;
+            display: flex; justify-content: space-between; align-items: flex-end;
+            padding-bottom: 1rem; border-bottom: 1px solid var(--border);
+            z-index: 10;
+        }
+        .h-left { display: flex; flex-direction: column; gap: 4px; }
+        .h-sub { font-family: 'JetBrains Mono'; color: var(--accent); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; }
+        h1 { font-family: 'Space Grotesk'; font-size: 2.2rem; line-height: 1; font-weight: 700; color: #fff; }
+
+        .h-right { text-align: right; }
+        .meta-tag { 
+            font-family: 'JetBrains Mono'; font-size: 0.75rem; color: var(--text-muted); 
+            background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        /* --- MAIN FRAME CONTAINER --- */
+        .frame-container {
+            width: 90%; max-width: 1400px;
+            flex-grow: 1; max-height: 75vh;
+            position: relative;
+            background: rgba(2, 6, 23, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 10px;
+            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        /* The Image Area */
+        .image-wrapper {
+            width: 100%; height: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            background: #0f172a; /* Fallback color */
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* Placeholder Style (Remove 'display:flex' above if using real image) */
+        .placeholder-text {
+            color: var(--text-muted); font-family: 'JetBrains Mono'; text-align: center;
+            border: 2px dashed var(--border); width: 98%; height: 98%; border-radius: 8px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem;
+        }
+
+        /* The Actual Image Styling */
+        .gantt-img {
+            width: 100%; height: 100%;
+            object-fit: contain; /* Ensures the whole chart is visible */
+        }
+
+        /* --- LEGEND BAR (Bottom) --- */
+        .legend-bar {
+            margin-top: 1.5rem;
+            display: flex; gap: 2rem;
+            background: rgba(255,255,255,0.03);
+            padding: 10px 20px; border-radius: 50px;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(5px);
+        }
+
+        .l-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 500; color: #cbd5e1; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 10px var(--c); background: var(--c); }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .frame-container { animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-grid"></div>
+    <div class="glow-spot"></div>
+
+    <header>
+        <div class="h-left">
+            <div class="h-sub">Project Management</div>
+            <h1>Project Schedule</h1>
+        </div>
+        <div class="h-right">
+            <div style="font-weight: 600; margin-bottom: 5px;">SentriZK Roadmap</div>
+            <div class="meta-tag">RAD Methodology • 2 Semesters</div>
+        </div>
+    </header>
+
+    <div class="frame-container">
+        <div class="image-wrapper">
+            <div class="placeholder-text">
+                <i class="ph-duotone ph-image" style="font-size: 3rem; opacity: 0.5;"></i>
+                <div>
+                    <div>Place your Excel Screenshot here</div>
+                    <div style="font-size: 0.8rem; opacity: 0.6;">&lt;img src="gantt_chart.png" class="gantt-img"&gt;</div>
+                </div>
+            </div>
+            </div>
+    </div>
+
+    <div class="legend-bar">
+        <div class="l-item" style="--c: var(--c-loop1)"><div class="dot"></div> Loop 1: Auth (FYP 1)</div>
+        <div class="l-item" style="--c: var(--c-break)"><div class="dot"></div> Gap Analysis (Break)</div>
+        <div class="l-item" style="--c: var(--c-loop2)"><div class="dot"></div> Loop 2: Chat (FYP 2)</div>
+        <div class="l-item" style="--c: var(--c-loop3)"><div class="dot"></div> Loop 3: AI (FYP 2)</div>
+    </div>
+
+</body>
+</html>

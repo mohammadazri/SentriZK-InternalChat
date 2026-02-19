@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentriZK - RAD Methodology</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.08);
+            --glass: rgba(15, 23, 42, 0.6);
+            --accent: #3b82f6;
+            
+            /* RAD Colors */
+            --c-cyan: #06b6d4;
+            --c-violet: #8b5cf6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            /* increased base font size for Slide One */
+            font-size: 18px;
+            height: 100vh; width: 100vw;
+            overflow: hidden;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* --- BACKGROUND --- */
+        .bg-grid {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 50px 50px; z-index: -1;
+            mask-image: radial-gradient(circle at center, black 50%, transparent 100%);
+        }
+
+        /* --- HEADER --- */
+        header {
+            width: 100%; max-width: none;
+            margin: 0; padding: 0.8rem 1rem 0.8rem 1rem;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .h-sub { font-family: 'JetBrains Mono'; color: var(--accent); font-size: 1.05rem; text-transform: uppercase; letter-spacing: 2px; }
+        h1 { font-family: 'Space Grotesk'; font-size: 3rem; line-height: 1; font-weight: 700; color: #fff; }
+
+        /* --- LAYOUT GRID --- */
+        .main-content {
+            width: 100%; max-width: none;
+            height: calc(100vh - 56px); /* fill remaining viewport under header */
+            flex-grow: 1;
+            display: grid;
+            grid-template-rows: 1.2fr 0.8fr; /* Top section larger */
+            gap: 1.5rem;
+            padding: 0; margin: 0;
+        }
+
+        /* TOP SECTION: Diagram + Definition */
+        .top-split {
+            display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.5rem;
+            width: 100%; padding: 1rem;
+        }
+
+        /* Left: Diagram Box */
+        .diagram-box {
+            background: rgba(2, 6, 23, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+            padding: 1rem;
+        }
+        .img-placeholder {
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: var(--text-muted); gap: 10px;
+            background: #0f172a;
+        }
+        .rad-img { width: 100%; height: 100%; object-fit: contain; }
+
+        /* Right: Definition Box */
+        .info-box {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex; flex-direction: column; justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+        .info-title { font-family: 'Space Grotesk'; font-size: 2rem; font-weight: 700; margin-bottom: 1rem; color: #fff; }
+        .info-text { font-size: 1.15rem; line-height: 1.6; color: var(--text-muted); margin-bottom: 1.5rem; }
+
+        .info-callout {
+            background: linear-gradient(90deg, rgba(59,130,246,0.06), rgba(16,185,129,0.03));
+            border-left: 4px solid var(--accent);
+            padding: 1rem 1.1rem; border-radius: 10px; margin-bottom: 1rem;
+            color: var(--text-main); font-size: 1.05rem; line-height: 1.6;
+            display: grid; gap: 0.6rem;
+        }
+
+        .callout-item { display:flex; gap:0.8rem; align-items:flex-start; }
+        .callout-icon { width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; font-size:1.25rem; color:var(--accent); }
+        .callout .muted { color: var(--text-muted); font-size:0.95rem; margin-top:3px; }
+        .metric-badges { display:flex; gap:0.45rem; margin-top:6px; }
+        .badge { background: rgba(255,255,255,0.03); padding:4px 8px; border-radius:999px; font-size:0.85rem; color:var(--text-muted); border:1px solid rgba(255,255,255,0.03); }
+
+        /* BOTTOM SECTION: Justification Cards */
+        .cards-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem;
+            width: 100%; padding: 1rem;
+        }
+
+        .just-card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-top: 3px solid var(--c);
+            border-radius: 12px;
+            padding: 1.2rem;
+            display: flex; flex-direction: column; gap: 0.5rem;
+            transition: transform 0.2s;
+        }
+        .just-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.03); }
+
+        .jc-icon { font-size: 2rem; color: var(--c); margin-bottom: 0.5rem; }
+        .jc-title { font-family: 'Space Grotesk'; font-weight: 700; font-size: 1.4rem; color: #fff; }
+        .jc-text { font-size: 1.05rem; line-height: 1.4; color: var(--text-muted); }
+
+        /* Emphasis colors for label text inside cards */
+        .label-focus { color: #0ea5d9; font-weight: 700; margin-right:6px; }
+        .label-logic { color: #10b981; font-weight: 700; margin-right:6px; }
+
+        /* Result line styling */
+        .result-line { margin-top:1rem; padding-top:0.25rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:0.6rem; color: var(--c); text-transform:uppercase; letter-spacing:0.6px; }
+        .result-line i { font-size:1.05rem; color: inherit; }
+
+        /* Card list layout (neat label/value rows) */
+        .card-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+        .card-list li { display: flex; align-items: flex-start; gap: 0.6rem; }
+        .card-val { color: var(--text-main); font-weight: 500; }
+
+    </style>
+</head>
+<body>
+
+    <div class="bg-grid"></div>
+
+    <header>
+        <div>
+            <div class="h-sub">Methodology Selection</div>
+            <h1>Rapid Application Development (RAD)</h1>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-weight: 600; font-size: 0.9rem;">SentriZK Project</div>
+            <div style="font-family: 'JetBrains Mono'; font-size: 0.7rem; color: var(--text-muted);">Development Framework</div>
+        </div>
+    </header>
+
+    <div class="main-content">
+        
+        <div class="top-split">
+            <div class="diagram-box">
+                <div class="img-placeholder">
+                    <i class="ph-duotone ph-arrows-clockwise" style="font-size: 4rem; opacity: 0.5; color: var(--c-cyan);"></i>
+                    <div style="font-family: 'JetBrains Mono';">Insert RAD Loop Diagram</div>
+                    <div style="font-size: 0.7rem; opacity: 0.5;"></div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <div class="info-title">Why RAD?</div>
+                <div class="info-callout">
+                    <p class="info-text">A methodology emphasizing rapid prototyping and frequent user feedback over rigid planning.</p>
+                    <p class="info-text">It condenses analysis, design, and testing into short, iterative cycles, ensuring functional components (like ZKP Auth) are delivered and tested early.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="cards-grid">
+
+            <div class="just-card" style="--c: #06b6d4;">
+                <i class="ph-duotone ph-calculator jc-icon"></i>
+                <div class="jc-title">Technical Validation</div>
+                <div class="jc-text"><span class="label-focus">The Focus:</span> The "Heavy Math" (ZKP) and AI.</div>
+                <div class="jc-text"><span class="label-logic">The Logic:</span> Test the hardest parts first — if the mobile CPU can't handle AI or ZKP, we find out immediately and fix it.</div>
+                <div class="result-line"><i class="ph-duotone ph-check-circle"></i>FEASIBILITY SECURED</div>
+            </div>
+
+            <div class="just-card" style="--c: #10b981;">
+                <i class="ph-duotone ph-arrows-left-right jc-icon"></i>
+                <div class="jc-title">Adaptive Flexibility</div>
+                <div class="jc-text"><span class="label-focus">The Focus:</span> Changing the design based on what we learn.</div>
+                <div class="jc-text"><span class="label-logic">The Logic:</span> Instead of a rigid plan, pivot based on testing results. If a security feature is too slow, revise without restarting the project.</div>
+                <div class="result-line"><i class="ph-duotone ph-shield-check"></i>DESIGN OPTIMIZED</div>
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>

@@ -48,10 +48,12 @@
         /* --- GRID --- */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 340px 1fr 340px; /* Wider side panels */
-            gap: 2.5rem;
+            grid-template-columns: 1fr; /* single centered column */
+            gap: 0;
             flex: 1;
-            align-items: stretch;
+            align-items: center;
+            justify-items: center;
+            padding: 2rem 0;
         }
 
         /* --- PANELS --- */
@@ -196,34 +198,7 @@
         </header>
 
         <div class="dashboard-grid">
-
-            <div class="panel profile-container fade-in d-1">
-                <div class="section-label">Presented By</div>
-
-                <div class="avatar-frame">
-                    <img src="diagram/azri.jpg" alt="Mohammad Azri" class="avatar-img">
-                </div>
-
-                <h2 class="student-name">Mohammad Azri<br>Bin Aziz</h2>
-                <span class="student-id">52215123264</span>
-
-                <div style="margin-top: auto; width: 100%;">
-                    <div class="detail-row">
-                        <span class="dr-label">Supervisor</span>
-                        <span class="dr-val">Dr. Delina Beh Mei Yin</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="dr-label">Course</span>
-                        <span class="dr-val">Computer System Security</span>
-                    </div>
-                    <div class="detail-row" style="border-bottom:none;">
-                        <span class="dr-label">Session</span>
-                        <span class="dr-val">FYP 1</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="panel center-panel fade-in d-2">
+            <div class="panel center-panel fade-in d-2" style="max-width:920px; width:100%;">
                 <div class="thank-you-text">Thank You</div>
                 
                 <div class="qa-badge">
@@ -245,34 +220,6 @@
                     </div>
                 </div>
             </div>
-
-            <div class="panel artifacts-panel fade-in d-3">
-                <div class="section-label">Project Artifacts</div>
-
-                <div class="qr-block">
-                    <div class="qr-header" style="color:var(--accent-blue)">
-                        <i class="si si-github"></i> Repository
-                    </div>
-                    <div class="qr-frame-clean">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://github.com/mohammadazri/SentriZK-InternalChat.git" alt="GitHub QR">
-                    </div>
-                </div>
-
-                <div class="qr-block">
-                    <div class="qr-header" style="color:var(--accent-purple)">
-                        <i class="si si-linkedin"></i> Profile
-                    </div>
-                    <div class="qr-frame-clean">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://www.linkedin.com/in/mohammadazri/" alt="LinkedIn QR">
-                    </div>
-                </div>
-
-                <div class="build-status">
-                    <i class="ph-fill ph-check-circle" style="color: var(--accent-green);"></i>
-                    <div class="status-text">System Build: InProgress</div>
-                </div>
-            </div>
-
         </div>
 
         <div class="footer-bar">

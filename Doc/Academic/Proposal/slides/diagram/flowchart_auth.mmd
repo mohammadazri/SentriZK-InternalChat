@@ -1,0 +1,77 @@
+---
+config:
+  layout: elk
+  theme: mc
+  look: classic
+---
+flowchart TD
+    classDef mobile fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
+    classDef backend fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#000
+    classDef zkp fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000
+    classDef decision fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,color:#000
+    classDef error fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000
+    classDef success fill:#ccffcc,stroke:#006600,stroke-width:2px,color:#000
+    Start([Start Application]) --> A[Initialize App Components]
+    A --> B[Check Network Availability]
+    
+    B --> C{Network Available?}
+    
+    C -->|No| D[Show Network Error<br>and Exit]
+    C -->|Yes| E{Session Token Exists<br>in Secure Storage?}
+    
+    E -->|No| F[Redirect to<br>Authentication Page]
+    E -->|Yes| G[Send Token to Backend<br>for Validation]
+    
+    G --> H{Token Valid<br>and Active?}
+    
+    H -->|No| I[Invalidate Token<br>Clear Secure Storage]
+    I --> F
+    H -->|Yes| J[Load User Profile<br>and Permissions]
+    J --> K[Open Secure Dashboard]
+    
+    F --> L[Mobile App Requests<br>Mobile Access Token]
+    L --> M[Backend Generates MAT<br>Expires in 5 Minutes]
+    M --> N[Open Web Auth Page<br>Pass MAT in URL]
+    
+    N --> O{MAT Validated<br>by Backend?}
+    
+    O -->|No| P[Access Denied<br>Close Web View]
+    O -->|Yes| Q[Display Authentication<br>Interface to User]
+    
+    Q --> R{Registration or Login?}
+    
+    R -->|Registration| S[User Enters Master Secret<br>Never Leaves Browser]
+    S --> T[Generate Identity Commitment<br>Using Poseidon Hash]
+    T --> U[Generate Zero-Knowledge Proof<br>Using Groth16 Protocol]
+    U --> V[Send Proof to Backend<br>for Verification]
+    
+    V --> W{Proof Verification<br>Successful?}
+    
+    W -->|No| X[Registration Failed<br>Show Error]
+    X --> S
+    W -->|Yes| Y[Store Identity Commitment<br>in db.json]
+    
+    R -->|Login| Z[Backend Provides Unique Nonce<br>and User's Commitment]
+    Z --> AA[Generate ZKP Proof<br>Proving Knowledge of Secret]
+    AA --> BB[Send Proof to Backend<br>for Verification]
+    
+    BB --> CC{Proof Verification<br>Successful?}
+    
+    CC -->|No| DD[Login Failed<br>Show Error]
+    DD --> Q
+    CC -->|Yes| EE[Issue JWT Session Token<br>with Expiry Time]
+    
+    Y --> FF[Registration Complete<br>Proceed to Login]
+    EE --> GG[Redirect Back to Mobile App<br>via Deep Link]
+    
+    GG --> HH[Mobile App Receives<br>Session Token]
+    HH --> II[Store Token in<br>FlutterSecureStorage]
+    II --> K
+    
+    FF --> Z
+    class Start,A,B,F,G,J,L,N,Q,S,V,BB,FF,GG,HH,II mobile
+    class M,Y,Z,EE backend
+    class T,U,AA zkp
+    class C,E,H,O,R,W,CC decision
+    class D,I,P,X,DD error
+    class K success

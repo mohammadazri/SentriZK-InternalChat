@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Literature Review - AI Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #030712;
+            --primary: #10b981; /* Green Theme */
+            --accent: #34d399;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --table-header-bg: rgba(16, 185, 129, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 2rem;
+        }
+
+        .bg-gradient {
+            position: fixed; width: 800px; height: 800px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, rgba(0,0,0,0) 60%);
+            top: -200px; right: -200px; z-index: -1; filter: blur(80px);
+        }
+        .bg-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px; z-index: -1;
+        }
+
+        .container { width: 100%; max-width: 1600px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; }
+
+        /* --- HEADER --- */
+        header {
+            margin-bottom: 2rem;
+            border-left: 5px solid var(--primary);
+            padding-left: 1.5rem;
+            display: flex; justify-content: space-between; align-items: flex-end;
+            animation: slideDown 0.8s ease-out;
+        }
+        .header-content h2 { font-family: 'Space Grotesk'; font-size: 1.2rem; color: var(--primary); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem;}
+        .header-content h1 { font-size: 3rem; font-weight: 700; margin: 0; background: linear-gradient(135deg, #fff 0%, #4ade80 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header-right { font-family: 'Space Grotesk'; font-size: 2.5rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 4px; line-height: 1; }
+
+        /* --- TABLE --- */
+        .table-wrapper {
+            flex-grow: 1; background: var(--glass-bg); border: 1px solid var(--glass-border);
+            border-radius: 16px; overflow: hidden; backdrop-filter: blur(12px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3); margin-bottom: 1.5rem; animation: fadeIn 1s ease-out;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { background: var(--table-header-bg); text-align: left; padding: 1.2rem; color: var(--accent); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--glass-border); }
+        td { padding: 1.5rem 1.2rem; border-bottom: 1px solid var(--glass-border); vertical-align: top; color: var(--text-muted); font-size: 1rem; line-height: 1.6; }
+
+        .col-method { width: 20%; color: #fff; font-family: 'Space Grotesk'; font-size: 1.2rem; font-weight: 700; }
+        .col-findings { width: 50%; }
+        .col-verdict { width: 30%; }
+
+        tr.selected-row { background: rgba(16, 185, 129, 0.04); }
+        tr.selected-row td { color: #f1f5f9; border-bottom: none; }
+        tr.selected-row .col-method { color: #10b981; }
+
+        .badge-reject { display: inline-block; padding: 6px 12px; border-radius: 8px; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem; }
+        .badge-select { display: inline-block; padding: 6px 12px; border-radius: 8px; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem; box-shadow: 0 0 15px rgba(16, 185, 129, 0.1); }
+        
+        .citation-tag { display: block; margin-top: 0.8rem; font-size: 0.85rem; color: var(--primary); font-style: italic; opacity: 0.8; }
+        
+        .ref-footer { height: 140px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1rem; overflow-y: auto; }
+        .ref-header { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 0.5rem; display: block; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.3rem;}
+        .ref-item { font-size: 0.8rem; color: #64748b; margin-bottom: 0.5rem; padding-left: 0.8rem; border-left: 2px solid var(--glass-border); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="bg-grid"></div>
+    <div class="bg-gradient"></div>
+
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h2>Domain 03</h2>
+                <h1>AI Anomaly Detection</h1>
+            </div>
+            <div class="header-right">Literature Review</div>
+        </header>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-method">Approach</th>
+                        <th class="col-findings">Literature Findings</th>
+                        <th class="col-verdict">Comparative Verdict</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="col-method">Method A:<br>Standard ML</td>
+                        <td>
+                            Older algorithms like SVM tend to "underfit" the data. They miss complex/novel attacks due to the noisy nature of real-world data.
+                            <span class="citation-tag">Natha (2022)</span>
+                        </td>
+                        <td>
+                            <span class="badge-reject">REJECTED</span><br>
+                            Lacks the sophistication to catch modern, subtle anomalies.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="col-method">Method B:<br>Hybrid Cloud Models</td>
+                        <td>
+                            Accurate for URL scanning, but requires sending sensitive data to the cloud. This introduces latency (slowness) and privacy risks.
+                            <span class="citation-tag">Karim et al. (2023)</span>
+                        </td>
+                        <td>
+                            <span class="badge-reject">REJECTED</span><br>
+                            Unacceptable latency and privacy exposure for real-time messaging.
+                        </td>
+                    </tr>
+                    <tr class="selected-row">
+                        <td class="col-method">Method C:<br>On-Device Edge AI</td>
+                        <td>
+                            Using "Tiny" models on-device achieves 96% accuracy (Gaurav) with <100ms latency (Bispo), matching cloud performance locally.
+                            <span class="citation-tag">Bispo et al. (2025); Gaurav et al. (2025)</span>
+                        </td>
+                        <td>
+                            <span class="badge-select">SELECTED (SentriZK)</span><br>
+                            Provides high accuracy with zero latency and absolute privacy.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="ref-footer">
+            <span class="ref-header">References Used</span>
+            <div class="ref-item">Natha, S. (2022). A systematic review of anomaly detection using machine and deep learning techniques. <em>Quaid-e-Awam University Research Journal</em>.</div>
+            <div class="ref-item">Gaurav, A., et al. (2025). AI-driven smishing detection in Android devices using TinyBERT and Aquila optimization. <em>Computers & Security</em>.</div>
+            <div class="ref-item">Bispo, G. D., et al. (2025). PHILDER: Lightweight framework for intelligent phishing detection on resource-limited devices. <em>IEEE Internet of Things Journal</em>.</div>
+            <div class="ref-item">Karim, A., et al. (2023). Phishing detection system through hybrid machine learning based on URL. <em>IEEE Access</em>.</div>
+        </div>
+    </div>
+
+</body>
+</html>
