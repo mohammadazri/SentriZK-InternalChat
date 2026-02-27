@@ -18,9 +18,11 @@ subprojects {
 // Ensure all Android library modules (including plugins like isar_flutter_libs)
 // are compiled with the same SDK level to avoid missing attributes such as android:attr/lStar.
 subprojects {
-    plugins.withId("com.android.library") {
-        extensions.configure<LibraryExtension>("android") {
-            compileSdk = 36
+    afterEvaluate {
+        if (plugins.hasPlugin("com.android.library")) {
+            extensions.configure<LibraryExtension>("android") {
+                compileSdk = 36
+            }
         }
     }
 }
