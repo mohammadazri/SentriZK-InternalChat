@@ -42,8 +42,13 @@ const LocalMessageSchema = CollectionSchema(
       name: r'status',
       type: IsarType.string,
     ),
-    r'timestamp': PropertySchema(
+    r'threatScore': PropertySchema(
       id: 5,
+      name: r'threatScore',
+      type: IsarType.double,
+    ),
+    r'timestamp': PropertySchema(
+      id: 6,
       name: r'timestamp',
       type: IsarType.dateTime,
     )
@@ -92,7 +97,8 @@ void _localMessageSerialize(
   writer.writeString(offsets[2], object.receiverId);
   writer.writeString(offsets[3], object.senderId);
   writer.writeString(offsets[4], object.status);
-  writer.writeDateTime(offsets[5], object.timestamp);
+  writer.writeDouble(offsets[5], object.threatScore);
+  writer.writeDateTime(offsets[6], object.timestamp);
 }
 
 LocalMessage _localMessageDeserialize(
@@ -108,7 +114,8 @@ LocalMessage _localMessageDeserialize(
   object.receiverId = reader.readString(offsets[2]);
   object.senderId = reader.readString(offsets[3]);
   object.status = reader.readString(offsets[4]);
-  object.timestamp = reader.readDateTime(offsets[5]);
+  object.threatScore = reader.readDoubleOrNull(offsets[5]);
+  object.timestamp = reader.readDateTime(offsets[6]);
   return object;
 }
 
@@ -130,6 +137,8 @@ P _localMessageDeserializeProp<P>(
     case 4:
       return (reader.readString(offset)) as P;
     case 5:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 6:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -981,6 +990,90 @@ extension LocalMessageQueryFilter
   }
 
   QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      threatScoreIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'threatScore',
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      threatScoreIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'threatScore',
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      threatScoreEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'threatScore',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      threatScoreGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'threatScore',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      threatScoreLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'threatScore',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      threatScoreBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'threatScore',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
       timestampEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -1107,6 +1200,19 @@ extension LocalMessageQuerySortBy
     });
   }
 
+  QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy> sortByThreatScore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'threatScore', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy>
+      sortByThreatScoreDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'threatScore', Sort.desc);
+    });
+  }
+
   QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy> sortByTimestamp() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'timestamp', Sort.asc);
@@ -1196,6 +1302,19 @@ extension LocalMessageQuerySortThenBy
     });
   }
 
+  QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy> thenByThreatScore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'threatScore', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy>
+      thenByThreatScoreDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'threatScore', Sort.desc);
+    });
+  }
+
   QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy> thenByTimestamp() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'timestamp', Sort.asc);
@@ -1247,6 +1366,12 @@ extension LocalMessageQueryWhereDistinct
     });
   }
 
+  QueryBuilder<LocalMessage, LocalMessage, QDistinct> distinctByThreatScore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'threatScore');
+    });
+  }
+
   QueryBuilder<LocalMessage, LocalMessage, QDistinct> distinctByTimestamp() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'timestamp');
@@ -1290,6 +1415,12 @@ extension LocalMessageQueryProperty
   QueryBuilder<LocalMessage, String, QQueryOperations> statusProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'status');
+    });
+  }
+
+  QueryBuilder<LocalMessage, double?, QQueryOperations> threatScoreProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'threatScore');
     });
   }
 

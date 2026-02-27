@@ -8,6 +8,7 @@ class Message {
   final DateTime timestamp;
   final String? attachmentUrl;
   final String status;
+  final double? threatScore;
 
   Message({
     required this.id,
@@ -17,6 +18,7 @@ class Message {
     required this.timestamp,
     this.attachmentUrl,
     this.status = 'sent',
+    this.threatScore,
   });
 
   factory Message.fromFirestore(DocumentSnapshot doc) {
@@ -29,6 +31,7 @@ class Message {
       timestamp: (data['timestamp'] as Timestamp).toDate(),
       attachmentUrl: data['attachmentUrl'],
       status: data['status'] ?? 'sent',
+      threatScore: (data['threatScore'] as num?)?.toDouble(),
     );
   }
 
@@ -40,6 +43,7 @@ class Message {
       'timestamp': Timestamp.fromDate(timestamp),
       'attachmentUrl': attachmentUrl,
       'status': status,
+      if (threatScore != null) 'threatScore': threatScore,
     };
   }
 }

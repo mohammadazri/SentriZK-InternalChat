@@ -483,6 +483,41 @@ app.post("/firebase-token", async (req, res) => {
 });
 
 // ---------------------
+// Threat Log (ML insider threat detection)
+// ---------------------
+app.post("/threat-log", (req, res) => {
+  try {
+    const { senderId, receiverId, content, threatScore, timestamp } = req.body;
+
+    if (!senderId || !receiverId || !content || threatScore === undefined) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const db = loadDB();
+    if (!db.threat_logs) db.threat_logs = [];
+
+    const logEntry = {
+      id: crypto.randomBytes(16).toString("hex"),
+      senderId,
+      receiverId,
+      content,
+      threatScore,
+      timestamp: timestamp || Date.now(),
+      reportedAt: Date.now(),
+    };
+
+    db.threat_logs.push(logEntry);
+    saveDB(db);
+
+    console.log(`🚨 [THREAT] Logged threat from "${senderId}" to "${receiverId}" (score: ${threatScore})`);
+    res.json({ status: "ok", logId: logEntry.id });
+  } catch (err) {
+    console.error("💥 [threat-log] Error:", err);
+    res.status(500).json({ error: "Failed to log threat", details: String(err) });
+  }
+});
+
+// ---------------------
 // Token validation (for mobile app redirect)
 // ---------------------
 app.get("/validate-token", (req, res) => {

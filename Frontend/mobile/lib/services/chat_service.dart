@@ -27,6 +27,7 @@ class ChatService {
     required String receiverId,
     DateTime? timestamp,
     File? attachment,
+    double? threatScore,
   }) async {
     String? attachmentUrl;
     final createdAt = timestamp ?? DateTime.now();
@@ -46,6 +47,7 @@ class ChatService {
       timestamp: createdAt,
       attachmentUrl: attachmentUrl,
       status: 'sent',
+      threatScore: threatScore,
     );
     final docRef = _firestore
         .collection('chats')

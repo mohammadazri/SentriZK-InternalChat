@@ -1,13 +1,16 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../models/message.dart';
 import '../services/chat_service.dart';
 import '../services/message_security_service.dart';
+import '../services/message_scan_service.dart';
+import '../config/app_config.dart';
 
 import 'package:isar/isar.dart';
 import '../models/local_message.dart';
-// path_provider no longer required here; Isar instance is provided by MessageSecurityService
 
 // Security imports
 import '../widgets/secure_link_text.dart';
@@ -40,6 +43,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _initLocalStore();
+    MessageScanService.instance.init(); // Initialize ML model
   }
 
   Future<void> _initLocalStore() async {
@@ -91,7 +95,8 @@ class _ChatScreenState extends State<ChatScreen> {
           ..receiverId = msg.receiverId
           ..timestamp = msg.timestamp
           ..attachmentUrl = msg.attachmentUrl
-          ..status = status,
+          ..status = status
+          ..threatScore = msg.threatScore,
       );
     });
   }
@@ -143,6 +148,28 @@ class _ChatScreenState extends State<ChatScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Show threat warning for RECEIVED messages only
+                            if (!isMe && msg.threatScore != null && msg.threatScore! > 0.5)
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.red[50],
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: Colors.red[300]!),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.warning_amber_rounded, size: 14, color: Colors.red[700]),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Suspicious message detected',
+                                      style: TextStyle(fontSize: 11, color: Colors.red[700], fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             // Use SecureLinkText instead of Text for security
                             SecureLinkText(
                               text: msg.content,
@@ -200,12 +227,39 @@ class _ChatScreenState extends State<ChatScreen> {
                     final text = _controller.text.trim();
                     if (text.isNotEmpty) {
                       final sentAt = DateTime.now();
+
+                      // Silent ML scan — sender sees nothing
+                      double? threatScore;
+                      final scanService = MessageScanService.instance;
+                      if (scanService.isReady) {
+                        threatScore = await scanService.scanMessage(text);
+                      }
+
+                      // Send message with threat score
                       await _chatService.sendMessage(
                         content: text,
                         senderId: widget.username,
                         receiverId: widget.peerId,
                         timestamp: sentAt,
+                        threatScore: threatScore,
                       );
+
+                      // Report threat to backend (fire-and-forget)
+                      if (threatScore != null && scanService.isThreat(threatScore)) {
+                        http.post(
+                          Uri.parse(AppConfig.threatLogEndpoint),
+                          headers: {'Content-Type': 'application/json'},
+                          body: jsonEncode({
+                            'senderId': widget.username,
+                            'receiverId': widget.peerId,
+                            'content': text,
+                            'threatScore': threatScore,
+                            'timestamp': sentAt.millisecondsSinceEpoch,
+                          }),
+                        ).catchError((e) => print('⚠️ [ML] Failed to log threat: $e'));
+                      }
+
+                      // Save locally without threat score for sender
                       await _saveMessageLocally(
                         Message(
                           id: '',

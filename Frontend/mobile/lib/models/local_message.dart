@@ -11,4 +11,5 @@ class LocalMessage {
   late DateTime timestamp;
   String? attachmentUrl;
   String status = 'sent';
+  double? threatScore;
 }
