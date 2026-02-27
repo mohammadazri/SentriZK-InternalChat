@@ -29,7 +29,12 @@ class MessageScanService {
 
     try {
       // Load TFLite model
-      _interpreter = await Interpreter.fromAsset('assets/ml/sentrizk_model.tflite');
+      final options = InterpreterOptions()..addDelegate(GpuDelegateV2());
+      // By default adding GpuDelegateV2 without specifying the flex delegate works sometimes 
+      // but to force Flex ops in tflite_flutter 0.12+ we configure the options correctly.
+      options.useNnApiForAndroid = true;
+
+      _interpreter = await Interpreter.fromAsset('assets/ml/sentrizk_model.tflite', options: options);
       print('✅ [ML] TFLite model loaded');
 
       // Load vocabulary
