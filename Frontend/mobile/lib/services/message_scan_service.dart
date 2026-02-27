@@ -29,7 +29,7 @@ class MessageScanService {
 
     try {
       // Load TFLite model
-      _interpreter = await Interpreter.fromAsset('ml/sentrizk_model.tflite');
+      _interpreter = await Interpreter.fromAsset('assets/ml/sentrizk_model.tflite');
       print('✅ [ML] TFLite model loaded');
 
       // Load vocabulary
