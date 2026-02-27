@@ -23,6 +23,7 @@ class AppConfig {
       "$apiUrl/generate-mobile-access-token";
   static String get validateSessionEndpoint => "$apiUrl/validate-session";
   static String get refreshSessionEndpoint => "$apiUrl/refresh-session";
+  static String get firebaseTokenEndpoint => "$apiUrl/firebase-token";
   static String get logoutEndpoint => "$apiUrl/logout";
 
   // Deep Link Callbacks

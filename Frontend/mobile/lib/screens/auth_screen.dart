@@ -262,6 +262,12 @@ class _AuthScreenState extends State<AuthScreen>
                   onTimeout: () => throw TimeoutException('Login timeout'),
                 );
 
+            // Sign in to Firebase Auth with custom token (required before Firestore writes)
+            final firebaseSessionId = await _authService.getSessionId();
+            if (firebaseSessionId != null) {
+              await _authService.signInToFirebase(firebaseSessionId);
+            }
+
             // Create or update Firestore user profile after successful login
             final deviceId = await _authService.getDeviceId();
             final userService = UserService();

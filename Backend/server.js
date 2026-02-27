@@ -17,6 +17,16 @@ const cors = require("cors");
 const crypto = require("crypto");
 const circomlibjs = require("circomlibjs");
 const rateLimit = require("express-rate-limit");
+const admin = require("firebase-admin");
+
+// =======================
+// --- Firebase Admin SDK ---
+// =======================
+const serviceAccount = require("./serviceAccountKey.json");
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+console.log("🔥 [firebase] Admin SDK initialized.");
 
 const app = express();
 
@@ -139,7 +149,7 @@ function generateMobileAccessToken() {
 function cleanupExpiredTokens(db) {
   const now = Date.now();
   let cleaned = 0;
-  
+
   // Cleanup tokens
   for (const [token, data] of Object.entries(db.tokens)) {
     if (data.expires && now > data.expires) {
@@ -147,7 +157,7 @@ function cleanupExpiredTokens(db) {
       cleaned++;
     }
   }
-  
+
   // Cleanup sessions
   for (const [sessionId, data] of Object.entries(db.sessions)) {
     if (data.expires && now > data.expires) {
@@ -155,7 +165,7 @@ function cleanupExpiredTokens(db) {
       cleaned++;
     }
   }
-  
+
   // Cleanup mobile access tokens
   for (const [mat, data] of Object.entries(db.mobileAccessTokens)) {
     if (data.expires && now > data.expires) {
@@ -163,7 +173,7 @@ function cleanupExpiredTokens(db) {
       cleaned++;
     }
   }
-  
+
   if (cleaned > 0) {
     saveDB(db);
     console.log(`🧹 [cleanup] Removed ${cleaned} expired tokens/sessions`);
@@ -222,21 +232,21 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 app.post("/generate-mobile-access-token", (req, res) => {
   try {
     const { deviceId, action } = req.body; // action: "register" or "login"
-    
+
     if (!deviceId || !action) {
       return res.status(400).json({ error: "deviceId and action required" });
     }
-    
+
     if (!["register", "login"].includes(action)) {
       return res.status(400).json({ error: "action must be 'register' or 'login'" });
     }
-    
+
     const db = loadDB();
     cleanupExpiredTokens(db);
-    
+
     const mat = generateMobileAccessToken();
     const expires = Date.now() + MOBILE_ACCESS_TOKEN_TTL;
-    
+
     db.mobileAccessTokens[mat] = {
       deviceId,
       action,
@@ -244,15 +254,15 @@ app.post("/generate-mobile-access-token", (req, res) => {
       used: false,
       createdAt: Date.now()
     };
-    
+
     saveDB(db);
-    
-    res.json({ 
+
+    res.json({
       mobileAccessToken: mat,
       expiresIn: MOBILE_ACCESS_TOKEN_TTL,
-      action 
+      action
     });
-    
+
   } catch (err) {
     res.status(500).json({ error: "Server error", details: String(err) });
   }
@@ -263,50 +273,50 @@ app.post("/generate-mobile-access-token", (req, res) => {
 // ---------------------
 function validateMobileAccessToken(req, res, next) {
   const mat = req.query.mat || req.body.mat || req.headers["x-mobile-access-token"];
-  
+
   if (!mat) {
-    return res.status(403).json({ 
+    return res.status(403).json({
       error: "Access denied: Mobile access token required",
       message: "This page can only be accessed from the mobile app"
     });
   }
-  
+
   const db = loadDB();
   cleanupExpiredTokens(db);
-  
+
   const matData = db.mobileAccessTokens[mat];
-  
+
   if (!matData) {
-    return res.status(403).json({ 
+    return res.status(403).json({
       error: "Invalid or expired mobile access token",
       message: "Please reopen this page from the mobile app"
     });
   }
-  
+
   if (matData.used) {
-    return res.status(403).json({ 
+    return res.status(403).json({
       error: "Mobile access token already used",
       message: "This link can only be used once"
     });
   }
-  
+
   if (Date.now() > matData.expires) {
     delete db.mobileAccessTokens[mat];
     saveDB(db);
-    return res.status(403).json({ 
+    return res.status(403).json({
       error: "Mobile access token expired",
       message: "Please reopen this page from the mobile app"
     });
   }
-  
+
   // Mark as used
   matData.used = true;
   saveDB(db);
-  
+
   // Attach to request for use in route handlers
   req.mobileAccessData = matData;
   req.mobileAccessToken = mat;
-  
+
   next();
 }
 
@@ -350,7 +360,7 @@ app.post("/register", async (req, res) => {
 
     if (getUser(db, username)) return res.status(400).json({ error: "Username already registered" });
 
-    db.users[username] = { 
+    db.users[username] = {
       commitment,
       registeredAt: Date.now()
     };
@@ -379,7 +389,7 @@ app.post("/login", async (req, res) => {
     const { username, proof, publicSignals } = req.body;
     const db = loadDB();
     cleanupExpiredTokens(db);
-    
+
     const user = getUser(db, username);
     if (!user) return res.status(404).json({ error: "User not found" });
 
@@ -405,7 +415,7 @@ app.post("/login", async (req, res) => {
     // Remove nonce after use
     delete user.nonce;
     delete user.nonceTime;
-    
+
     // Update last login
     user.lastLogin = Date.now();
     setUser(db, username, user);
@@ -425,14 +435,50 @@ app.post("/login", async (req, res) => {
     db.tokens[token] = { username, expires: tokenExpires, type: "login", sessionId };
     saveDB(db);
 
-    res.json({ 
-      status: "ok", 
+    res.json({
+      status: "ok",
       token,
       sessionId,
       expiresIn: SESSION_TTL
     });
   } catch (err) {
     res.status(500).json({ error: "Server error", details: String(err) });
+  }
+});
+
+// ---------------------
+// Firebase Custom Token (for Firestore auth)
+// ---------------------
+app.post("/firebase-token", async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+
+    if (!sessionId) {
+      return res.status(400).json({ error: "sessionId required" });
+    }
+
+    const db = loadDB();
+    cleanupExpiredTokens(db);
+
+    const session = db.sessions[sessionId];
+    if (!session) {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+
+    if (Date.now() > session.expires) {
+      delete db.sessions[sessionId];
+      saveDB(db);
+      return res.status(401).json({ error: "Session expired" });
+    }
+
+    // Generate Firebase custom token using the username as UID
+    const firebaseToken = await admin.auth().createCustomToken(session.username);
+    console.log(`🔥 [firebase] Custom token generated for: ${session.username}`);
+
+    res.json({ firebaseToken });
+  } catch (err) {
+    console.error("💥 [firebase-token] Error:", err);
+    res.status(500).json({ error: "Failed to generate Firebase token", details: String(err) });
   }
 });
 
@@ -483,28 +529,28 @@ app.get("/validate-token", (req, res) => {
 // ---------------------
 app.post("/validate-session", (req, res) => {
   const { sessionId } = req.body;
-  
+
   if (!sessionId) {
     return res.status(400).json({ valid: false, error: "sessionId required" });
   }
-  
+
   const db = loadDB();
   cleanupExpiredTokens(db);
-  
+
   const session = db.sessions[sessionId];
-  
+
   if (!session) {
     return res.status(400).json({ valid: false, error: "Session not found" });
   }
-  
+
   if (Date.now() > session.expires) {
     delete db.sessions[sessionId];
     saveDB(db);
     return res.status(400).json({ valid: false, error: "Session expired" });
   }
-  
-  res.json({ 
-    valid: true, 
+
+  res.json({
+    valid: true,
     username: session.username,
     expiresAt: session.expires,
     createdAt: session.createdAt
@@ -569,18 +615,18 @@ app.post("/refresh-session", (req, res) => {
 // ---------------------
 app.post("/logout", (req, res) => {
   const { sessionId } = req.body;
-  
+
   if (!sessionId) {
     return res.status(400).json({ error: "sessionId required" });
   }
-  
+
   const db = loadDB();
-  
+
   if (db.sessions[sessionId]) {
     delete db.sessions[sessionId];
     saveDB(db);
   }
-  
+
   res.json({ status: "ok", message: "Logged out successfully" });
 });
 

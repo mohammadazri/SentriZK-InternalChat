@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:math';
 import '../config/app_config.dart';
 import 'recovery_service.dart';
@@ -290,6 +291,35 @@ class AuthService {
     });
   }
 
+  /// Sign in to Firebase using a custom token from the backend
+  Future<void> signInToFirebase(String sessionId) async {
+    try {
+      print('🔥 Requesting Firebase custom token...');
+      final response = await http.post(
+        Uri.parse(AppConfig.firebaseTokenEndpoint),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'sessionId': sessionId}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final firebaseToken = data['firebaseToken'];
+
+        if (firebaseToken != null) {
+          await FirebaseAuth.instance.signInWithCustomToken(firebaseToken);
+          print('✅ Firebase Auth signed in successfully');
+        } else {
+          throw Exception('No firebaseToken in response');
+        }
+      } else {
+        throw Exception('Firebase token request failed: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      print('❌ Firebase sign-in error: $e');
+      rethrow;
+    }
+  }
+
   /// Logout (clear session)
   Future<void> logout() async {
     try {
@@ -303,6 +333,13 @@ class AuthService {
       }
     } catch (e) {
       // Ignore logout errors
+    }
+
+    // Sign out of Firebase Auth
+    try {
+      await FirebaseAuth.instance.signOut();
+    } catch (e) {
+      // Ignore Firebase sign-out errors
     }
 
     // Clear local session data
