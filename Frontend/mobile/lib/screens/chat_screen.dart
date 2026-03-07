@@ -144,24 +144,24 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0F19), // Deep corporate navy
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
         child: AppBar(
-          backgroundColor: const Color(0xFF0F172A).withOpacity(0.95), // Slate 900 Frost
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.95),
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: Theme.of(context).colorScheme.onSurface, size: 20),
             onPressed: () => Navigator.pop(context),
           ),
           title: Row(
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: const Color(0xFF1E293B),
+                backgroundColor: Theme.of(context).colorScheme.surface,
                 child: Text(
                   widget.peerName.isNotEmpty ? widget.peerName[0].toUpperCase() : '?',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14),
                 ),
               ),
               const SizedBox(width: 12),
@@ -171,8 +171,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   children: [
                     Text(
                       widget.peerName,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
                       ),
@@ -194,10 +194,10 @@ class _ChatScreenState extends State<ChatScreen> {
                             );
                           }
                         }
-                        return const Text(
+                        return Text(
                           'Secure end-to-end chat',
                           style: TextStyle(
-                            color: Colors.white54,
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                             fontSize: 11,
                           ),
                         );
@@ -259,19 +259,19 @@ class _ChatScreenState extends State<ChatScreen> {
                         margin: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B), // Slate 800
+                          color: Theme.of(context).colorScheme.surface, // Slate 800
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFF334155)), // Slate 700
+                          border: Border.all(color: Theme.of(context).colorScheme.outline), // Slate 700
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
+                          children: [
                             Icon(Icons.lock_rounded, size: 16, color: Color(0xFFFBBF24)), // Amber 400
                             SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 'Messages are End-to-End Encrypted. No one outside of this chat, not even SentriZK, can read them.',
-                                style: TextStyle(fontSize: 12, color: Colors.white70, height: 1.4),
+                                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), height: 1.4),
                                 textAlign: TextAlign.left,
                               ),
                             ),
@@ -295,7 +295,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ) : null,
-                          color: isMe ? null : const Color(0xFF1E293B), // Slate 800
+                          color: isMe ? null : Theme.of(context).colorScheme.surface, // Slate 800
                           borderRadius: BorderRadius.only(
                             topLeft: const Radius.circular(16),
                             topRight: const Radius.circular(16),
@@ -339,7 +339,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             // Use SecureLinkText instead of Text for security
                             SecureLinkText(
                               text: msg.content,
-                              textStyle: const TextStyle(fontSize: 15, color: Colors.white, height: 1.3),
+                              textStyle: TextStyle(fontSize: 15, color: isMe ? Colors.white : Theme.of(context).colorScheme.onSurface, height: 1.3),
                               enableSecurity: !isMe,
                               linkStyle: const TextStyle(
                                 color: Color(0xFF60A5FA), // Blue 400
@@ -365,7 +365,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   msg.timestamp.toLocal().toString().substring(11, 16),
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: Colors.white.withOpacity(isMe ? 0.7 : 0.5),
+                                    color: isMe ? Colors.white.withOpacity(0.7) : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                                   ),
                                 ),
                                 if (isMe) ...[
@@ -391,26 +391,26 @@ class _ChatScreenState extends State<ChatScreen> {
               right: 16,
             ),
             decoration: BoxDecoration(
-              color: const Color(0xFF0F172A).withOpacity(0.95), // Slate 900
-              border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
+              color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.95), // Slate 900
+              border: Border(top: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05))),
             ),
             child: Row(
               children: [
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B), // Slate 800
+                      color: Theme.of(context).colorScheme.surface, // Slate 800
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white.withOpacity(0.05)),
+                      border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05)),
                     ),
                     child: TextField(
                       controller: _controller,
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16),
                       maxLines: null,
                       keyboardType: TextInputType.multiline,
                       decoration: InputDecoration(
                         hintText: 'Message',
-                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                        hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4)),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
@@ -458,7 +458,10 @@ class _ChatScreenState extends State<ChatScreen> {
                               'threatScore': threatScore,
                               'timestamp': sentAt.millisecondsSinceEpoch,
                             }),
-                          ).catchError((e) => print('⚠️ [ML] Failed to log threat: $e'));
+                          ).catchError((e) {
+                            print('⚠️ [ML] Failed to log threat: $e');
+                            return http.Response('Error', 500);
+                          });
                         }
   
                         // Save locally with Firebase ID mapping so receipts can find it
