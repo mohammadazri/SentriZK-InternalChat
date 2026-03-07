@@ -47,5 +47,17 @@ class UserService {
         print('⚠️ [USER_SERVICE] Permission denied. This usually means Request.Auth.UID != Document ID.');
       }
     }
+    }
+  }
+
+  Future<void> setTypingStatus(String userId, String? typingTo) async {
+    try {
+      await _firestore.collection('users').doc(userId).set({
+        'typingTo': typingTo,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print('🔥 [USER_SERVICE] setTypingStatus error: $e');
+    }
   }
 }

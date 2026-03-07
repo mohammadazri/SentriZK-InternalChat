@@ -11,6 +11,7 @@ import '../models/local_message.dart';
 import '../models/message.dart';
 import 'dart:async';
 import 'package:isar/isar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UserListScreen extends StatefulWidget {
   final String currentUserId;
@@ -32,6 +33,7 @@ class _UserListScreenState extends State<UserListScreen>
   Isar? _isar;
   StreamSubscription<List<Message>>? _globalMessageSub;
   StreamSubscription<List<Map<String, dynamic>>>? _receiptSub;
+  Map<String, String> _drafts = {};
 
   @override
   void initState() {
@@ -39,6 +41,29 @@ class _UserListScreenState extends State<UserListScreen>
     WidgetsBinding.instance.addObserver(this);
     _setOnlineStatus(true);
     _initBackgroundSync();
+    _loadDrafts();
+  }
+
+  Future<void> _loadDrafts() async {
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys();
+    final newDrafts = <String, String>{};
+    
+    for (var key in keys) {
+      if (key.startsWith('draft_${widget.currentUserId}_')) {
+        final peerId = key.replaceAll('draft_${widget.currentUserId}_', '');
+        final text = prefs.getString(key);
+        if (text != null && text.isNotEmpty) {
+          newDrafts[peerId] = text;
+        }
+      }
+    }
+    
+    if (mounted) {
+      setState(() {
+        _drafts = newDrafts;
+      });
+    }
   }
 
   Future<void> _initBackgroundSync() async {
@@ -292,6 +317,8 @@ class _UserListScreenState extends State<UserListScreen>
                                   .join()
                                   .toUpperCase()
                             : '?';
+                        final draftText = _drafts[user['id']];
+                        final isTyping = user['typingTo'] == widget.currentUserId;
 
                         return _UserRow(
                           name: displayName,
@@ -299,8 +326,10 @@ class _UserListScreenState extends State<UserListScreen>
                           status: isOnline ? 'Online' : 'Offline',
                           isOnline: isOnline,
                           initials: initials,
-                          onTap: () {
-                            Navigator.push(
+                          draft: draftText,
+                          isTyping: isTyping,
+                          onTap: () async {
+                            await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => ChatScreen(
@@ -310,6 +339,8 @@ class _UserListScreenState extends State<UserListScreen>
                                 ),
                               ),
                             );
+                            // Refresh drafts when returning from ChatScreen
+                            _loadDrafts();
                           },
                         );
                       },
@@ -363,6 +394,8 @@ class _UserRow extends StatelessWidget {
   final String status;
   final bool isOnline;
   final String initials;
+  final String? draft;
+  final bool isTyping;
   final VoidCallback onTap;
 
   const _UserRow({
@@ -371,6 +404,8 @@ class _UserRow extends StatelessWidget {
     required this.status,
     required this.isOnline,
     required this.initials,
+    this.draft,
+    this.isTyping = false,
     required this.onTap,
   });
 
@@ -458,23 +493,54 @@ class _UserRow extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(
-                        Icons.shield_outlined,
-                        size: 14,
-                        color: Colors.white.withOpacity(0.3),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          '@$username • Tap to chat',
+                      if (isTyping) ...[
+                        const Text(
+                          'typing...',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
+                            color: Color(0xFF10B981), // Emerald 500
                             fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            fontStyle: FontStyle.italic,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
+                      ] else if (draft != null) ...[
+                        const Icon(
+                          Icons.edit_note_rounded,
+                          size: 16,
+                          color: Colors.redAccent,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            'Draft: $draft',
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ] else ...[
+                        Icon(
+                          Icons.shield_outlined,
+                          size: 14,
+                          color: Colors.white.withOpacity(0.3),
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '@$username • Tap to chat',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
+                              fontSize: 13,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ],

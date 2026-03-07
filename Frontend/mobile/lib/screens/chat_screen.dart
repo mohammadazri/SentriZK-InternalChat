@@ -10,7 +10,10 @@ import '../services/message_scan_service.dart';
 import '../config/app_config.dart';
 
 import 'package:isar/isar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/local_message.dart';
+import '../services/user_service.dart';
 
 // Security imports
 import '../widgets/secure_link_text.dart';
@@ -34,15 +37,59 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final ChatService _chatService = ChatService();
+  final UserService _userService = UserService();
   final TextEditingController _controller = TextEditingController();
   Isar? _isar;
   Stream<List<LocalMessage>>? _localMessagesStream;
+  Timer? _typingTimer;
+  bool _isTyping = false;
 
   @override
   void initState() {
     super.initState();
     _initLocalStore();
+    _loadDraft();
+    _controller.addListener(_onTextChanged);
     MessageScanService.instance.init(); // Initialize ML model
+  }
+
+  String get _draftKey => 'draft_${widget.username}_${widget.peerId}';
+
+  Future<void> _loadDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+    final draft = prefs.getString(_draftKey);
+    if (draft != null && draft.isNotEmpty && mounted) {
+      _controller.text = draft;
+    }
+  }
+
+  void _onTextChanged() async {
+    final text = _controller.text;
+    final prefs = await SharedPreferences.getInstance();
+    
+    if (text.isEmpty) {
+      await prefs.remove(_draftKey);
+      if (_isTyping) {
+        _isTyping = false;
+        _typingTimer?.cancel();
+        _userService.setTypingStatus(widget.username, null);
+      }
+    } else {
+      await prefs.setString(_draftKey, text);
+      
+      if (!_isTyping) {
+        _isTyping = true;
+        _userService.setTypingStatus(widget.username, widget.peerId);
+      }
+      
+      _typingTimer?.cancel();
+      _typingTimer = Timer(const Duration(seconds: 2), () {
+        if (mounted && _isTyping) {
+          _isTyping = false;
+          _userService.setTypingStatus(widget.username, null);
+        }
+      });
+    }
   }
 
   Future<void> _initLocalStore() async {
@@ -130,12 +177,31 @@ class _ChatScreenState extends State<ChatScreen> {
                         fontSize: 16,
                       ),
                     ),
-                    const Text(
-                      'Secure end-to-end chat',
-                      style: TextStyle(
-                        color: Colors.white54,
-                        fontSize: 11,
-                      ),
+                    StreamBuilder<DocumentSnapshot>(
+                      stream: FirebaseFirestore.instance.collection('users').doc(widget.peerId).snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
+                          final peerData = snapshot.data!.data() as Map<String, dynamic>;
+                          if (peerData['typingTo'] == widget.username) {
+                            return const Text(
+                              'typing...',
+                              style: TextStyle(
+                                color: Color(0xFF10B981), // Emerald 500
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            );
+                          }
+                        }
+                        return const Text(
+                          'Secure end-to-end chat',
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 11,
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -407,6 +473,15 @@ class _ChatScreenState extends State<ChatScreen> {
                           ),
                           status: 'sent',
                         );
+                        // Clear local draft from SharedPreferences precisely when sending
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.remove(_draftKey);
+                        
+                        // Clear typing status
+                        _isTyping = false;
+                        _typingTimer?.cancel();
+                        _userService.setTypingStatus(widget.username, null);
+                        
                         _controller.clear();
                       }
                     },
@@ -422,6 +497,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    _typingTimer?.cancel();
+    if (_isTyping) {
+      _userService.setTypingStatus(widget.username, null);
+    }
+    _controller.removeListener(_onTextChanged);
     _controller.dispose();
     super.dispose();
   }
