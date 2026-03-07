@@ -31,6 +31,7 @@ class _UserListScreenState extends State<UserListScreen>
   String _searchQuery = '';
   Isar? _isar;
   StreamSubscription<List<Message>>? _globalMessageSub;
+  StreamSubscription<List<Map<String, dynamic>>>? _receiptSub;
 
   @override
   void initState() {
@@ -68,12 +69,44 @@ class _UserListScreenState extends State<UserListScreen>
             );
           });
 
-          // 3. Delete from Firebase to preserve ephemeral privacy
+          // 3. Fire a 2 grey ticks (delivered) receipt back to the sender
+          await _chatService.sendReceipt(msg.senderId, msg.id, 'delivered');
+
+          // 4. Delete from Firebase to preserve ephemeral privacy
           await _chatService.deleteMessageAfterLocalSave(
             widget.currentUserId,
             msg.id,
           );
         }
+      }
+    });
+
+    // Start listening globally for delivery/read receipts coming back to us
+    _receiptSub = _chatService
+        .listenForReceipts(widget.currentUserId)
+        .listen((receipts) async {
+      for (final receipt in receipts) {
+        final messageId = receipt['messageId'] as String;
+        final status = receipt['status'] as String;
+
+        await isar.writeTxn(() async {
+          // Find the exact message we sent that this receipt is responding to
+          final localMessage = await isar.localMessages
+              .filter()
+              .firebaseIdEqualTo(messageId)
+              .findFirst(); 
+
+          if (localMessage != null) {
+            // Only upgrade status (don't downgrade from read to delivered)
+            if (localMessage.status == 'read') return;
+            
+            localMessage.status = status;
+            await isar.localMessages.put(localMessage);
+          }
+        });
+
+        // Delete the receipt node from Firebase completely. The sender has ingested it.
+        await _chatService.deleteReceiptAfterLocalSave(widget.currentUserId, messageId);
       }
     });
   }
@@ -84,6 +117,7 @@ class _UserListScreenState extends State<UserListScreen>
     _setOnlineStatus(false);
     _searchController.dispose();
     _globalMessageSub?.cancel();  // Stop background sync on exit
+    _receiptSub?.cancel();
     super.dispose();
   }
 

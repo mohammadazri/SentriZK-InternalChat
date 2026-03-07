@@ -110,7 +110,7 @@ class ChatService {
     });
   }
 
-  Future<void> sendMessage({
+  Future<String> sendMessage({
     required String content,
     required String senderId,
     required String receiverId,
@@ -167,8 +167,8 @@ class ChatService {
         .doc(receiverId)
         .collection('messages')
         .doc();
-    await docRef.set(message.toMap());
-    // Do NOT delete immediately. Deletion will occur after receiver marks as 'seen'.
+                              // Return the generated message ID!
+    return docRef.id;
   }
 
   Future<void> markMessageSeen(String ownId, String messageId) async {
@@ -198,6 +198,53 @@ class ChatService {
         .collection('chats')
         .doc(ownId)
         .collection('messages')
+        .doc(messageId)
+        .delete();
+  }
+
+  // --- E2EE Safe Delivery Receipts (WhatsApp Ticks) ---
+
+  /// Sends a completely opaque receipt token to the original sender's `receipts` subcollection.
+  /// Status can be 'delivered' (UserListScreen downloaded it) or 'read' (ChatScreen opened it).
+  Future<void> sendReceipt(String originalSenderId, String messageId, String status) async {
+    try {
+      await _firestore
+          .collection('chats')
+          .doc(originalSenderId)
+          .collection('receipts')
+          .doc(messageId)
+          .set({
+        'status': status,
+        'timestamp': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true)); // Merge so 'read' overwrites 'delivered'
+    } catch (e) {
+      print('⚠️ Failed to send $status receipt: $e');
+    }
+  }
+
+  /// Listens to incoming receipt tokens (Sent to us by people who received our messages).
+  Stream<List<Map<String, dynamic>>> listenForReceipts(String ownId) {
+    return _firestore
+        .collection('chats')
+        .doc(ownId)
+        .collection('receipts')
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return {
+          'messageId': doc.id,
+          'status': doc.data()['status'] as String,
+        };
+      }).toList();
+    });
+  }
+
+  /// Deletes a receipt out of Firebase once our local database has ingested it.
+  Future<void> deleteReceiptAfterLocalSave(String ownId, String messageId) async {
+    await _firestore
+        .collection('chats')
+        .doc(ownId)
+        .collection('receipts')
         .doc(messageId)
         .delete();
   }

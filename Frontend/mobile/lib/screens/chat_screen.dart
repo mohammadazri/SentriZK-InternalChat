@@ -71,6 +71,7 @@ class _ChatScreenState extends State<ChatScreen> {
     await _isar!.writeTxn(() async {
       await _isar!.localMessages.put(
         LocalMessage()
+          ..firebaseId = msg.id.isNotEmpty ? msg.id : null
           ..content = msg.content
           ..senderId = msg.senderId
           ..receiverId = msg.receiverId
@@ -108,6 +109,30 @@ class _ChatScreenState extends State<ChatScreen> {
                         )
                         .toList()
                       ..sort((a, b) => a.id.compareTo(b.id));
+
+                // WhatsApp Read Receipt magic:
+                // If we are looking at this screen, any incoming message should be marked 'read'
+                if (_isar != null && _isar!.isOpen) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) async {
+                    final unreadIncoming = messages.where(
+                      (m) => m.senderId == widget.peerId && m.status != 'read'
+                    ).toList();
+                    
+                    if (unreadIncoming.isNotEmpty) {
+                      await _isar!.writeTxn(() async {
+                        for (final m in unreadIncoming) {
+                          m.status = 'read';
+                          await _isar!.localMessages.put(m);
+                          
+                          // Fire the blue tick receipt over the network back to the sender
+                          if (m.firebaseId != null) {
+                            _chatService.sendReceipt(m.senderId, m.firebaseId!, 'read');
+                          }
+                        }
+                      });
+                    }
+                  });
+                }
 
                 return ListView.builder(
                   padding: const EdgeInsets.all(8),
@@ -192,20 +217,27 @@ class _ChatScreenState extends State<ChatScreen> {
                             if (msg.attachmentUrl != null)
                               Padding(
                                 padding: const EdgeInsets.only(top: 4),
-                                child: Text(
+                                child: const Text(
                                   '[Attachment]',
                                   style: TextStyle(color: Colors.blue),
                                 ),
                               ),
-                            Text(
-                              msg.timestamp.toLocal().toString().substring(
-                                0,
-                                16,
-                              ),
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey,
-                              ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Text(
+                                  msg.timestamp.toLocal().toString().substring(0, 16),
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                if (isMe) ...[
+                                  const SizedBox(width: 4),
+                                  _MessageStatusIndicator(status: msg.status),
+                                ],
+                              ],
                             ),
                           ],
                         ),
@@ -242,8 +274,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         threatScore = await scanService.scanMessage(text);
                       }
 
-                      // Send message with threat score
-                      await _chatService.sendMessage(
+                      // Send message with threat score and get Firebase ID
+                      final firebaseId = await _chatService.sendMessage(
                         content: text,
                         senderId: widget.username,
                         receiverId: widget.peerId,
@@ -266,10 +298,10 @@ class _ChatScreenState extends State<ChatScreen> {
                         ).catchError((e) => print('⚠️ [ML] Failed to log threat: $e'));
                       }
 
-                      // Save locally without threat score for sender
+                      // Save locally with Firebase ID mapping so receipts can find it
                       await _saveMessageLocally(
                         Message(
-                          id: '',
+                          id: firebaseId,
                           content: text,
                           senderId: widget.username,
                           receiverId: widget.peerId,
@@ -294,5 +326,37 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+}
+
+class _MessageStatusIndicator extends StatelessWidget {
+  final String status;
+  
+  const _MessageStatusIndicator({Key? key, required this.status}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    IconData icon;
+    Color color;
+
+    switch (status) {
+      case 'sent':
+        icon = Icons.check;
+        color = Colors.grey;
+        break;
+      case 'delivered':
+        icon = Icons.done_all;
+        color = Colors.grey;
+        break;
+      case 'read':
+        icon = Icons.done_all;
+        color = Colors.blue;
+        break;
+      default:
+        icon = Icons.schedule; // Sending...
+        color = Colors.grey;
+    }
+
+    return Icon(icon, size: 14, color: color);
   }
 }

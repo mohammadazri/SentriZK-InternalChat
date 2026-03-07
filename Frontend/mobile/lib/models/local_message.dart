@@ -12,4 +12,7 @@ class LocalMessage {
   String? attachmentUrl;
   String status = 'sent';
   double? threatScore;
+
+  @Index(unique: false)
+  String? firebaseId;
 }
