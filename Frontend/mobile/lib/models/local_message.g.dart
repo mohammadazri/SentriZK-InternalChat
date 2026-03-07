@@ -27,28 +27,33 @@ const LocalMessageSchema = CollectionSchema(
       name: r'content',
       type: IsarType.string,
     ),
-    r'receiverId': PropertySchema(
+    r'firebaseId': PropertySchema(
       id: 2,
+      name: r'firebaseId',
+      type: IsarType.string,
+    ),
+    r'receiverId': PropertySchema(
+      id: 3,
       name: r'receiverId',
       type: IsarType.string,
     ),
     r'senderId': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'senderId',
       type: IsarType.string,
     ),
     r'status': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'status',
       type: IsarType.string,
     ),
     r'threatScore': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'threatScore',
       type: IsarType.double,
     ),
     r'timestamp': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'timestamp',
       type: IsarType.dateTime,
     )
@@ -58,7 +63,21 @@ const LocalMessageSchema = CollectionSchema(
   deserialize: _localMessageDeserialize,
   deserializeProp: _localMessageDeserializeProp,
   idName: r'id',
-  indexes: {},
+  indexes: {
+    r'firebaseId': IndexSchema(
+      id: -334079192014120732,
+      name: r'firebaseId',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'firebaseId',
+          type: IndexType.hash,
+          caseSensitive: true,
+        )
+      ],
+    )
+  },
   links: {},
   embeddedSchemas: {},
   getId: _localMessageGetId,
@@ -80,6 +99,12 @@ int _localMessageEstimateSize(
     }
   }
   bytesCount += 3 + object.content.length * 3;
+  {
+    final value = object.firebaseId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.receiverId.length * 3;
   bytesCount += 3 + object.senderId.length * 3;
   bytesCount += 3 + object.status.length * 3;
@@ -94,11 +119,12 @@ void _localMessageSerialize(
 ) {
   writer.writeString(offsets[0], object.attachmentUrl);
   writer.writeString(offsets[1], object.content);
-  writer.writeString(offsets[2], object.receiverId);
-  writer.writeString(offsets[3], object.senderId);
-  writer.writeString(offsets[4], object.status);
-  writer.writeDouble(offsets[5], object.threatScore);
-  writer.writeDateTime(offsets[6], object.timestamp);
+  writer.writeString(offsets[2], object.firebaseId);
+  writer.writeString(offsets[3], object.receiverId);
+  writer.writeString(offsets[4], object.senderId);
+  writer.writeString(offsets[5], object.status);
+  writer.writeDouble(offsets[6], object.threatScore);
+  writer.writeDateTime(offsets[7], object.timestamp);
 }
 
 LocalMessage _localMessageDeserialize(
@@ -110,12 +136,13 @@ LocalMessage _localMessageDeserialize(
   final object = LocalMessage();
   object.attachmentUrl = reader.readStringOrNull(offsets[0]);
   object.content = reader.readString(offsets[1]);
+  object.firebaseId = reader.readStringOrNull(offsets[2]);
   object.id = id;
-  object.receiverId = reader.readString(offsets[2]);
-  object.senderId = reader.readString(offsets[3]);
-  object.status = reader.readString(offsets[4]);
-  object.threatScore = reader.readDoubleOrNull(offsets[5]);
-  object.timestamp = reader.readDateTime(offsets[6]);
+  object.receiverId = reader.readString(offsets[3]);
+  object.senderId = reader.readString(offsets[4]);
+  object.status = reader.readString(offsets[5]);
+  object.threatScore = reader.readDoubleOrNull(offsets[6]);
+  object.timestamp = reader.readDateTime(offsets[7]);
   return object;
 }
 
@@ -131,14 +158,16 @@ P _localMessageDeserializeProp<P>(
     case 1:
       return (reader.readString(offset)) as P;
     case 2:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 3:
       return (reader.readString(offset)) as P;
     case 4:
       return (reader.readString(offset)) as P;
     case 5:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 6:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 7:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -233,6 +262,73 @@ extension LocalMessageQueryWhere
         upper: upperId,
         includeUpper: includeUpper,
       ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterWhereClause>
+      firebaseIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'firebaseId',
+        value: [null],
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterWhereClause>
+      firebaseIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'firebaseId',
+        lower: [null],
+        includeLower: false,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterWhereClause> firebaseIdEqualTo(
+      String? firebaseId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'firebaseId',
+        value: [firebaseId],
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterWhereClause>
+      firebaseIdNotEqualTo(String? firebaseId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'firebaseId',
+              lower: [],
+              upper: [firebaseId],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'firebaseId',
+              lower: [firebaseId],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'firebaseId',
+              lower: [firebaseId],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'firebaseId',
+              lower: [],
+              upper: [firebaseId],
+              includeUpper: false,
+            ));
+      }
     });
   }
 }
@@ -524,6 +620,160 @@ extension LocalMessageQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'content',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      firebaseIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'firebaseId',
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      firebaseIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'firebaseId',
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      firebaseIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'firebaseId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      firebaseIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'firebaseId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      firebaseIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'firebaseId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      firebaseIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'firebaseId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      firebaseIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'firebaseId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      firebaseIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'firebaseId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      firebaseIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'firebaseId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      firebaseIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'firebaseId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      firebaseIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'firebaseId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      firebaseIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'firebaseId',
         value: '',
       ));
     });
@@ -1163,6 +1413,19 @@ extension LocalMessageQuerySortBy
     });
   }
 
+  QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy> sortByFirebaseId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firebaseId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy>
+      sortByFirebaseIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firebaseId', Sort.desc);
+    });
+  }
+
   QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy> sortByReceiverId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'receiverId', Sort.asc);
@@ -1250,6 +1513,19 @@ extension LocalMessageQuerySortThenBy
   QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy> thenByContentDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'content', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy> thenByFirebaseId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firebaseId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy>
+      thenByFirebaseIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firebaseId', Sort.desc);
     });
   }
 
@@ -1345,6 +1621,13 @@ extension LocalMessageQueryWhereDistinct
     });
   }
 
+  QueryBuilder<LocalMessage, LocalMessage, QDistinct> distinctByFirebaseId(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'firebaseId', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<LocalMessage, LocalMessage, QDistinct> distinctByReceiverId(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1397,6 +1680,12 @@ extension LocalMessageQueryProperty
   QueryBuilder<LocalMessage, String, QQueryOperations> contentProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'content');
+    });
+  }
+
+  QueryBuilder<LocalMessage, String?, QQueryOperations> firebaseIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'firebaseId');
     });
   }
 

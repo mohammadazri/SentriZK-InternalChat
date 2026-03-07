@@ -51,33 +51,32 @@ class _UserListScreenState extends State<UserListScreen>
         .getAllIncomingMessages(widget.currentUserId)
         .listen((messages) async {
       for (final msg in messages) {
-        if (msg.status != 'seen') {
-          // 1. Tell Firebase we saw it so others don't process it simultaneously
-          await _chatService.markMessageSeen(widget.currentUserId, msg.id);
-
-          // 2. Save the locally decrypted plaintext securely
-          await isar.writeTxn(() async {
-            await isar.localMessages.put(
-              LocalMessage()
-                ..content = msg.content
-                ..senderId = msg.senderId
-                ..receiverId = msg.receiverId
-                ..timestamp = msg.timestamp
-                ..attachmentUrl = msg.attachmentUrl
-                ..status = 'seen'
-                ..threatScore = msg.threatScore,
-            );
-          });
-
-          // 3. Fire a 2 grey ticks (delivered) receipt back to the sender
-          await _chatService.sendReceipt(msg.senderId, msg.id, 'delivered');
-
-          // 4. Delete from Firebase to preserve ephemeral privacy
-          await _chatService.deleteMessageAfterLocalSave(
-            widget.currentUserId,
-            msg.id,
+        // 🔥 HIGH PERFORMANCE: No more 'markMessageSeen' middle-man updates. 
+        // Updating to 'seen' just to delete it 1ms later causes Firebase to trigger Double Stream rebuilds.
+        
+        // 1. Save the locally decrypted plaintext securely
+        await isar.writeTxn(() async {
+          await isar.localMessages.put(
+            LocalMessage()
+              ..firebaseId = msg.id // 🔥 MUST save ID so we can send a read receipt later!
+              ..content = msg.content
+              ..senderId = msg.senderId
+              ..receiverId = msg.receiverId
+              ..timestamp = msg.timestamp
+              ..attachmentUrl = msg.attachmentUrl
+              ..status = 'delivered' // Saved locally as delivered initially
+              ..threatScore = msg.threatScore,
           );
-        }
+        });
+
+        // 2. Fire a 2 grey ticks (delivered) receipt back to the sender
+        await _chatService.sendReceipt(msg.senderId, msg.id, 'delivered');
+
+        // 3. Delete from Firebase to preserve ephemeral privacy
+        await _chatService.deleteMessageAfterLocalSave(
+          widget.currentUserId,
+          msg.id,
+        );
       }
     });
 

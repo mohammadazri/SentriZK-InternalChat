@@ -56,9 +56,15 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     _isar = isar;
-    _localMessagesStream = isar.localMessages.where().watch(
-      fireImmediately: true,
-    );
+    
+    // 🔥 HIGH PERFORMANCE: Filter at the database level instead of in Dart memory!
+    _localMessagesStream = isar.localMessages
+        .filter()
+        .group((q) => q.senderIdEqualTo(widget.username).and().receiverIdEqualTo(widget.peerId))
+        .or()
+        .group((q) => q.senderIdEqualTo(widget.peerId).and().receiverIdEqualTo(widget.username))
+        .watch(fireImmediately: true);
+        
     setState(() {});
   }
 
@@ -98,17 +104,15 @@ class _ChatScreenState extends State<ChatScreen> {
             child: StreamBuilder<List<LocalMessage>>(
               stream: localStream,
               builder: (context, snapshot) {
-                final messages =
-                    (snapshot.data ?? [])
-                        .where(
-                          (msg) =>
-                              (msg.senderId == widget.username &&
-                                  msg.receiverId == widget.peerId) ||
-                              (msg.senderId == widget.peerId &&
-                                  msg.receiverId == widget.username),
-                        )
-                        .toList()
-                      ..sort((a, b) => a.id.compareTo(b.id));
+                if (snapshot.hasError) {
+                  print('🚨 [ChatScreen] StreamBuilder ERROR: ${snapshot.error}');
+                }
+
+                // Isar already filtered this exactly for our chat!
+                final rawData = snapshot.data ?? [];
+                
+                final messages = List<LocalMessage>.from(rawData)
+                  ..sort((a, b) => a.id.compareTo(b.id));
 
                 // WhatsApp Read Receipt magic:
                 // If we are looking at this screen, any incoming message should be marked 'read'

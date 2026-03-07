@@ -198,7 +198,13 @@ class AuthService {
     return await _secureStorage.read(key: 'session_id');
   }
 
-  /// Check if session is still valid
+  /// Check if session exists locally (Fast, non-blocking startup)
+  Future<bool> hasLocalSession() async {
+    final sessionId = await getSessionId();
+    return sessionId != null && sessionId.isNotEmpty;
+  }
+
+  /// Check if session is still valid with the backend (Network request)
   Future<bool> isSessionValid() async {
     try {
       final sessionId = await getSessionId();

@@ -69,44 +69,48 @@ class ChatService {
         .orderBy('timestamp', descending: false)
         .snapshots()
         .asyncMap((snapshot) async {
-      final List<Message> messages = [];
-      for (var doc in snapshot.docs) {
-        final data = doc.data();
-        var plaintext = data['content'] as String;
-        final type = data['signalType'] as int?;
-        final senderId = data['senderId'] as String? ?? '';
+      final List<Message> newMessages = [];
+      
+      for (var change in snapshot.docChanges) {
+        if (change.type == DocumentChangeType.added) {
+          final doc = change.doc;
+          final data = doc.data() as Map<String, dynamic>;
+          var plaintext = data['content'] as String;
+          final type = data['signalType'] as int?;
+          final senderId = data['senderId'] as String? ?? '';
 
-        if (type != null && senderId.isNotEmpty) {
-          if (_decryptedCache.containsKey(doc.id)) {
-            plaintext = _decryptedCache[doc.id]!;
-          } else {
-            try {
-              // The senderId of the incoming message is our peerId for decryption
-              plaintext = await _signalManager.decryptMessage(senderId, type, plaintext);
-              _decryptedCache[doc.id] = plaintext;
-            } catch (e) {
-              print('🔐 [E2EE] Failed to decrypt message globally: $e');
-              plaintext = '🔒 [Decryption Failed]';
-              _decryptedCache[doc.id] = plaintext;
+          if (type != null && senderId.isNotEmpty) {
+            if (_decryptedCache.containsKey(doc.id)) {
+              plaintext = _decryptedCache[doc.id]!;
+            } else {
+              try {
+                // The senderId of the incoming message is our peerId for decryption
+                plaintext = await _signalManager.decryptMessage(senderId, type, plaintext);
+                _decryptedCache[doc.id] = plaintext;
+              } catch (e) {
+                print('🔐 [E2EE] Failed to decrypt message globally: $e');
+                plaintext = '🔒 [Decryption Failed]';
+                _decryptedCache[doc.id] = plaintext;
+              }
             }
           }
-        }
 
-        messages.add(Message(
-          id: doc.id,
-          content: plaintext,
-          senderId: senderId,
-          receiverId: data['receiverId'] ?? '',
-          timestamp: data['timestamp'] != null
-              ? (data['timestamp'] as Timestamp).toDate()
-              : DateTime.now(),
-          attachmentUrl: data['attachmentUrl'],
-          status: data['status'] ?? 'sent',
-          threatScore: (data['threatScore'] as num?)?.toDouble(),
-          signalType: type,
-        ));
+          newMessages.add(Message(
+            id: doc.id,
+            content: plaintext,
+            senderId: senderId,
+            receiverId: data['receiverId'] ?? '',
+            timestamp: data['timestamp'] != null
+                ? (data['timestamp'] as Timestamp).toDate()
+                : DateTime.now(),
+            attachmentUrl: data['attachmentUrl'],
+            status: data['status'] ?? 'sent',
+            threatScore: (data['threatScore'] as num?)?.toDouble(),
+            signalType: type,
+          ));
+        }
       }
-      return messages;
+      return newMessages;
     });
   }
 
@@ -167,18 +171,14 @@ class ChatService {
         .doc(receiverId)
         .collection('messages')
         .doc();
-                              // Return the generated message ID!
-    return docRef.id;
-  }
+        
+    await docRef.set(message.toMap());
 
-  Future<void> markMessageSeen(String ownId, String messageId) async {
-    final docRef = _firestore
-        .collection('chats')
-        .doc(ownId)
-        .collection('messages')
-        .doc(messageId);
-    await docRef.update({'status': 'seen'});
-    // Do NOT delete here! Deletion will occur after local save.
+    if (docRef.id.isEmpty) {
+      throw Exception('Firestore generated an empty Document ID for the message.');
+    }
+    // Return the generated message ID!
+    return docRef.id;
   }
 
   Future<void> deleteMessageAfterLocalSave(
@@ -230,12 +230,16 @@ class ChatService {
         .collection('receipts')
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        return {
-          'messageId': doc.id,
-          'status': doc.data()['status'] as String,
-        };
-      }).toList();
+      final List<Map<String, dynamic>> newReceipts = [];
+      for (var change in snapshot.docChanges) {
+        if (change.type == DocumentChangeType.added) {
+          newReceipts.add({
+            'messageId': change.doc.id,
+            'status': change.doc.data()!['status'] as String,
+          });
+        }
+      }
+      return newReceipts;
     });
   }
 

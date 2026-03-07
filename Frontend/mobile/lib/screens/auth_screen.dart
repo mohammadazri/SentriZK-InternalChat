@@ -65,7 +65,8 @@ class _AuthScreenState extends State<AuthScreen>
     try {
       final loginData = await _authService.loadLoginData();
       final username = loginData['username'];
-      final isValid = await _authService.isSessionValid();
+      // 🔥 PERFORMANCE: Use local check instead of a blocking HTTP request to backend
+      final isValid = await _authService.hasLocalSession();
 
       if (mounted) {
         setState(() {
@@ -135,11 +136,10 @@ class _AuthScreenState extends State<AuthScreen>
 
   Future<void> _onAppResume() async {
     try {
-      final isValid = await _authService.isSessionValid();
-      if (isValid) {
-        // Try to refresh silently
-        await _authService.refreshSession();
-      } else {
+      // 🔥 PERFORMANCE: Don't do 2 HTTP requests (validate + refresh) on every single app resume!
+      // The _refreshTimer in AuthService automatically handles background refreshing based on TTL.
+      final isValid = await _authService.hasLocalSession();
+      if (!isValid) {
         // Not valid — ensure UI reflects logged-out status
         if (mounted && (_isLoggedIn || _username != null)) {
           setState(() {
