@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { recoverSaltFromMnemonic } from "@/lib/secureCrypto";
 import { encryptSaltHex } from "@/lib/saltEncryption";
 import { KeyRound, Check, FileDown, Shield, Hexagon, Lock } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -77,27 +78,28 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0b0f19" }}>
-      <div style={{ width: "100%", maxWidth: 820, background: "rgba(15,23,42,0.7)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 24, padding: 48, color: "#f8fafc", boxShadow: "0 24px 64px rgba(0,0,0,0.4)" }}>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg-primary)", transition: "background 0.3s" }}>
+      <ThemeToggle />
+      <div style={{ width: "100%", maxWidth: 820, background: "var(--surface)", backdropFilter: "blur(20px)", border: "1px solid var(--border-subtle)", borderRadius: 24, padding: 48, color: "var(--text-primary)", boxShadow: "0 24px 64px rgba(0,0,0,0.1)", transition: "background 0.3s, color 0.3s" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 32 }}>
           <div style={{ width: 56, height: 56, borderRadius: 14, background: "#2563eb", display: "grid", placeItems: "center", boxShadow: "0 4px 16px rgba(37, 99, 235, 0.3)" }}>
             <KeyRound size={28} color="white" />
           </div>
           <div>
             <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700 }}>Recover Salt via Recovery Phrase</h1>
-            <p style={{ margin: "4px 0 0", color: "#94a3b8", fontSize: 15 }}>Use your 12/24-word mnemonic to derive your salt for cross-device sign-in.</p>
+            <p style={{ margin: "4px 0 0", color: "var(--text-secondary)", fontSize: 15 }}>Use your 12/24-word mnemonic to derive your salt for cross-device sign-in.</p>
           </div>
         </div>
 
         <form onSubmit={onDeriveSalt} style={{ display: "grid", gap: 20 }}>
           <div style={{ display: "grid", gap: 8 }}>
-            <label htmlFor="username" style={{ fontSize: 14, fontWeight: 600, color: "#cbd5e1" }}>Username</label>
-            <input id="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="your-username" required style={{ background: "rgba(15,23,42,0.5)", border: "1px solid rgba(255,255,255,0.2)", color: "white", padding: "16px 20px", borderRadius: 14, fontSize: 16, outline: "none" }} />
+            <label htmlFor="username" style={{ fontSize: 14, fontWeight: 600, color: "var(--text-secondary)" }}>Username</label>
+            <input id="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="your-username" required style={{ background: "transparent", border: "1px solid var(--border-subtle)", color: "var(--text-primary)", padding: "16px 20px", borderRadius: 14, fontSize: 16, outline: "none" }} />
           </div>
 
           <div style={{ display: "grid", gap: 8 }}>
-            <label htmlFor="mnemonic" style={{ fontSize: 14, fontWeight: 600, color: "#cbd5e1" }}>Recovery Phrase (BIP-39)</label>
-            <textarea id="mnemonic" value={mnemonic} onChange={(e) => setMnemonic(e.target.value)} placeholder="enter your 12/24-word phrase" rows={4} style={{ background: "rgba(15,23,42,0.5)", border: "1px solid rgba(255,255,255,0.2)", color: "white", padding: "16px 20px", borderRadius: 14, fontSize: 16, outline: "none", fontFamily: "inherit" }} />
+            <label htmlFor="mnemonic" style={{ fontSize: 14, fontWeight: 600, color: "var(--text-secondary)" }}>Recovery Phrase (BIP-39)</label>
+            <textarea id="mnemonic" value={mnemonic} onChange={(e) => setMnemonic(e.target.value)} placeholder="enter your 12/24-word phrase" rows={4} style={{ background: "transparent", border: "1px solid var(--border-subtle)", color: "var(--text-primary)", padding: "16px 20px", borderRadius: 14, fontSize: 16, outline: "none", fontFamily: "inherit" }} />
             <small style={{ color: "#94a3b8", fontSize: 13 }}>Tip: Paste words separated by single spaces.</small>
           </div>
 

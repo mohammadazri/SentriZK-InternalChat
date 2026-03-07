@@ -5,6 +5,7 @@ import { prepareRegistration, submitRegistration } from "@/auth/registerLogic";
 import WalletConnector from "@/components/WalletConnector";
 import styles from "./register.module.css";
 import { Lock, Wallet, KeyRound, Check, AlertCircle, LayoutDashboard, Database, Shield, Hexagon, ArrowLeft } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
@@ -194,6 +195,7 @@ export default function RegisterPage() {
   if (isCheckingAuth) {
     return (
       <div className={styles.container}>
+        <ThemeToggle />
         <div className={styles.authCheck}>
           <div className={styles.spinner}></div>
           <p>Verifying access...</p>
@@ -206,6 +208,7 @@ export default function RegisterPage() {
   if (!isAuthorized) {
     return (
       <div className={styles.container}>
+        <ThemeToggle />
         <div className={styles.accessDenied}>
           <Lock className={styles.lockIcon} color="#94a3b8" />
           <h1>Access Restricted</h1>
@@ -225,6 +228,7 @@ export default function RegisterPage() {
 
   return (
     <div className={styles.container}>
+      <ThemeToggle />
       <div className={styles.card}>
         <div className={styles.header}>
           <div className={styles.brandLogo}>
