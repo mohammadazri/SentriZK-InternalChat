@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { prepareRegistration, submitRegistration } from "@/auth/registerLogic";
 import WalletConnector from "@/components/WalletConnector";
 import styles from "./register.module.css";
+import { Lock, Wallet, KeyRound, Check, AlertCircle, LayoutDashboard, Database, Shield, Hexagon, ArrowLeft } from "lucide-react";
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
@@ -23,7 +24,7 @@ export default function RegisterPage() {
     const checkAuthorization = () => {
       const params = new URLSearchParams(window.location.search);
       const mat = params.get("mat");
-      
+
       if (!mat) {
         setIsAuthorized(false);
         setError("Access Denied: This page can only be accessed from the SentriApp mobile application.");
@@ -106,7 +107,7 @@ export default function RegisterPage() {
 
   async function onRegister(e: React.FormEvent) {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setBusy(true);
@@ -119,7 +120,7 @@ export default function RegisterPage() {
       setMessage("🔍 Checking username availability...");
       const { checkUsername } = await import('@/auth/api');
       const available = await checkUsername(username);
-      
+
       if (!available) {
         setError(`Username "${username}" is already taken. Please choose another.`);
         setBusy(false);
@@ -149,7 +150,7 @@ export default function RegisterPage() {
 
       // 5️⃣ Construct deep link URL
       setMessage("✅ Registration successful! Redirecting to app...");
-      
+
       const redirectUri = "sentriapp://auth-callback";
       const queryParams = new URLSearchParams({
         token: resp.token,
@@ -203,7 +204,7 @@ export default function RegisterPage() {
     return (
       <div className={styles.container}>
         <div className={styles.accessDenied}>
-          <div className={styles.lockIcon}>🔒</div>
+          <Lock className={styles.lockIcon} color="#94a3b8" />
           <h1>Access Restricted</h1>
           <p>{error}</p>
           <div className={styles.instructions}>
@@ -226,12 +227,12 @@ export default function RegisterPage() {
           <div className={styles.brandLogo}>
             <div className={styles.logoGradient}>
               <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                <path d="M24 4L42 14V34L24 44L6 34V14L24 4Z" fill="url(#grad1)" stroke="white" strokeWidth="2"/>
-                <circle cx="24" cy="24" r="8" fill="white"/>
+                <path d="M24 4L42 14V34L24 44L6 34V14L24 4Z" fill="url(#grad1)" stroke="white" strokeWidth="2" />
+                <circle cx="24" cy="24" r="8" fill="white" />
                 <defs>
                   <linearGradient id="grad1" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#6366f1"/>
-                    <stop offset="1" stopColor="#8b5cf6"/>
+                    <stop stopColor="#6366f1" />
+                    <stop offset="1" stopColor="#8b5cf6" />
                   </linearGradient>
                 </defs>
               </svg>
@@ -245,18 +246,18 @@ export default function RegisterPage() {
 
         <div className={styles.progress}>
           <div className={styles.progressBar}>
-            <div className={styles.progressFill} style={{width: `${(currentStep/3)*100}%`}}></div>
+            <div className={styles.progressFill} style={{ width: `${(currentStep / 3) * 100}%` }}></div>
           </div>
           <div className={styles.progressSteps}>
             <div className={`${styles.progressStep} ${currentStep >= 1 ? styles.active : ''} ${currentStep > 1 ? styles.complete : ''}`}>
               <div className={styles.stepCircle}>
-                {currentStep > 1 ? '✓' : '1'}
+                {currentStep > 1 ? <Check size={20} /> : '1'}
               </div>
               <span>Connect</span>
             </div>
             <div className={`${styles.progressStep} ${currentStep >= 2 ? styles.active : ''} ${currentStep > 2 ? styles.complete : ''}`}>
               <div className={styles.stepCircle}>
-                {currentStep > 2 ? '✓' : '2'}
+                {currentStep > 2 ? <Check size={20} /> : '2'}
               </div>
               <span>Register</span>
             </div>
@@ -283,12 +284,9 @@ export default function RegisterPage() {
               <h2>Create Your Account</h2>
               <p>Secure your identity with zero-knowledge proof encryption</p>
             </div>
-            
+
             <div className={styles.walletBadge}>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <rect width="20" height="20" rx="4" fill="#10b981"/>
-                <path d="M14 10C14 9.44772 13.5523 9 13 9H7C6.44772 9 6 9.44772 6 10V13C6 13.5523 6.44772 14 7 14H13C13.5523 14 14 13.5523 14 13V10Z" fill="white"/>
-              </svg>
+              <Wallet size={20} color="#38bdf8" />
               <span>Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
             </div>
 
@@ -341,10 +339,7 @@ export default function RegisterPage() {
 
               {error && (
                 <div className={styles.error}>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="2"/>
-                    <path d="M10 6V11M10 14V14.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
+                  <AlertCircle size={20} />
                   {error}
                 </div>
               )}
@@ -360,18 +355,18 @@ export default function RegisterPage() {
                     <>
                       Create Account
                       <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path d="M7 10H13M13 10L10 7M13 10L10 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M7 10H13M13 10L10 7M13 10L10 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </>
                   )}
                 </button>
-                <button 
-                  type="button" 
-                  onClick={() => setCurrentStep(1)} 
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(1)}
                   disabled={busy}
                   className={styles.secondaryBtn}
                 >
-                  ← Change Wallet
+                  <ArrowLeft size={16} /> Change Wallet
                 </button>
               </div>
             </form>
@@ -383,11 +378,11 @@ export default function RegisterPage() {
             <div className={styles.processing}>
               <div className={styles.processingIcon}>
                 <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                  <circle cx="32" cy="32" r="30" stroke="url(#grad2)" strokeWidth="4" strokeDasharray="188" strokeDashoffset="0" className={styles.processingCircle}/>
+                  <circle cx="32" cy="32" r="30" stroke="url(#grad2)" strokeWidth="4" strokeDasharray="188" strokeDashoffset="0" className={styles.processingCircle} />
                   <defs>
                     <linearGradient id="grad2" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-                      <stop stopColor="#6366f1"/>
-                      <stop offset="1" stopColor="#8b5cf6"/>
+                      <stop stopColor="#6366f1" />
+                      <stop offset="1" stopColor="#8b5cf6" />
                     </linearGradient>
                   </defs>
                 </svg>
@@ -396,15 +391,15 @@ export default function RegisterPage() {
               <p className={styles.processingMessage}>{message || 'Processing...'}</p>
               <div className={styles.securityIndicators}>
                 <div className={styles.indicator}>
-                  <div className={styles.indicatorIcon}>🔐</div>
+                  <KeyRound size={24} className={styles.indicatorIcon} />
                   <span>Generating ZK Proof</span>
                 </div>
                 <div className={styles.indicator}>
-                  <div className={styles.indicatorIcon}>🔒</div>
+                  <Lock size={24} className={styles.indicatorIcon} />
                   <span>Encrypting Credentials</span>
                 </div>
                 <div className={styles.indicator}>
-                  <div className={styles.indicatorIcon}>✨</div>
+                  <Check size={24} className={styles.indicatorIcon} />
                   <span>Finalizing Registration</span>
                 </div>
               </div>
@@ -414,9 +409,9 @@ export default function RegisterPage() {
 
         <div className={styles.footer}>
           <div className={styles.securityBadges}>
-            <span>🔒 End-to-End Encrypted</span>
-            <span>🛡️ Zero-Knowledge</span>
-            <span>📱 Mobile Protected</span>
+            <span><Lock size={14} /> End-to-End Encrypted</span>
+            <span><Shield size={14} /> Zero-Knowledge</span>
+            <span><Hexagon size={14} /> Mobile Protected</span>
           </div>
         </div>
       </div>

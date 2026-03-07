@@ -34,6 +34,7 @@ dependencies:
   punycode: ^1.0.0
   tflite_flutter: ^0.12.0
   libsignal_protocol_dart: ^0.7.2
+  google_fonts: ^8.0.2
   # url_launcher already present above (keep existing version)
 
 dev_dependencies:

@@ -143,205 +143,178 @@ class _UserListScreenState extends State<UserListScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        title: const Text(
-          'Chats',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 22,
-          ),
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Logout',
-            icon: const Icon(Icons.logout_rounded),
-            onPressed: () async {
-              await _setOnlineStatus(false);
-              await _authService.logout();
-              if (!mounted) return;
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const AuthScreen()),
-                (route) => false,
-              );
-            },
-          ),
-        ],
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0F172A), Color(0xFF0B1224)],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+      backgroundColor: const Color(0xFF0B0F19), // Deep corporate navy
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('users').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-                final docs = snapshot.data?.docs ?? [];
-                final users = docs
-                    .map((d) => d.data() as Map<String, dynamic>)
-                    .where((u) => u['id'] != widget.currentUserId)
-                    .toList();
+          final docs = snapshot.data?.docs ?? [];
+          final users = docs
+              .map((d) => d.data() as Map<String, dynamic>)
+              .where((u) => u['id'] != widget.currentUserId)
+              .toList();
 
-                final onlineCount = users
-                    .where((u) => u['activityStatus'] == 'Online')
-                    .length;
+          final onlineCount = users
+              .where((u) => u['activityStatus'] == 'Online')
+              .length;
 
-                final filtered = users.where((u) {
-                  final search = _searchQuery.trim().toLowerCase();
-                  if (search.isEmpty) return true;
-                  final name = (u['username'] ?? u['id'] ?? '')
-                      .toString()
-                      .toLowerCase();
-                  return name.contains(search);
-                }).toList();
+          final filtered = users.where((u) {
+            final search = _searchQuery.trim().toLowerCase();
+            if (search.isEmpty) return true;
+            final name = (u['displayName'] ?? u['username'] ?? u['id'] ?? '')
+                .toString()
+                .toLowerCase();
+            return name.contains(search);
+          }).toList();
 
-                if (filtered.isEmpty) {
-                  return Column(
+          return CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              // Premium Sliver App Bar
+              SliverAppBar(
+                expandedHeight: 140.0,
+                floating: true,
+                pinned: true,
+                backgroundColor: const Color(0xFF0F172A).withOpacity(0.95), // Slate 900 Frost
+                elevation: 0,
+                flexibleSpace: FlexibleSpaceBar(
+                  titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+                  title: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      _HeaderCard(onlineCount: onlineCount),
-                      const SizedBox(height: 16),
-                      _SearchField(
-                        controller: _searchController,
-                        onChanged: (value) =>
-                            setState(() => _searchQuery = value),
-                      ),
-                      const Spacer(),
                       const Text(
-                        'No users found',
-                        style: TextStyle(color: Colors.white70),
+                        'Messages',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 22,
+                          letterSpacing: -0.5,
+                        ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2563EB).withOpacity(0.2), // Cobalt Blue
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.5)),
+                        ),
+                        child: Text(
+                          '$onlineCount Online',
+                          style: const TextStyle(
+                            color: Color(0xFF60A5FA),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ],
-                  );
-                }
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _HeaderCard(onlineCount: onlineCount),
-                    const SizedBox(height: 16),
-                    _SearchField(
+                  ),
+                ),
+                actions: [
+                  IconButton(
+                    tooltip: 'Logout',
+                    icon: const Icon(Icons.logout_rounded, color: Colors.white70),
+                    onPressed: () async {
+                      await _setOnlineStatus(false);
+                      await _authService.logout();
+                      if (!mounted) return;
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const AuthScreen()),
+                        (route) => false,
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(70),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    child: _SearchField(
                       controller: _searchController,
-                      onChanged: (value) =>
-                          setState(() => _searchQuery = value),
+                      onChanged: (value) => setState(() => _searchQuery = value),
                     ),
-                    const SizedBox(height: 12),
-                    Expanded(
-                      child: ListView.separated(
-                        itemCount: filtered.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
-                        itemBuilder: (context, index) {
-                          final user = filtered[index];
-                          final isOnline = user['activityStatus'] == 'Online';
-                          final displayName =
-                              user['username'] ?? user['id'] ?? '';
-                          final initials = displayName.isNotEmpty
-                              ? displayName
-                                    .trim()
-                                    .split(' ')
-                                    .map((e) => e.isNotEmpty ? e[0] : '')
-                                    .join()
-                                    .toUpperCase()
-                              : '?';
-
-                          return _UserCard(
-                            name: displayName,
-                            status: isOnline ? 'Online' : 'Offline',
-                            isOnline: isOnline,
-                            initials: initials,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ChatScreen(
-                                    username: widget.currentUserId,
-                                    peerId: user['id'],
-                                    peerName: displayName,
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HeaderCard extends StatelessWidget {
-  final int onlineCount;
-  const _HeaderCard({required this.onlineCount});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1D4ED8), Color(0xFF7C3AED)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.25),
-            blurRadius: 14,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Secure Chats',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
+                  ),
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                '$onlineCount online now',
-                style: const TextStyle(color: Colors.white70, fontSize: 14),
-              ),
+
+              // User List
+              if (filtered.isEmpty)
+                SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.inbox_outlined, size: 64, color: Colors.white.withOpacity(0.2)),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No messages found',
+                          style: TextStyle(color: Colors.white70, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final user = filtered[index];
+                        final isOnline = user['activityStatus'] == 'Online';
+                        // Prioritize displayName, fallback to username
+                        final displayName =
+                            user['displayName'] ?? user['username'] ?? user['id'] ?? '';
+                        final cryptoUsername = user['username'] ?? '';
+                        
+                        final initials = displayName.isNotEmpty
+                            ? displayName
+                                  .trim()
+                                  .split(' ')
+                                  .map((e) => e.isNotEmpty ? e[0] : '')
+                                  .join()
+                                  .toUpperCase()
+                            : '?';
+
+                        return _UserRow(
+                          name: displayName,
+                          username: cryptoUsername,
+                          status: isOnline ? 'Online' : 'Offline',
+                          isOnline: isOnline,
+                          initials: initials,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ChatScreen(
+                                  username: widget.currentUserId,
+                                  peerId: user['id'],
+                                  peerName: displayName,
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      childCount: filtered.length,
+                    ),
+                  ),
+                ),
             ],
-          ),
-          const Icon(Icons.lock_outline_rounded, color: Colors.white, size: 28),
-        ],
+          );
+        },
       ),
     );
   }
 }
+
+
 
 class _SearchField extends StatelessWidget {
   final TextEditingController controller;
@@ -351,36 +324,39 @@ class _SearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: 46,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white12),
+        color: const Color(0xFF1E293B), // Slate 800
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: TextField(
         controller: controller,
         onChanged: onChanged,
-        style: const TextStyle(color: Colors.white),
-        decoration: const InputDecoration(
+        style: const TextStyle(color: Colors.white, fontSize: 16),
+        decoration: InputDecoration(
           hintText: 'Search teammates',
-          hintStyle: TextStyle(color: Colors.white60),
-          prefixIcon: Icon(Icons.search, color: Colors.white70),
+          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+          prefixIcon: Icon(Icons.search, color: Colors.white.withOpacity(0.5), size: 20),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
       ),
     );
   }
 }
 
-class _UserCard extends StatelessWidget {
+class _UserRow extends StatelessWidget {
   final String name;
+  final String username;
   final String status;
   final bool isOnline;
   final String initials;
   final VoidCallback onTap;
 
-  const _UserCard({
+  const _UserRow({
     required this.name,
+    required this.username,
     required this.status,
     required this.isOnline,
     required this.initials,
@@ -389,36 +365,35 @@ class _UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white10),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.35),
-              blurRadius: 12,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
+      splashColor: const Color(0xFF2563EB).withOpacity(0.1),
+      highlightColor: Colors.transparent,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
             Stack(
               children: [
-                CircleAvatar(
-                  radius: 26,
-                  backgroundColor: isOnline
-                      ? const Color(0xFF16A34A)
-                      : const Color(0xFF334155),
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF2563EB), Color(0xFF3B82F6)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  ),
+                  alignment: Alignment.center,
                   child: Text(
-                    initials,
+                    initials.length > 2 ? initials.substring(0, 2) : initials,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
+                      fontSize: 18,
                     ),
                   ),
                 ),
@@ -426,54 +401,73 @@ class _UserCard extends StatelessWidget {
                   right: 0,
                   bottom: 0,
                   child: Container(
-                    height: 12,
-                    width: 12,
+                    height: 14,
+                    width: 14,
                     decoration: BoxDecoration(
-                      color: isOnline ? const Color(0xFF22C55E) : Colors.grey,
+                      color: isOnline ? const Color(0xFF10B981) : const Color(0xFF475569), // Emerald or Slate
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: const Color(0xFF0F172A),
-                        width: 2,
+                        color: const Color(0xFF0B0F19), // Match background color for cutout effect
+                        width: 2.5,
                       ),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        '12:45 PM', // Placeholder for dynamic timestamp integration later
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.4),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    status,
-                    style: TextStyle(
-                      color: isOnline
-                          ? const Color(0xFF22C55E)
-                          : Colors.white70,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Tap to start a secure chat',
-                    style: TextStyle(color: Colors.white60, fontSize: 12),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.shield_outlined,
+                        size: 14,
+                        color: Colors.white.withOpacity(0.3),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          '@$username • Tap to chat',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 13,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ),
-            const Icon(
-              Icons.keyboard_arrow_right_rounded,
-              color: Colors.white70,
             ),
           ],
         ),

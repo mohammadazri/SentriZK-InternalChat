@@ -97,7 +97,53 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('Chat with ${widget.peerName}')),
+      backgroundColor: const Color(0xFF0B0F19), // Deep corporate navy
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: AppBar(
+          backgroundColor: const Color(0xFF0F172A).withOpacity(0.95), // Slate 900 Frost
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: const Color(0xFF1E293B),
+                child: Text(
+                  widget.peerName.isNotEmpty ? widget.peerName[0].toUpperCase() : '?',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.peerName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const Text(
+                      'Secure end-to-end chat',
+                      style: TextStyle(
+                        color: Colors.white54,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
       body: Column(
         children: [
           Expanded(
@@ -144,23 +190,23 @@ class _ChatScreenState extends State<ChatScreen> {
                   itemBuilder: (context, index) {
                     if (index == 0) {
                       return Container(
-                        margin: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                        padding: const EdgeInsets.all(8),
+                        margin: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.amber[50],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.amber[200]!),
+                          color: const Color(0xFF1E293B), // Slate 800
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF334155)), // Slate 700
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: const [
-                            Icon(Icons.lock, size: 16, color: Colors.amber),
-                            SizedBox(width: 8),
+                            Icon(Icons.lock_rounded, size: 16, color: Color(0xFFFBBF24)), // Amber 400
+                            SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 'Messages are End-to-End Encrypted. No one outside of this chat, not even SentriZK, can read them.',
-                                style: TextStyle(fontSize: 12, color: Colors.black87),
-                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 12, color: Colors.white70, height: 1.4),
+                                textAlign: TextAlign.left,
                               ),
                             ),
                           ],
@@ -175,33 +221,51 @@ class _ChatScreenState extends State<ChatScreen> {
                           ? Alignment.centerRight
                           : Alignment.centerLeft,
                       child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 2),
-                        padding: const EdgeInsets.all(10),
+                        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                        padding: const EdgeInsets.only(left: 14, right: 14, top: 10, bottom: 8),
                         decoration: BoxDecoration(
-                          color: isMe ? Colors.blue[100] : Colors.grey[200],
-                          borderRadius: BorderRadius.circular(8),
+                          gradient: isMe ? const LinearGradient(
+                            colors: [Color(0xFF2563EB), Color(0xFF3B82F6)], // Cobalt Blue
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ) : null,
+                          color: isMe ? null : const Color(0xFF1E293B), // Slate 800
+                          borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(16),
+                            topRight: const Radius.circular(16),
+                            bottomLeft: Radius.circular(isMe ? 16 : 4),
+                            bottomRight: Radius.circular(isMe ? 4 : 16),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             // Show threat warning for RECEIVED messages only
                             if (!isMe && msg.threatScore != null && msg.threatScore! > 0.5)
                               Container(
-                                margin: const EdgeInsets.only(bottom: 4),
+                                margin: const EdgeInsets.only(bottom: 6),
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: Colors.red[50],
-                                  borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(color: Colors.red[300]!),
+                                  color: Colors.redAccent.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.warning_amber_rounded, size: 14, color: Colors.red[700]),
-                                    const SizedBox(width: 4),
+                                  children: const [
+                                    Icon(Icons.warning_amber_rounded, size: 14, color: Colors.redAccent),
+                                    SizedBox(width: 6),
                                     Text(
                                       'Suspicious message detected',
-                                      style: TextStyle(fontSize: 11, color: Colors.red[700], fontWeight: FontWeight.w600),
+                                      style: TextStyle(fontSize: 11, color: Colors.redAccent, fontWeight: FontWeight.w600),
                                     ),
                                   ],
                                 ),
@@ -209,37 +273,38 @@ class _ChatScreenState extends State<ChatScreen> {
                             // Use SecureLinkText instead of Text for security
                             SecureLinkText(
                               text: msg.content,
-                              textStyle: const TextStyle(fontSize: 14),
+                              textStyle: const TextStyle(fontSize: 15, color: Colors.white, height: 1.3),
                               enableSecurity: !isMe,
-                              linkStyle: TextStyle(
-                                color: isMe
-                                    ? Colors.blue[800]
-                                    : Colors.blue[700],
-                                fontSize: 14,
+                              linkStyle: const TextStyle(
+                                color: Color(0xFF60A5FA), // Blue 400
+                                fontSize: 15,
+                                decoration: TextDecoration.underline,
+                                decorationColor: Color(0xFF60A5FA),
                               ),
                             ),
                             if (msg.attachmentUrl != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: const Text(
+                              const Padding(
+                                padding: EdgeInsets.only(top: 6),
+                                child: Text(
                                   '[Attachment]',
-                                  style: TextStyle(color: Colors.blue),
+                                  style: TextStyle(color: Color(0xFF60A5FA), fontSize: 13),
                                 ),
                               ),
+                            const SizedBox(height: 4),
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 Text(
-                                  msg.timestamp.toLocal().toString().substring(0, 16),
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.grey,
+                                  msg.timestamp.toLocal().toString().substring(11, 16),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.white.withOpacity(isMe ? 0.7 : 0.5),
                                   ),
                                 ),
                                 if (isMe) ...[
                                   const SizedBox(width: 4),
-                                  _MessageStatusIndicator(status: msg.status),
+                                  _MessageStatusIndicator(status: msg.status, isMe: isMe),
                                 ],
                               ],
                             ),
@@ -252,71 +317,100 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
+          Container(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).padding.bottom + 12,
+              top: 12,
+              left: 16,
+              right: 16,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F172A).withOpacity(0.95), // Slate 900
+              border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
+            ),
             child: Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(
-                      hintText: 'Type a message...',
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B), // Slate 800
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.white.withOpacity(0.05)),
+                    ),
+                    child: TextField(
+                      controller: _controller,
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                      maxLines: null,
+                      keyboardType: TextInputType.multiline,
+                      decoration: InputDecoration(
+                        hintText: 'Message',
+                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: () async {
-                    final text = _controller.text.trim();
-                    if (text.isNotEmpty) {
-                      final sentAt = DateTime.now();
-
-                      // Silent ML scan — sender sees nothing
-                      double? threatScore;
-                      final scanService = MessageScanService.instance;
-                      if (scanService.isReady) {
-                        threatScore = await scanService.scanMessage(text);
-                      }
-
-                      // Send message with threat score and get Firebase ID
-                      final firebaseId = await _chatService.sendMessage(
-                        content: text,
-                        senderId: widget.username,
-                        receiverId: widget.peerId,
-                        timestamp: sentAt,
-                        threatScore: threatScore,
-                      );
-
-                      // Report threat to backend (fire-and-forget)
-                      if (threatScore != null && scanService.isThreat(threatScore)) {
-                        http.post(
-                          Uri.parse(AppConfig.threatLogEndpoint),
-                          headers: {'Content-Type': 'application/json'},
-                          body: jsonEncode({
-                            'senderId': widget.username,
-                            'receiverId': widget.peerId,
-                            'content': text,
-                            'threatScore': threatScore,
-                            'timestamp': sentAt.millisecondsSinceEpoch,
-                          }),
-                        ).catchError((e) => print('⚠️ [ML] Failed to log threat: $e'));
-                      }
-
-                      // Save locally with Firebase ID mapping so receipts can find it
-                      await _saveMessageLocally(
-                        Message(
-                          id: firebaseId,
+                const SizedBox(width: 12),
+                Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF2563EB), // Cobalt Blue
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                    onPressed: () async {
+                      final text = _controller.text.trim();
+                      if (text.isNotEmpty) {
+                        final sentAt = DateTime.now();
+  
+                        // Silent ML scan — sender sees nothing
+                        double? threatScore;
+                        final scanService = MessageScanService.instance;
+                        if (scanService.isReady) {
+                          threatScore = await scanService.scanMessage(text);
+                        }
+  
+                        // Send message with threat score and get Firebase ID
+                        final firebaseId = await _chatService.sendMessage(
                           content: text,
                           senderId: widget.username,
                           receiverId: widget.peerId,
                           timestamp: sentAt,
-                          attachmentUrl: null,
-                        ),
-                        status: 'sent',
-                      );
-                      _controller.clear();
-                    }
-                  },
+                          threatScore: threatScore,
+                        );
+  
+                        // Report threat to backend (fire-and-forget)
+                        if (threatScore != null && scanService.isThreat(threatScore)) {
+                          http.post(
+                            Uri.parse(AppConfig.threatLogEndpoint),
+                            headers: {'Content-Type': 'application/json'},
+                            body: jsonEncode({
+                              'senderId': widget.username,
+                              'receiverId': widget.peerId,
+                              'content': text,
+                              'threatScore': threatScore,
+                              'timestamp': sentAt.millisecondsSinceEpoch,
+                            }),
+                          ).catchError((e) => print('⚠️ [ML] Failed to log threat: $e'));
+                        }
+  
+                        // Save locally with Firebase ID mapping so receipts can find it
+                        await _saveMessageLocally(
+                          Message(
+                            id: firebaseId,
+                            content: text,
+                            senderId: widget.username,
+                            receiverId: widget.peerId,
+                            timestamp: sentAt,
+                            attachmentUrl: null,
+                          ),
+                          status: 'sent',
+                        );
+                        _controller.clear();
+                      }
+                    },
+                  ),
                 ),
               ],
             ),
@@ -335,8 +429,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
 class _MessageStatusIndicator extends StatelessWidget {
   final String status;
+  final bool isMe;
   
-  const _MessageStatusIndicator({Key? key, required this.status}) : super(key: key);
+  const _MessageStatusIndicator({Key? key, required this.status, required this.isMe}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -345,20 +440,20 @@ class _MessageStatusIndicator extends StatelessWidget {
 
     switch (status) {
       case 'sent':
-        icon = Icons.check;
-        color = Colors.grey;
+        icon = Icons.check_rounded;
+        color = Colors.white70;
         break;
       case 'delivered':
-        icon = Icons.done_all;
-        color = Colors.grey;
+        icon = Icons.done_all_rounded;
+        color = Colors.white70;
         break;
       case 'read':
-        icon = Icons.done_all;
-        color = Colors.blue;
+        icon = Icons.done_all_rounded;
+        color = const Color(0xFF38BDF8); // Sky blue 400 for read receipts
         break;
       default:
-        icon = Icons.schedule; // Sending...
-        color = Colors.grey;
+        icon = Icons.access_time_rounded; // Sending...
+        color = Colors.white70;
     }
 
     return Icon(icon, size: 14, color: color);
