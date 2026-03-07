@@ -10,6 +10,7 @@ import 'security/local_phishing_database.dart';
 import '../utils/url_extractor.dart';
 import '../models/security_scan_cache.dart';
 import '../models/local_message.dart';
+import '../models/signal_state.dart';
 
 class MessageSecurityService {
   static Isar? _isar;
@@ -23,7 +24,15 @@ class MessageSecurityService {
     // security cache and the local message schemas so other parts
     // of the app can reuse the same instance without opening again.
     _isar = await Isar.open(
-      [SecurityScanCacheSchema, LocalMessageSchema],
+      [
+        SecurityScanCacheSchema, 
+        LocalMessageSchema,
+        SignalSessionSchema,
+        SignalPreKeySchema,
+        SignalSignedPreKeySchema,
+        SignalIdentitySchema,
+        LocalSignalIdentitySchema,
+      ],
       directory: dir.path,
     );
   }

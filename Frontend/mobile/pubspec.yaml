@@ -33,6 +33,7 @@ dependencies:
   public_suffix: ^3.0.0
   punycode: ^1.0.0
   tflite_flutter: ^0.12.0
+  libsignal_protocol_dart: ^0.7.2
   # url_launcher already present above (keep existing version)
 
 dev_dependencies:
