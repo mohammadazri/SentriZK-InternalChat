@@ -81,8 +81,11 @@ export default function RegisterPage() {
   };
 
   const validateForm = (): boolean => {
-    if (!username || username.length < 3) {
-      setError("Username must be at least 3 characters");
+    // Alphanumeric and underscores only, 3-20 chars, no spaces
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+
+    if (!username || !usernameRegex.test(username)) {
+      setError("Username must be 3-20 characters and contain only letters, numbers, and underscores (no spaces).");
       return false;
     }
 
