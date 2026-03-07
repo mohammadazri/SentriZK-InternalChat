@@ -313,7 +313,6 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _controller.dispose();
     _incomingSub?.cancel();
-    _isar?.close();
     super.dispose();
   }
 }
