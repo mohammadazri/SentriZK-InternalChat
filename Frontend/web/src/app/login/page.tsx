@@ -139,7 +139,7 @@ export default function LoginPage() {
       setCurrentStep(3);
 
       // 1️⃣ Prepare login proof
-      setMessage("🔐 Decrypting salt and generating proof...");
+      setMessage("Decrypting salt and generating proof...");
       // Always decrypt fresh to avoid stale state
       const saltHex = await decryptSaltHex(encryptedSalt, password);
       setDecryptedSaltHex(saltHex);
@@ -147,12 +147,12 @@ export default function LoginPage() {
       const { proofBundle } = await prepareLogin(username, walletAddress, { saltHex });
 
       // 2️⃣ Send proof to backend
-      setMessage("📡 Authenticating with server...");
+      setMessage("Authenticating with server...");
       const resp = await loginUser(username, proofBundle);
 
       if (!resp.token) throw new Error("Login failed: no token received");
 
-      setMessage("✅ Login successful! Returning to the app...");
+      setMessage("Login successful! Returning to the app...");
 
       // 3️⃣ Mark MAT as used to prevent reuse
       const params = new URLSearchParams(window.location.search);

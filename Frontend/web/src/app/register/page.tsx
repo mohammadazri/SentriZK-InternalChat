@@ -117,7 +117,7 @@ export default function RegisterPage() {
 
     try {
       // 0️⃣ Check username availability first
-      setMessage("🔍 Checking username availability...");
+      setMessage("Checking username availability...");
       const { checkUsername } = await import('@/auth/api');
       const available = await checkUsername(username);
 
@@ -129,11 +129,11 @@ export default function RegisterPage() {
       }
 
       // 1️⃣ Prepare registration
-      setMessage("🔐 Generating zero-knowledge proof...");
+      setMessage("Generating zero-knowledge proof...");
       const prep = await prepareRegistration(username, walletAddress, password);
 
       // 2️⃣ Submit registration
-      setMessage("📡 Submitting registration to server...");
+      setMessage("Submitting registration to server...");
       const resp = await submitRegistration(username, prep.proofBundle);
 
       if (!resp.token) throw new Error("Registration failed: no token received");
@@ -149,7 +149,7 @@ export default function RegisterPage() {
       }
 
       // 5️⃣ Construct deep link URL
-      setMessage("✅ Registration successful! Redirecting to app...");
+      setMessage("Registration successful! Redirecting to app...");
 
       const redirectUri = "sentriapp://auth-callback";
       const queryParams = new URLSearchParams({
