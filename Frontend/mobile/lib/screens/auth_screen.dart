@@ -35,6 +35,7 @@ class _AuthScreenState extends State<AuthScreen>
   bool _isLoading = false;
   bool _hasNavigatedToDashboard = false;
   bool _isRedirecting = false;
+  String? _lastProcessedToken;
   IconData _statusIcon = Icons.shield_outlined;
   Color _statusColor = Colors.white70;
 
@@ -221,6 +222,16 @@ class _AuthScreenState extends State<AuthScreen>
         }
 
         final token = uri.queryParameters['token'] ?? "";
+        
+        // Deduplicate: prevent the exact same token from triggering the backend validation API twice
+        if (token.isNotEmpty && token == _lastProcessedToken) {
+          debugPrint('📱 Skipping duplicate login deep link processing for token: $token');
+          return;
+        }
+        if (token.isNotEmpty) {
+          _lastProcessedToken = token;
+        }
+
         final username = uri.queryParameters['username'] ?? "";
         final encryptedSalt = uri.queryParameters['encryptedSalt'] ?? "";
         final encodedMnemonic = uri.queryParameters['mnemonic'] ?? "";
