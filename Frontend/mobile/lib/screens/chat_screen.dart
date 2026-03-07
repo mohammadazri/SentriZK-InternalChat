@@ -37,7 +37,6 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   Isar? _isar;
   Stream<List<LocalMessage>>? _localMessagesStream;
-  StreamSubscription<List<Message>>? _incomingSub;
 
   @override
   void initState() {
@@ -60,25 +59,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _localMessagesStream = isar.localMessages.where().watch(
       fireImmediately: true,
     );
-    _subscribeToIncoming();
     setState(() {});
-  }
-
-  void _subscribeToIncoming() {
-    _incomingSub = _chatService
-        .getMessages(widget.username, widget.peerId)
-        .listen((messages) async {
-          for (final msg in messages) {
-            if (msg.status != 'seen') {
-              await _chatService.markMessageSeen(widget.username, msg.id);
-              await _saveMessageLocally(msg, status: 'seen');
-              await _chatService.deleteMessageAfterLocalSave(
-                widget.username,
-                msg.id,
-              );
-            }
-          }
-        });
   }
 
   Future<void> _saveMessageLocally(
@@ -130,9 +111,35 @@ class _ChatScreenState extends State<ChatScreen> {
 
                 return ListView.builder(
                   padding: const EdgeInsets.all(8),
-                  itemCount: messages.length,
+                  itemCount: messages.length + 1,
                   itemBuilder: (context, index) {
-                    final msg = messages[index];
+                    if (index == 0) {
+                      return Container(
+                        margin: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.amber[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.amber[200]!),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Icon(Icons.lock, size: 16, color: Colors.amber),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Messages are End-to-End Encrypted. No one outside of this chat, not even SentriZK, can read them.',
+                                style: TextStyle(fontSize: 12, color: Colors.black87),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    
+                    final msg = messages[index - 1];
                     final isMe = msg.senderId == widget.username;
                     return Align(
                       alignment: isMe
@@ -286,8 +293,6 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _controller.dispose();
-    _incomingSub?.cancel();
-    _isar?.close();
     super.dispose();
   }
 }

@@ -9,6 +9,7 @@ class Message {
   final String? attachmentUrl;
   final String status;
   final double? threatScore;
+  final int? signalType;
 
   Message({
     required this.id,
@@ -19,6 +20,7 @@ class Message {
     this.attachmentUrl,
     this.status = 'sent',
     this.threatScore,
+    this.signalType,
   });
 
   factory Message.fromFirestore(DocumentSnapshot doc) {
@@ -32,6 +34,7 @@ class Message {
       attachmentUrl: data['attachmentUrl'],
       status: data['status'] ?? 'sent',
       threatScore: (data['threatScore'] as num?)?.toDouble(),
+      signalType: data['signalType'],
     );
   }
 
@@ -44,6 +47,7 @@ class Message {
       'attachmentUrl': attachmentUrl,
       'status': status,
       if (threatScore != null) 'threatScore': threatScore,
+      if (signalType != null) 'signalType': signalType,
     };
   }
 }
