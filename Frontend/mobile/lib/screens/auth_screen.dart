@@ -11,6 +11,7 @@ import '../config/app_config.dart';
 import 'user_list_screen.dart';
 import 'profile_setup_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -85,17 +86,33 @@ class _AuthScreenState extends State<AuthScreen>
 
   Future<void> _navigateToDashboard() async {
     if (_hasNavigatedToDashboard || !mounted || _username == null) return;
+    
+    // Diagnostic logging for UID mismatch
+    final currentUser = FirebaseAuth.instance.currentUser;
+    debugPrint('🔥 [AUTH] Navigating to dashboard for user: $_username');
+    debugPrint('🔥 [AUTH] Firebase Current User UID: ${currentUser?.uid}');
+
     setState(() {
       _hasNavigatedToDashboard = true;
       _isRedirecting = true;
     });
 
     try {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(_username).get();
-      final hasDisplayName = doc.exists && doc.data()!.containsKey('displayName') && doc.data()!['displayName'] != null;
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_username)
+          .get()
+          .catchError((e) {
+        debugPrint('🔥 [AUTH] Firestore fetch error: $e');
+        throw e;
+      });
+
+      final hasDisplayName = doc.exists &&
+          doc.data()!.containsKey('displayName') &&
+          doc.data()!['displayName'] != null;
 
       if (!mounted) return;
-      
+
       Widget nextScreen;
       if (hasDisplayName) {
         nextScreen = UserListScreen(currentUserId: _username!);
@@ -110,7 +127,15 @@ class _AuthScreenState extends State<AuthScreen>
       });
     } catch (e) {
       debugPrint('Error navigating to dashboard: $e');
-      if (mounted) setState(() => _isRedirecting = false);
+      // If permission denied, we might need to show an error or try a different ID
+      if (mounted) {
+        _updateStatus(
+          "Permission Denied: Firebase configuration issue.",
+          Icons.error_outline,
+          Colors.redAccent,
+        );
+        setState(() => _isRedirecting = false);
+      }
     }
   }
 

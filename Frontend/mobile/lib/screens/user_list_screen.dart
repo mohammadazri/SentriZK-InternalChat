@@ -50,37 +50,32 @@ class _UserListScreenState extends State<UserListScreen>
     _globalMessageSub = _chatService
         .getAllIncomingMessages(widget.currentUserId)
         .listen((messages) async {
+      // ... same processing logic ...
       for (final msg in messages) {
-        // 🔥 HIGH PERFORMANCE: No more 'markMessageSeen' middle-man updates. 
-        // Updating to 'seen' just to delete it 1ms later causes Firebase to trigger Double Stream rebuilds.
-        
-        // 1. Save the locally decrypted plaintext securely
         await isar.writeTxn(() async {
           await isar.localMessages.put(
             LocalMessage()
-              ..firebaseId = msg.id // 🔥 MUST save ID so we can send a read receipt later!
+              ..firebaseId = msg.id
               ..content = msg.content
               ..senderId = msg.senderId
               ..receiverId = msg.receiverId
               ..timestamp = msg.timestamp
               ..attachmentUrl = msg.attachmentUrl
-              ..status = 'delivered' // Saved locally as delivered initially
+              ..status = 'delivered'
               ..threatScore = msg.threatScore,
           );
         });
-
-        // 2. Fire a 2 grey ticks (delivered) receipt back to the sender
         await _chatService.sendReceipt(msg.senderId, msg.id, 'delivered');
-
-        // 3. Delete from Firebase to preserve ephemeral privacy
         await _chatService.deleteMessageAfterLocalSave(
           widget.currentUserId,
           msg.id,
         );
       }
+    }, onError: (e) {
+      debugPrint('🔥 [SYNC] Global message listener error: $e');
     });
 
-    // Start listening globally for delivery/read receipts coming back to us
+    // Start listening globally for delivery/read receipts
     _receiptSub = _chatService
         .listenForReceipts(widget.currentUserId)
         .listen((receipts) async {
@@ -89,24 +84,21 @@ class _UserListScreenState extends State<UserListScreen>
         final status = receipt['status'] as String;
 
         await isar.writeTxn(() async {
-          // Find the exact message we sent that this receipt is responding to
           final localMessage = await isar.localMessages
               .filter()
               .firebaseIdEqualTo(messageId)
               .findFirst(); 
 
           if (localMessage != null) {
-            // Only upgrade status (don't downgrade from read to delivered)
             if (localMessage.status == 'read') return;
-            
             localMessage.status = status;
             await isar.localMessages.put(localMessage);
           }
         });
-
-        // Delete the receipt node from Firebase completely. The sender has ingested it.
         await _chatService.deleteReceiptAfterLocalSave(widget.currentUserId, messageId);
       }
+    }, onError: (e) {
+      debugPrint('🔥 [SYNC] Global receipt listener error: $e');
     });
   }
 
@@ -147,6 +139,25 @@ class _UserListScreenState extends State<UserListScreen>
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('users').snapshots(),
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.lock_person, size: 48, color: Colors.orangeAccent),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Access Restricted: ${snapshot.error}',
+                      style: const TextStyle(color: Colors.white70),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
