@@ -9,11 +9,11 @@
 
 /* Connect Card Styles */
 .connectCard {
-  background: rgba(255, 255, 255, 0.98);
+  background: var(--surface);
   backdrop-filter: blur(20px);
   border-radius: 24px;
   padding: 48px 40px;
-  box-shadow: 
+  box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -1px rgba(0, 0, 0, 0.06),
     0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -23,7 +23,7 @@
 
 .connectCard:hover {
   transform: translateY(-2px);
-  box-shadow: 
+  box-shadow:
     0 12px 24px -4px rgba(0, 0, 0, 0.12),
     0 8px 16px -4px rgba(0, 0, 0, 0.08),
     0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -38,8 +38,15 @@
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 .connectCard h3 {
@@ -80,6 +87,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -103,14 +111,14 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 
+  box-shadow:
     0 4px 12px rgba(99, 102, 241, 0.25),
     0 0 0 1px rgba(99, 102, 241, 0.1);
 }
 
 .connectBtn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 
+  box-shadow:
     0 8px 20px rgba(99, 102, 241, 0.35),
     0 0 0 1px rgba(99, 102, 241, 0.1);
 }
@@ -134,7 +142,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Connected State */
@@ -156,6 +166,7 @@
     opacity: 0;
     transform: scale(0.95) translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -174,17 +185,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--surface);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
   animation: checkPulse 2s ease-in-out infinite;
 }
 
 @keyframes checkPulse {
-  0%, 100% { 
+
+  0%,
+  100% {
     box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
   }
-  50% { 
+
+  50% {
     box-shadow: 0 2px 16px rgba(16, 185, 129, 0.4);
   }
 }
@@ -208,7 +222,7 @@
 .connectedAddress {
   font-size: 18px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-primary);
   font-family: 'Courier New', monospace;
   letter-spacing: 0.02em;
 }
@@ -268,9 +282,11 @@
     opacity: 0;
     transform: translateX(-10px);
   }
+
   50% {
     transform: translateX(5px);
   }
+
   100% {
     opacity: 1;
     transform: translateX(0);
@@ -287,6 +303,7 @@
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
