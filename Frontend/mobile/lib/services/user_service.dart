@@ -47,7 +47,6 @@ class UserService {
         print('⚠️ [USER_SERVICE] Permission denied. This usually means Request.Auth.UID != Document ID.');
       }
     }
-    }
   }
 
   Future<void> setTypingStatus(String userId, String? typingTo) async {
