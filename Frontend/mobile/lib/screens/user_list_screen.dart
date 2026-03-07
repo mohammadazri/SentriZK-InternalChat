@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';
 import 'chat_screen.dart';
 import 'auth_screen.dart';
 
@@ -157,10 +159,9 @@ class _UserListScreenState extends State<UserListScreen>
     );
   }
 
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0F19), // Deep corporate navy
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('users').snapshots(),
         builder: (context, snapshot) {
@@ -175,7 +176,7 @@ class _UserListScreenState extends State<UserListScreen>
                     const SizedBox(height: 16),
                     Text(
                       'Access Restricted: ${snapshot.error}',
-                      style: const TextStyle(color: Colors.white70),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -209,12 +210,11 @@ class _UserListScreenState extends State<UserListScreen>
           return CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // Premium Sliver App Bar
               SliverAppBar(
                 expandedHeight: 140.0,
                 floating: true,
                 pinned: true,
-                backgroundColor: const Color(0xFF0F172A).withOpacity(0.95), // Slate 900 Frost
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.95),
                 elevation: 0,
                 flexibleSpace: FlexibleSpaceBar(
                   titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
@@ -222,10 +222,10 @@ class _UserListScreenState extends State<UserListScreen>
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         'Messages',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.w700,
                           fontSize: 22,
                           letterSpacing: -0.5,
@@ -235,14 +235,14 @@ class _UserListScreenState extends State<UserListScreen>
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2563EB).withOpacity(0.2), // Cobalt Blue
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.5)),
+                          border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.3)),
                         ),
                         child: Text(
                           '$onlineCount Online',
-                          style: const TextStyle(
-                            color: Color(0xFF60A5FA),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
@@ -252,9 +252,24 @@ class _UserListScreenState extends State<UserListScreen>
                   ),
                 ),
                 actions: [
+                  Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, child) {
+                      final isDark = themeProvider.themeMode == ThemeMode.dark ||
+                          (themeProvider.themeMode == ThemeMode.system &&
+                              MediaQuery.of(context).platformBrightness == Brightness.dark);
+                      return IconButton(
+                        icon: Icon(
+                          isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                        onPressed: () => themeProvider.toggleTheme(),
+                        tooltip: 'Toggle Theme',
+                      );
+                    },
+                  ),
                   IconButton(
                     tooltip: 'Logout',
-                    icon: const Icon(Icons.logout_rounded, color: Colors.white70),
+                    icon: Icon(Icons.logout_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
                     onPressed: () async {
                       await _setOnlineStatus(false);
                       await _authService.logout();
@@ -286,11 +301,11 @@ class _UserListScreenState extends State<UserListScreen>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.inbox_outlined, size: 64, color: Colors.white.withOpacity(0.2)),
+                        Icon(Icons.inbox_outlined, size: 64, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
                         const SizedBox(height: 16),
-                        const Text(
+                        Text(
                           'No messages found',
-                          style: TextStyle(color: Colors.white70, fontSize: 16),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 16),
                         ),
                       ],
                     ),
@@ -368,18 +383,18 @@ class _SearchField extends StatelessWidget {
     return Container(
       height: 46,
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B), // Slate 800
+        color: Theme.of(context).colorScheme.surface, // Slate 800
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05)),
       ),
       child: TextField(
         controller: controller,
         onChanged: onChanged,
-        style: const TextStyle(color: Colors.white, fontSize: 16),
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16),
         decoration: InputDecoration(
           hintText: 'Search teammates',
-          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-          prefixIcon: Icon(Icons.search, color: Colors.white.withOpacity(0.5), size: 20),
+          hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+          prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), size: 20),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
@@ -413,7 +428,7 @@ class _UserRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      splashColor: const Color(0xFF2563EB).withOpacity(0.1),
+      splashColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
       highlightColor: Colors.transparent,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -431,7 +446,7 @@ class _UserRow extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1)),
                   ),
                   alignment: Alignment.center,
                   child: Text(
@@ -453,7 +468,7 @@ class _UserRow extends StatelessWidget {
                       color: isOnline ? const Color(0xFF10B981) : const Color(0xFF475569), // Emerald or Slate
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: const Color(0xFF0B0F19), // Match background color for cutout effect
+                        color: Theme.of(context).scaffoldBackgroundColor, // Match background color for cutout effect
                         width: 2.5,
                       ),
                     ),
@@ -472,8 +487,8 @@ class _UserRow extends StatelessWidget {
                       Expanded(
                         child: Text(
                           name,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
                           ),
@@ -484,7 +499,7 @@ class _UserRow extends StatelessWidget {
                       Text(
                         '12:45 PM', // Placeholder for dynamic timestamp integration later
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.4),
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                           fontSize: 12,
                         ),
                       ),
@@ -526,14 +541,14 @@ class _UserRow extends StatelessWidget {
                         Icon(
                           Icons.shield_outlined,
                           size: 14,
-                          color: Colors.white.withOpacity(0.3),
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
                         ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             '@$username • Tap to chat',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                               fontSize: 13,
                             ),
                             maxLines: 1,
