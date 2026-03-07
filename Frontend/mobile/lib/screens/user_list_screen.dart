@@ -5,6 +5,12 @@ import 'auth_screen.dart';
 
 import '../services/user_service.dart';
 import '../services/auth_service.dart';
+import '../services/chat_service.dart';
+import '../services/message_security_service.dart';
+import '../models/local_message.dart';
+import '../models/message.dart';
+import 'dart:async';
+import 'package:isar/isar.dart';
 
 class UserListScreen extends StatefulWidget {
   final String currentUserId;
@@ -19,14 +25,57 @@ class _UserListScreenState extends State<UserListScreen>
     with WidgetsBindingObserver {
   final UserService _userService = UserService();
   final AuthService _authService = AuthService();
+  final ChatService _chatService = ChatService();
   final TextEditingController _searchController = TextEditingController();
+  
   String _searchQuery = '';
+  Isar? _isar;
+  StreamSubscription<List<Message>>? _globalMessageSub;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _setOnlineStatus(true);
+    _initBackgroundSync();
+  }
+
+  Future<void> _initBackgroundSync() async {
+    final isar = await MessageSecurityService.getInstance();
+    if (!mounted) return;
+    _isar = isar;
+
+    // Start listening globally for all incoming messages
+    _globalMessageSub = _chatService
+        .getAllIncomingMessages(widget.currentUserId)
+        .listen((messages) async {
+      for (final msg in messages) {
+        if (msg.status != 'seen') {
+          // 1. Tell Firebase we saw it so others don't process it simultaneously
+          await _chatService.markMessageSeen(widget.currentUserId, msg.id);
+
+          // 2. Save the locally decrypted plaintext securely
+          await isar.writeTxn(() async {
+            await isar.localMessages.put(
+              LocalMessage()
+                ..content = msg.content
+                ..senderId = msg.senderId
+                ..receiverId = msg.receiverId
+                ..timestamp = msg.timestamp
+                ..attachmentUrl = msg.attachmentUrl
+                ..status = 'seen'
+                ..threatScore = msg.threatScore,
+            );
+          });
+
+          // 3. Delete from Firebase to preserve ephemeral privacy
+          await _chatService.deleteMessageAfterLocalSave(
+            widget.currentUserId,
+            msg.id,
+          );
+        }
+      }
+    });
   }
 
   @override
@@ -34,6 +83,7 @@ class _UserListScreenState extends State<UserListScreen>
     WidgetsBinding.instance.removeObserver(this);
     _setOnlineStatus(false);
     _searchController.dispose();
+    _globalMessageSub?.cancel();  // Stop background sync on exit
     super.dispose();
   }
 

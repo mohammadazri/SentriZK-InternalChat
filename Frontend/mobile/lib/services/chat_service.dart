@@ -60,6 +60,56 @@ class ChatService {
     });
   }
 
+  // Global listener for all incoming messages (WhatsApp-style)
+  Stream<List<Message>> getAllIncomingMessages(String ownId) {
+    return _firestore
+        .collection('chats')
+        .doc(ownId)
+        .collection('messages')
+        .orderBy('timestamp', descending: false)
+        .snapshots()
+        .asyncMap((snapshot) async {
+      final List<Message> messages = [];
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        var plaintext = data['content'] as String;
+        final type = data['signalType'] as int?;
+        final senderId = data['senderId'] as String? ?? '';
+
+        if (type != null && senderId.isNotEmpty) {
+          if (_decryptedCache.containsKey(doc.id)) {
+            plaintext = _decryptedCache[doc.id]!;
+          } else {
+            try {
+              // The senderId of the incoming message is our peerId for decryption
+              plaintext = await _signalManager.decryptMessage(senderId, type, plaintext);
+              _decryptedCache[doc.id] = plaintext;
+            } catch (e) {
+              print('🔐 [E2EE] Failed to decrypt message globally: $e');
+              plaintext = '🔒 [Decryption Failed]';
+              _decryptedCache[doc.id] = plaintext;
+            }
+          }
+        }
+
+        messages.add(Message(
+          id: doc.id,
+          content: plaintext,
+          senderId: senderId,
+          receiverId: data['receiverId'] ?? '',
+          timestamp: data['timestamp'] != null
+              ? (data['timestamp'] as Timestamp).toDate()
+              : DateTime.now(),
+          attachmentUrl: data['attachmentUrl'],
+          status: data['status'] ?? 'sent',
+          threatScore: (data['threatScore'] as num?)?.toDouble(),
+          signalType: type,
+        ));
+      }
+      return messages;
+    });
+  }
+
   Future<void> sendMessage({
     required String content,
     required String senderId,

@@ -37,7 +37,6 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   Isar? _isar;
   Stream<List<LocalMessage>>? _localMessagesStream;
-  StreamSubscription<List<Message>>? _incomingSub;
 
   @override
   void initState() {
@@ -60,25 +59,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _localMessagesStream = isar.localMessages.where().watch(
       fireImmediately: true,
     );
-    _subscribeToIncoming();
     setState(() {});
-  }
-
-  void _subscribeToIncoming() {
-    _incomingSub = _chatService
-        .getMessages(widget.username, widget.peerId)
-        .listen((messages) async {
-          for (final msg in messages) {
-            if (msg.status != 'seen') {
-              await _chatService.markMessageSeen(widget.username, msg.id);
-              await _saveMessageLocally(msg, status: 'seen');
-              await _chatService.deleteMessageAfterLocalSave(
-                widget.username,
-                msg.id,
-              );
-            }
-          }
-        });
   }
 
   Future<void> _saveMessageLocally(
@@ -312,7 +293,6 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _controller.dispose();
-    _incomingSub?.cancel();
     super.dispose();
   }
 }
