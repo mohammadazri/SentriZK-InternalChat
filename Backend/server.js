@@ -128,6 +128,11 @@ function requireFields(obj, fields = []) {
   }
   return null;
 }
+function isValidUsername(username) {
+  // Alphanumeric and underscores only, 3-20 chars, no spaces
+  const regex = /^[a-zA-Z0-9_]{3,20}$/;
+  return regex.test(username);
+}
 async function verifyProof(vk, signals, proof) {
   try {
     return await snarkjs.groth16.verify(vk, signals, proof);
@@ -322,8 +327,12 @@ function validateMobileAccessToken(req, res, next) {
 
 // Check username availability
 app.get("/check-username/:username", (req, res) => {
+  const { username } = req.params;
+  if (!isValidUsername(username)) {
+    return res.json({ available: false, error: "Username must be 3-20 characters and contain only letters, numbers, and underscores." });
+  }
   const db = loadDB();
-  const exists = !!db.users[req.params.username];
+  const exists = !!db.users[username];
   res.json({ available: !exists });
 });
 
@@ -351,6 +360,12 @@ app.post("/register", async (req, res) => {
     if (!ensurePoseidonReady(res)) return;
 
     const { username, proof, publicSignals } = req.body;
+
+    // Strict format check
+    if (!isValidUsername(username)) {
+      return res.status(400).json({ error: "Invalid username format. No spaces allowed." });
+    }
+
     const validReg = await verifyProof(regVk, publicSignals, proof);
     if (!validReg) return res.status(400).json({ error: "Invalid registration proof" });
 

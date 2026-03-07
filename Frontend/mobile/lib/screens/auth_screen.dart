@@ -9,6 +9,9 @@ import '../services/notification_service.dart';
 
 import '../config/app_config.dart';
 import 'user_list_screen.dart';
+import 'profile_setup_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -22,7 +25,6 @@ class _AuthScreenState extends State<AuthScreen>
   final AppLinks _appLinks = AppLinks();
   final AuthService _authService = AuthService();
 
-  late AnimationController _particleController;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
@@ -33,6 +35,7 @@ class _AuthScreenState extends State<AuthScreen>
   bool _isLoading = false;
   bool _hasNavigatedToDashboard = false;
   bool _isRedirecting = false;
+  String? _lastProcessedToken;
   IconData _statusIcon = Icons.shield_outlined;
   Color _statusColor = Colors.white70;
 
@@ -46,11 +49,6 @@ class _AuthScreenState extends State<AuthScreen>
   }
 
   void _initAnimations() {
-    _particleController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 20),
-    )..repeat();
-
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
@@ -87,26 +85,59 @@ class _AuthScreenState extends State<AuthScreen>
     }
   }
 
-  void _navigateToDashboard() {
+  Future<void> _navigateToDashboard() async {
     if (_hasNavigatedToDashboard || !mounted || _username == null) return;
+    
+    // Diagnostic logging for UID mismatch
+    final currentUser = FirebaseAuth.instance.currentUser;
+    debugPrint('🔥 [AUTH] Navigating to dashboard for user: $_username');
+    debugPrint('🔥 [AUTH] Firebase Current User UID: ${currentUser?.uid}');
+
     setState(() {
       _hasNavigatedToDashboard = true;
       _isRedirecting = true;
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_username)
+          .get()
+          .catchError((e) {
+        debugPrint('🔥 [AUTH] Firestore fetch error: $e');
+        throw e;
+      });
+
+      final hasDisplayName = doc.exists &&
+          doc.data()!.containsKey('displayName') &&
+          doc.data()!['displayName'] != null;
+
       if (!mounted) return;
+
+      Widget nextScreen;
+      if (hasDisplayName) {
+        nextScreen = UserListScreen(currentUserId: _username!);
+      } else {
+        nextScreen = ProfileSetupScreen(username: _username!);
+      }
+
       Navigator.of(context)
-          .pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => UserListScreen(currentUserId: _username!),
-            ),
-          )
+          .pushReplacement(MaterialPageRoute(builder: (context) => nextScreen))
           .whenComplete(() {
-            if (mounted) {
-              setState(() => _isRedirecting = false);
-            }
-          });
-    });
+        if (mounted) setState(() => _isRedirecting = false);
+      });
+    } catch (e) {
+      debugPrint('Error navigating to dashboard: $e');
+      // If permission denied, we might need to show an error or try a different ID
+      if (mounted) {
+        _updateStatus(
+          "Permission Denied: Firebase configuration issue.",
+          Icons.error_outline,
+          Colors.redAccent,
+        );
+        setState(() => _isRedirecting = false);
+      }
+    }
   }
 
   void _updateStatus(String message, IconData icon, Color color) {
@@ -122,7 +153,6 @@ class _AuthScreenState extends State<AuthScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _particleController.dispose();
     _pulseController.dispose();
     super.dispose();
   }
@@ -192,6 +222,16 @@ class _AuthScreenState extends State<AuthScreen>
         }
 
         final token = uri.queryParameters['token'] ?? "";
+        
+        // Deduplicate: prevent the exact same token from triggering the backend validation API twice
+        if (token.isNotEmpty && token == _lastProcessedToken) {
+          debugPrint('📱 Skipping duplicate login deep link processing for token: $token');
+          return;
+        }
+        if (token.isNotEmpty) {
+          _lastProcessedToken = token;
+        }
+
         final username = uri.queryParameters['username'] ?? "";
         final encryptedSalt = uri.queryParameters['encryptedSalt'] ?? "";
         final encodedMnemonic = uri.queryParameters['mnemonic'] ?? "";
@@ -371,7 +411,7 @@ class _AuthScreenState extends State<AuthScreen>
                 const Icon(Icons.key, color: Colors.white, size: 48),
                 const SizedBox(height: 16),
                 const Text(
-                  '🔐 Recovery Phrase',
+                  'Recovery Phrase',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 24,
@@ -492,7 +532,13 @@ class _AuthScreenState extends State<AuthScreen>
                         final confirm = await showDialog<bool>(
                           context: context,
                           builder: (context) => AlertDialog(
-                            title: const Text('⚠️ Warning'),
+                            title: Row(
+                              children: const [
+                                Icon(Icons.warning, color: Colors.orange),
+                                SizedBox(width: 8),
+                                Text('Warning'),
+                              ],
+                            ),
                             content: const Text(
                               'You haven\'t copied the recovery phrase yet. Are you sure you\'ve saved it somewhere safe?',
                             ),
@@ -1271,31 +1317,19 @@ class _AuthScreenState extends State<AuthScreen>
     return Scaffold(
       body: Stack(
         children: [
-          // Animated gradient background
-          AnimatedBuilder(
-            animation: _particleController,
-            builder: (context, child) {
-              return Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0xFF0F172A), // Slate 900
-                      const Color(0xFF1E293B), // Slate 800
-                      const Color(0xFF334155), // Slate 700
-                    ],
-                    stops: [0.0, _particleController.value, 1.0],
-                  ),
-                ),
-              );
-            },
-          ),
-
-          // Particle effect overlay
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _ParticlePainter(_particleController.value),
+          // Minimalist deep geometric backdrop
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF0B0F19), // Deep corporate navy
+                  Color(0xFF0F172A), // Slate 900
+                  Color(0xFF1E293B), // Slate 800
+                ],
+                stops: [0.0, 0.5, 1.0],
+              ),
             ),
           ),
 
@@ -1600,31 +1634,5 @@ class _AuthScreenState extends State<AuthScreen>
         ),
       ),
     );
-  }
-}
-
-// Custom particle painter for background effect
-class _ParticlePainter extends CustomPainter {
-  final double animationValue;
-
-  _ParticlePainter(this.animationValue);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withOpacity(0.1)
-      ..style = PaintingStyle.fill;
-
-    // Draw animated particles
-    for (int i = 0; i < 30; i++) {
-      final x = (size.width / 30) * i + (animationValue * 50);
-      final y = (size.height / 3) * (i % 3) + (animationValue * 30);
-      canvas.drawCircle(Offset(x % size.width, y % size.height), 2, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _ParticlePainter oldDelegate) {
-    return oldDelegate.animationValue != animationValue;
   }
 }
