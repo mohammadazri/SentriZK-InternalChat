@@ -9,6 +9,9 @@ class ChatService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final SignalManager _signalManager = SignalManager.instance;
 
+  // Cache decrypted messages to avoid DuplicateMessageException from the Ratchet when snapshots update
+  final Map<String, String> _decryptedCache = {};
+
   Stream<List<Message>> getMessages(String ownId, String peerId) {
     return _firestore
         .collection('chats')
@@ -20,44 +23,38 @@ class ChatService {
         .asyncMap((snapshot) async {
       final List<Message> messages = [];
       for (var doc in snapshot.docs) {
-        try {
-          final data = doc.data();
-          var plaintext = data['content'] as String;
-          final type = data['signalType'] as int?;
+        final data = doc.data();
+        var plaintext = data['content'] as String;
+        final type = data['signalType'] as int?;
 
-          if (type != null) {
-            plaintext = await _signalManager.decryptMessage(peerId, type, plaintext);
+        if (type != null) {
+          if (_decryptedCache.containsKey(doc.id)) {
+            plaintext = _decryptedCache[doc.id]!;
+          } else {
+            try {
+              plaintext = await _signalManager.decryptMessage(peerId, type, plaintext);
+              _decryptedCache[doc.id] = plaintext;
+            } catch (e) {
+              print('🔐 [E2EE] Failed to decrypt message: $e');
+              plaintext = '🔒 [Decryption Failed]';
+              _decryptedCache[doc.id] = plaintext;
+            }
           }
-
-          messages.add(Message(
-            id: doc.id,
-            content: plaintext,
-            senderId: data['senderId'] ?? '',
-            receiverId: data['receiverId'] ?? '',
-            timestamp: data['timestamp'] != null
-                ? (data['timestamp'] as Timestamp).toDate()
-                : DateTime.now(),
-            attachmentUrl: data['attachmentUrl'],
-            status: data['status'] ?? 'sent',
-            threatScore: (data['threatScore'] as num?)?.toDouble(),
-            signalType: type,
-          ));
-        } catch (e) {
-          print('🔐 [E2EE] Failed to decrypt message: $e');
-          final data = doc.data();
-          messages.add(Message(
-            id: doc.id,
-            content: '🔒 [Decryption Failed]',
-            senderId: data['senderId'] ?? '',
-            receiverId: data['receiverId'] ?? '',
-            timestamp: data['timestamp'] != null
-                ? (data['timestamp'] as Timestamp).toDate()
-                : DateTime.now(),
-            attachmentUrl: data['attachmentUrl'],
-            status: data['status'] ?? 'sent',
-            threatScore: null,
-          ));
         }
+
+        messages.add(Message(
+          id: doc.id,
+          content: plaintext,
+          senderId: data['senderId'] ?? '',
+          receiverId: data['receiverId'] ?? '',
+          timestamp: data['timestamp'] != null
+              ? (data['timestamp'] as Timestamp).toDate()
+              : DateTime.now(),
+          attachmentUrl: data['attachmentUrl'],
+          status: data['status'] ?? 'sent',
+          threatScore: (data['threatScore'] as num?)?.toDouble(),
+          signalType: type,
+        ));
       }
       return messages;
     });
