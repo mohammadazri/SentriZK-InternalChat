@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'signal/signal_manager.dart';
 
 class UserService {
@@ -57,6 +59,49 @@ class UserService {
       }, SetOptions(merge: true));
     } catch (e) {
       print('🔥 [USER_SERVICE] setTypingStatus error: $e');
+    }
+  }
+
+  /// Updates the user's display name
+  Future<void> updateDisplayName(String userId, String newDisplayName) async {
+    try {
+      await _firestore.collection('users').doc(userId).set({
+        'displayName': newDisplayName,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print('🔥 [USER_SERVICE] updateDisplayName error: $e');
+      rethrow;
+    }
+  }
+
+  /// Uploads a new profile avatar to Firebase Storage and updates the user record
+  Future<String> updateProfileAvatar(String userId, File imageFile) async {
+    try {
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('avatars')
+          .child('$userId.jpg');
+
+      // Upload the file
+      final uploadTask = await storageRef.putFile(
+        imageFile,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+
+      // Get the download URL
+      final downloadUrl = await uploadTask.ref.getDownloadURL();
+
+      // Update Firestore user document
+      await _firestore.collection('users').doc(userId).set({
+        'avatarUrl': downloadUrl,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      return downloadUrl;
+    } catch (e) {
+      print('🔥 [USER_SERVICE] updateProfileAvatar error: $e');
+      rethrow;
     }
   }
 }

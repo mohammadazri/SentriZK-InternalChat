@@ -5,6 +5,7 @@ import '../providers/theme_provider.dart';
 import 'package:mobile/utils/time_utils.dart';
 import 'chat_screen.dart';
 import 'auth_screen.dart';
+import 'settings_screen.dart';
 
 import '../services/user_service.dart';
 import '../services/auth_service.dart';
@@ -323,31 +324,20 @@ class _UserListScreenState extends State<UserListScreen>
                   ),
                 ),
                 actions: [
-                  Consumer<ThemeProvider>(
-                    builder: (context, themeProvider, child) {
-                      final isDark = themeProvider.themeMode == ThemeMode.dark ||
-                          (themeProvider.themeMode == ThemeMode.system &&
-                              MediaQuery.of(context).platformBrightness == Brightness.dark);
-                      return IconButton(
-                        icon: Icon(
-                          isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                        ),
-                        onPressed: () => themeProvider.toggleTheme(),
-                        tooltip: 'Toggle Theme',
-                      );
-                    },
-                  ),
                   IconButton(
-                    tooltip: 'Logout',
-                    icon: Icon(Icons.logout_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-                    onPressed: () async {
-                      await _setOnlineStatus(false);
-                      await _authService.logout();
-                      if (!mounted) return;
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (_) => const AuthScreen()),
-                        (route) => false,
+                    icon: Icon(
+                      Icons.settings_outlined,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                    tooltip: 'Settings',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SettingsScreen(
+                            currentUserId: widget.currentUserId,
+                          ),
+                        ),
                       );
                     },
                   ),

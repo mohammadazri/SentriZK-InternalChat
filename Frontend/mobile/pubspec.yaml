@@ -45,6 +45,11 @@ dependencies:
   firebase_core: any
   firebase_storage: any
   firebase_messaging: any
+  
+  # Settings & Profile Additions
+  image_picker: ^1.1.2
+  share_plus: ^10.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
