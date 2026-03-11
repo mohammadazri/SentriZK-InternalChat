@@ -51,6 +51,14 @@ dev_dependencies:
   build_runner: ^2.4.13
   isar_generator: ^3.1.0+1
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/mobil_logo_no_bg.png"
+  min_sdk_android: 21
+  background_color: "#1E293B" # Dark Slate 800 background for Android adaptive icons
 
 flutter:
   uses-material-design: true
