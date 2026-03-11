@@ -32,7 +32,7 @@ def run_mobile_training():
     train_texts, val_texts, train_labels, val_labels = train_test_split(texts, labels, test_size=0.2, random_state=42)
     console.print(f"[green]✔ Loaded Data:[/green] {len(train_texts)} Training samples.")
 
-    VOCAB_SIZE = 7500  
+    VOCAB_SIZE = 10000  
     MAX_LEN = 120      
     OOV_TOK = "<OOV>" 
 
@@ -53,25 +53,25 @@ def run_mobile_training():
         classes=np.unique(train_labels),
         y=train_labels
     )
-    class_weights_dict = {0: weights[0], 1: weights[1] * 1.5}
+    class_weights_dict = {0: weights[0], 1: weights[1]}
 
     # PURE TFLite compatible architecture (No RNNs/LSTMs)
     model = tf.keras.Sequential([
         # Ensure we define input_length to guarantee static shape for TFLite
-        tf.keras.layers.Embedding(VOCAB_SIZE, 32, input_length=MAX_LEN),
+        tf.keras.layers.Embedding(VOCAB_SIZE, 64, input_length=MAX_LEN),
         
         # Conv1D performs exceptionally well for text classification and is 100% native TFLite
-        tf.keras.layers.Conv1D(64, 5, activation='relu'),
+        tf.keras.layers.Conv1D(128, 5, activation='relu'),
         tf.keras.layers.GlobalMaxPooling1D(),
         
-        tf.keras.layers.Dense(32, activation='relu'),
-        tf.keras.layers.Dropout(0.5),
+        tf.keras.layers.Dense(64, activation='relu'),
+        tf.keras.layers.Dropout(0.4),
         tf.keras.layers.Dense(1, activation='sigmoid')
     ])
 
     model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-    EPOCHS = 5
+    EPOCHS = 15
     console.print(f"\n[bold yellow]🚀 Training Conv1D for {EPOCHS} Epochs...[/bold yellow]")
     
     history = model.fit(
@@ -98,6 +98,16 @@ def run_mobile_training():
     tflite_path = os.path.join(MODELS_DIR, 'sentrizk_model.tflite')
     with open(tflite_path, 'wb') as f:
         f.write(tflite_model)
+
+    # Export vocab.json for Flutter mobile app
+    import json
+    word_index = tokenizer.word_index
+    # Only keep words within VOCAB_SIZE
+    vocab_export = {word: idx for word, idx in word_index.items() if idx < VOCAB_SIZE}
+    vocab_path = os.path.join(MODELS_DIR, 'vocab.json')
+    with open(vocab_path, 'w') as f:
+        json.dump(vocab_export, f)
+    console.print(f"[green]✔ Exported vocab.json ({len(vocab_export)} words)[/green]")
 
     final_acc = history.history['val_accuracy'][-1] * 100
     console.print(f"[bold green]✔ Done! Final Accuracy: {final_acc:.2f}%. Mobile model saved![/bold green]")

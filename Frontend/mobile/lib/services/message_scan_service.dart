@@ -12,7 +12,7 @@ class MessageScanService {
 
   static const int _maxLen = 120;
   static const int _oovIndex = 1; // <OOV> token index
-  static const double _threatThreshold = 0.5;
+  static const double _threatThreshold = 0.65;
 
   MessageScanService._();
 
@@ -63,10 +63,17 @@ class MessageScanService {
   }
 
   /// Scan a message and return the threat score (0.0 = safe, 1.0 = threat).
-  /// Returns 0.0 if the model is not ready.
+  /// Returns 0.0 if the model is not ready or message is too short.
   Future<double> scanMessage(String text) async {
     if (!_isReady || _interpreter == null) {
       print('⚠️ [ML] Model not ready, skipping scan');
+      return 0.0;
+    }
+
+    // Skip very short messages — they produce unreliable OOV-heavy scores
+    final words = text.trim().split(RegExp(r'\s+'));
+    if (words.length < 4) {
+      print('⏭️ [ML] Message too short (${words.length} words), skipping scan');
       return 0.0;
     }
 
