@@ -1,5 +1,6 @@
 /// Security Warning Widget - Shows visual warnings for suspicious links
 /// Inspired by WhatsApp's security UI
+library;
 import 'package:flutter/material.dart';
 import '../services/message_security_service.dart';
 
@@ -7,8 +8,7 @@ class SecurityWarningBadge extends StatelessWidget {
   final ThreatLevel threatLevel;
   final VoidCallback? onTap;
 
-  const SecurityWarningBadge({Key? key, required this.threatLevel, this.onTap})
-    : super(key: key);
+  const SecurityWarningBadge({super.key, required this.threatLevel, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -135,11 +135,11 @@ class DangerousLinkDialog extends StatelessWidget {
   final VoidCallback onCancel;
 
   const DangerousLinkDialog({
-    Key? key,
+    super.key,
     required this.urlAnalysis,
     required this.onProceedAnyway,
     required this.onCancel,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -217,7 +217,7 @@ class DangerousLinkDialog extends StatelessWidget {
                     ),
                   ),
                 )
-                .toList(),
+                ,
             const SizedBox(height: 24),
 
             // Warning Message
@@ -296,11 +296,11 @@ class SuspiciousLinkDialog extends StatelessWidget {
   final VoidCallback onCancel;
 
   const SuspiciousLinkDialog({
-    Key? key,
+    super.key,
     required this.urlAnalysis,
     required this.onProceed,
     required this.onCancel,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -337,7 +337,7 @@ class SuspiciousLinkDialog extends StatelessWidget {
                     ),
                   ),
                 )
-                .toList(),
+                ,
             const SizedBox(height: 20),
             Row(
               children: [

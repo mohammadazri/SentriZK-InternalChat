@@ -1,5 +1,6 @@
 /// Main Security Service - Orchestrates all security checks
 /// This is the primary interface for checking message security
+library;
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:isar/isar.dart';

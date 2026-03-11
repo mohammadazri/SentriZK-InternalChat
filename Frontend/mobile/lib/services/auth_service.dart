@@ -154,8 +154,9 @@ class AuthService {
     }
 
     final sessionId = data['sessionId'];
-    if (sessionId == null)
+    if (sessionId == null) {
       throw Exception('No sessionId returned from validation');
+    }
 
     // Persist validated session and schedule refresh
     await updateLoginToken(
@@ -410,7 +411,7 @@ class AuthService {
         "🔐 Saved Data:\n"
         "Username: $username\n"
         "Token: ${token?.substring(0, 8)}...\n"
-        "EncryptedSalt: ${encryptedSalt != null ? encryptedSalt.substring(0, 12) + '...' : 'None'}\n"
+        "EncryptedSalt: ${encryptedSalt != null ? '${encryptedSalt.substring(0, 12)}...' : 'None'}\n"
         "Session: ${sessionId != null ? '✓ Active' : '✗ None'}\n"
         "Valid: ${sessionValid ? '✓ Yes' : '✗ No'}";
     return {'status': status};

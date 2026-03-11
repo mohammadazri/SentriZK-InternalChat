@@ -1,5 +1,6 @@
 /// Clickable Link Widget with Security Integration
 /// Displays URLs as clickable links with automatic security checks
+library;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
@@ -14,12 +15,12 @@ class SecureLinkText extends StatefulWidget {
   final bool enableSecurity;
 
   const SecureLinkText({
-    Key? key,
+    super.key,
     required this.text,
     this.textStyle,
     this.linkStyle,
     this.enableSecurity = true,
-  }) : super(key: key);
+  });
 
   @override
   State<SecureLinkText> createState() => _SecureLinkTextState();

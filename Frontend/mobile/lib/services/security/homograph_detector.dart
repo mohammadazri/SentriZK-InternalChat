@@ -1,5 +1,6 @@
 /// Homograph Attack Detection Service
 /// Detects suspicious Unicode characters that mimic ASCII characters (e.g., googIe.com)
+library;
 import 'dart:core';
 
 class HomographDetector {

@@ -1,5 +1,6 @@
 /// Example usage and testing for phishing detection
 /// This file demonstrates how to use the security layer
+library;
 import 'package:flutter/material.dart';
 import '../services/message_security_service.dart';
 import '../utils/url_extractor.dart';
@@ -7,7 +8,7 @@ import '../services/security/homograph_detector.dart';
 import '../services/security/local_phishing_database.dart';
 
 class SecurityTestScreen extends StatefulWidget {
-  const SecurityTestScreen({Key? key}) : super(key: key);
+  const SecurityTestScreen({super.key});
 
   @override
   State<SecurityTestScreen> createState() => _SecurityTestScreenState();
