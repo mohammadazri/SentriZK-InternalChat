@@ -651,19 +651,43 @@ flutter run
 
 For comprehensive setup instructions, please refer to:
 
-- **[Backend Documentation](./Doc/Backend/server_doc.md)** - Server setup and API reference
+- **[Backend Setup](./Doc/backend/server_setup.md)** - Server setup and API reference
 - **[Web Frontend Guide](./Frontend/web/README.md)** - Next.js configuration and deployment
-- **[Mobile App Guide](./Frontend/mobile/README.md)** - Flutter setup and deep linking
+- **[Mobile App Guide](./Doc/frontend/mobile/mobile_app.md)** - Flutter architecture and deep linking
 
 ---
 
 ## 📚 Documentation
 
-### Core Documentation
+> **📖 Full Documentation Index**: See **[Doc/README.md](./Doc/README.md)** for a complete table of contents.
 
-- **[ZKP Authentication Flow](./Doc/general/authentication_flow.md)** - Complete authentication workflow
-- **[Circuit Generation Guide](./Doc/general/snarkjs_generation.md)** - How to compile and generate ZKP circuits
-- **[API Reference](./Doc/Backend/api_reference.md)** - Complete API endpoint documentation
+### Architecture
+
+- **[System Overview](./Doc/architecture/system_overview.md)** - Component diagram, tech stack, data flow
+- **[Authentication Flow](./Doc/architecture/authentication_flow.md)** - ZKP registration, login, MAT protocol
+- **[Security Model](./Doc/architecture/security_model.md)** - Threat model and defense strategies
+
+### Backend
+
+- **[API Reference](./Doc/backend/api_reference.md)** - Complete REST API documentation
+- **[ZKP Circuits](./Doc/backend/zkp_circuits.md)** - Circom circuit compilation and trusted setup
+
+### Frontend
+
+- **[Mobile App](./Doc/frontend/mobile/mobile_app.md)** - Flutter architecture and services
+- **[E2EE Chat](./Doc/frontend/mobile/e2ee_chat.md)** - Signal Protocol encryption
+- **[Audio/Video Calling](./Doc/frontend/mobile/audio_video_calling.md)** - WebRTC P2P calling
+- **[Web App](./Doc/frontend/web/web_app.md)** - Next.js web frontend
+
+### Security & ML
+
+- **[Phishing Detection](./Doc/security/phishing_detection.md)** - On-device ML detection
+- **[Model Training](./Doc/ml/model_training.md)** - Python training pipeline
+
+### Guides
+
+- **[Quick Start](./Doc/guides/quick_start.md)** - Developer onboarding
+- **[Deployment](./Doc/guides/deployment.md)** - Production build and deploy
 
 ### Architecture Documents
 

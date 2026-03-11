@@ -49,7 +49,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   build_runner: ^2.4.13
-  isar_generator: ^3.1.0+1firebase_messaging: ^16.1.0firebase_storage: ^13.0.5
+  isar_generator: ^3.1.0+1
   flutter_lints: ^6.0.0
 
 flutter:
