@@ -57,8 +57,7 @@ flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
   image_path: "assets/mobil_logo_no_bg.png"
-  min_sdk_android: 21
-  background_color: "#1E293B" # Dark Slate 800 background for Android adaptive icons
+  remove_alpha_ios: true
 
 flutter:
   uses-material-design: true
