@@ -198,6 +198,8 @@ class _UserListScreenState extends State<UserListScreen>
     _searchController.dispose();
     _globalMessageSub?.cancel();  // Stop background sync on exit
     _receiptSub?.cancel();
+    _localMessagesSub?.cancel();
+    CallService().dispose();
     super.dispose();
   }
 

@@ -318,6 +318,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: StreamBuilder<DocumentSnapshot>(
                     stream: FirebaseFirestore.instance.collection('users').doc(widget.currentUserId).snapshots(),
                     builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        if (FirebaseAuth.instance.currentUser == null) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        return Center(child: Text('Error: ${snapshot.error}'));
+                      }
+                      
                       final userData = snapshot.data?.data() as Map<String, dynamic>?;
                       final displayName = userData?['displayName'] ?? userData?['username'] ?? widget.currentUserId;
                       final avatarUrl = userData?['avatarUrl'];

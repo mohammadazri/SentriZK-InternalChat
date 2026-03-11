@@ -318,7 +318,13 @@ class CallService {
         .where('receiverId', isEqualTo: _currentUserId)
         .where('status', whereIn: ['outgoing', 'ringing'])
         .snapshots()
-        .listen((snapshot) {
+        .handleError((e) {
+      if (e.toString().contains('permission-denied') || e.toString().contains('PERMISSION_DENIED')) {
+        debugPrint('🔒 [CALL_SERVICE] Ignoring incoming call permission-denied during logout.');
+      } else {
+        debugPrint('🔥 [CALL_SERVICE] Unexpected error in _listenForIncomingCalls: $e');
+      }
+    }).listen((snapshot) {
       for (final change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.added) {
           final data = change.doc.data()!;
@@ -345,7 +351,13 @@ class CallService {
   /// Caller listens for answer from receiver.
   void _listenForCallDoc(String callId) {
     _callDocSub?.cancel();
-    _callDocSub = _firestore.collection('calls').doc(callId).snapshots().listen((snap) async {
+    _callDocSub = _firestore.collection('calls').doc(callId).snapshots().handleError((e) {
+      if (e.toString().contains('permission-denied') || e.toString().contains('PERMISSION_DENIED')) {
+        debugPrint('🔒 [CALL_SERVICE] Ignoring call doc permission-denied during logout.');
+      } else {
+        debugPrint('🔥 [CALL_SERVICE] Unexpected error in _listenForCallDoc: $e');
+      }
+    }).listen((snap) async {
       if (!snap.exists) return;
       final data = snap.data()!;
       final status = data['status'] as String?;
@@ -387,7 +399,13 @@ class CallService {
         .doc(callId)
         .collection('ice')
         .snapshots()
-        .listen((snapshot) async {
+        .handleError((e) {
+      if (e.toString().contains('permission-denied') || e.toString().contains('PERMISSION_DENIED')) {
+        debugPrint('🔒 [CALL_SERVICE] Ignoring ICE permission-denied during logout.');
+      } else {
+        debugPrint('🔥 [CALL_SERVICE] Unexpected error in _listenForRemoteIce: $e');
+      }
+    }).listen((snapshot) async {
       for (final change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.added) {
           final data = change.doc.data()!;
@@ -431,7 +449,13 @@ class CallService {
         .collection('users')
         .doc(receiverId)
         .snapshots()
-        .listen((snap) {
+        .handleError((e) {
+      if (e.toString().contains('permission-denied') || e.toString().contains('PERMISSION_DENIED')) {
+        debugPrint('🔒 [CALL_SERVICE] Ignoring receiver status permission-denied during logout.');
+      } else {
+        debugPrint('🔥 [CALL_SERVICE] Unexpected error in _watchReceiverStatus: $e');
+      }
+    }).listen((snap) {
       if (!snap.exists) return;
       final data = snap.data()!;
       final status = data['activityStatus'] as String? ?? 'Offline';

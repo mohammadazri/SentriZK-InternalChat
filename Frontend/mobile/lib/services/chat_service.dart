@@ -68,7 +68,13 @@ class ChatService {
         .collection('messages')
         .orderBy('timestamp', descending: false)
         .snapshots()
-        .asyncMap((snapshot) async {
+        .handleError((e) {
+      if (e.toString().contains('permission-denied') || e.toString().contains('PERMISSION_DENIED')) {
+        debugPrint('🔒 [CHAT_SERVICE] Ignoring message permission-denied during logout.');
+      } else {
+        debugPrint('🔥 [CHAT_SERVICE] Unexpected error in getAllIncomingMessages: $e');
+      }
+    }).asyncMap((snapshot) async {
       final List<Message> newMessages = [];
       
       for (var change in snapshot.docChanges) {
@@ -229,7 +235,13 @@ class ChatService {
         .doc(ownId)
         .collection('receipts')
         .snapshots()
-        .map((snapshot) {
+        .handleError((e) {
+      if (e.toString().contains('permission-denied') || e.toString().contains('PERMISSION_DENIED')) {
+        print('🔒 [CHAT_SERVICE] Ignoring receipt permission-denied during logout.');
+      } else {
+        print('🔥 [CHAT_SERVICE] Unexpected error in listenForReceipts: $e');
+      }
+    }).map((snapshot) {
       final List<Map<String, dynamic>> newReceipts = [];
       for (var change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.added) {
