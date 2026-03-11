@@ -1419,7 +1419,7 @@ class _AuthScreenState extends State<AuthScreen>
             scale: _pulseAnimation,
             child: Center(
               child: Image.asset(
-                'assets/logo_only.png',
+                'assets/mobil_logo_no_bg.png',
                 width: 120,
                 height: 120,
                 fit: BoxFit.contain,
