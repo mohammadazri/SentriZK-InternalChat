@@ -36,6 +36,7 @@ class _AuthScreenState extends State<AuthScreen>
   bool _hasNavigatedToDashboard = false;
   bool _isRedirecting = false;
   String? _lastProcessedToken;
+  StreamSubscription? _linkSubscription;
   IconData _statusIcon = Icons.shield_outlined;
   Color _statusColor = Colors.white70;
 
@@ -152,6 +153,7 @@ class _AuthScreenState extends State<AuthScreen>
 
   @override
   void dispose() {
+    _linkSubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _pulseController.dispose();
     super.dispose();
@@ -190,7 +192,7 @@ class _AuthScreenState extends State<AuthScreen>
 
   /// Listen for redirect after web authentication with secure handling
   void _listenForRedirect() {
-    _appLinks.uriLinkStream.listen(
+    _linkSubscription = _appLinks.uriLinkStream.listen(
       (uri) async {
         // Security: Validate scheme
         if (uri.scheme != 'sentriapp') {
