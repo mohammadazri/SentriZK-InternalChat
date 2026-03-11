@@ -294,11 +294,17 @@ class _AuthScreenState extends State<AuthScreen>
               Colors.blueAccent,
             );
 
+            if (mounted) {
+              setState(() {
+                _isLoading = true;
+              });
+            }
+
             // Secure login: validate token with backend and store validated session
             await _authService
                 .processLoginRedirect(token: token, username: username)
                 .timeout(
-                  const Duration(seconds: 10),
+                  const Duration(seconds: 30),
                   onTimeout: () => throw TimeoutException('Login timeout'),
                 );
 
@@ -334,6 +340,7 @@ class _AuthScreenState extends State<AuthScreen>
                 _mnemonicDisplay = "";
                 _isLoggedIn = true;
                 _username = username;
+                _isLoading = false;
               });
 
               // Navigate to UserListScreen after successful login
@@ -346,6 +353,11 @@ class _AuthScreenState extends State<AuthScreen>
               'Welcome back, $username!',
             );
           } catch (e) {
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+            }
             _updateStatus(
               "Login error: ${e.toString()}",
               Icons.error,
@@ -1465,6 +1477,7 @@ class _AuthScreenState extends State<AuthScreen>
               colors: [Color(0xFF10B981), Color(0xFF06B6D4)],
             ),
             onTap: _handleSignIn,
+            isLoading: _isLoading,
           ),
 
           const SizedBox(height: 40),
@@ -1535,9 +1548,10 @@ class _AuthScreenState extends State<AuthScreen>
     required String subtitle,
     required Gradient gradient,
     required VoidCallback onTap,
+    bool isLoading = false,
   }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: isLoading ? null : onTap,
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
@@ -1563,7 +1577,16 @@ class _AuthScreenState extends State<AuthScreen>
                     color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(icon, color: Colors.white, size: 32),
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 32,
+                          height: 32,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3,
+                          ),
+                        )
+                      : Icon(icon, color: Colors.white, size: 32),
                 ),
                 const SizedBox(width: 20),
                 Expanded(
