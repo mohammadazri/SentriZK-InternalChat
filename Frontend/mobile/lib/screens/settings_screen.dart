@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -48,7 +49,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _updateAvatar() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 30,
+      maxWidth: 256,
+      maxHeight: 256,
+    );
 
     if (pickedFile != null) {
       setState(() => _isLoading = true);
@@ -255,6 +261,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  ImageProvider? _getAvatarProvider(String? url) {
+    if (url == null || url.isEmpty) return null;
+    if (url.startsWith('data:image')) {
+      try {
+        final base64String = url.split(',').last;
+        return MemoryImage(base64Decode(base64String));
+      } catch (e) {
+        return null;
+      }
+    }
+    return NetworkImage(url);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -323,7 +342,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         CircleAvatar(
                                           radius: 50,
                                           backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                                          backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                                          backgroundImage: _getAvatarProvider(avatarUrl),
                                           child: avatarUrl == null
                                               ? Text(
                                                   displayName.isNotEmpty ? displayName.substring(0, 1).toUpperCase() : '?',

@@ -75,30 +75,20 @@ class UserService {
     }
   }
 
-  /// Uploads a new profile avatar to Firebase Storage and updates the user record
+  /// Compresses the avatar to Base64 and updates the user record
   Future<String> updateProfileAvatar(String userId, File imageFile) async {
     try {
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('avatars')
-          .child('$userId.jpg');
+      final bytes = await imageFile.readAsBytes();
+      final base64Image = base64Encode(bytes);
+      final dataUri = 'data:image/jpeg;base64,$base64Image';
 
-      // Upload the file
-      final uploadTask = await storageRef.putFile(
-        imageFile,
-        SettableMetadata(contentType: 'image/jpeg'),
-      );
-
-      // Get the download URL
-      final downloadUrl = await uploadTask.ref.getDownloadURL();
-
-      // Update Firestore user document
+      // Update Firestore user document directly
       await _firestore.collection('users').doc(userId).set({
-        'avatarUrl': downloadUrl,
+        'avatarUrl': dataUri,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
-      return downloadUrl;
+      return dataUri;
     } catch (e) {
       print('🔥 [USER_SERVICE] updateProfileAvatar error: $e');
       rethrow;
