@@ -228,6 +228,11 @@ class _UserListScreenState extends State<UserListScreen>
         stream: FirebaseFirestore.instance.collection('users').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
+            // If the user has intentionally signed out, don't flash an error screen while routing
+            if (FirebaseAuth.instance.currentUser == null) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
