@@ -58,7 +58,7 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/mobil_logo_no_bg.png"
   adaptive_icon_background: "#0f172a" # Slate 900 (Dark background to match your app theme)
-  adaptive_icon_foreground: "assets/mobil_logo_no_bg.png"
+  adaptive_icon_foreground: "assets/mobil_logo_padded.png"
   remove_alpha_ios: true
 
 flutter:
