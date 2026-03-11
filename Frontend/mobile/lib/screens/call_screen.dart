@@ -37,6 +37,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   bool _isSpeaker = false;
   bool _isFrontCamera = true;
   CallState _callState = CallState.idle;
+  bool _isReceiverOnline = false;
   Timer? _durationTimer;
   int _callDuration = 0;
 
@@ -78,14 +79,25 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
         _startDurationTimer();
       }
 
-      if (state == CallState.ended || state == CallState.rejected || state == CallState.idle) {
+      if (state == CallState.ended || state == CallState.rejected ||
+          state == CallState.missed || state == CallState.idle) {
         _durationTimer?.cancel();
         if (mounted) {
-          Future.delayed(const Duration(milliseconds: 500), () {
+          Future.delayed(const Duration(milliseconds: 800), () {
             if (mounted) Navigator.of(context).pop();
           });
         }
       }
+    };
+
+    _callService.onRingingStatusChanged = (isOnline) {
+      if (!mounted) return;
+      setState(() {
+        _isReceiverOnline = isOnline;
+        if (isOnline && _callState == CallState.outgoing) {
+          _callState = CallState.ringing;
+        }
+      });
     };
 
     // Start or accept call
@@ -360,6 +372,8 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     switch (_callState) {
       case CallState.outgoing:
         return 'Calling...';
+      case CallState.ringing:
+        return 'Ringing...';
       case CallState.incoming:
         return 'Incoming call...';
       case CallState.connecting:
@@ -371,7 +385,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
       case CallState.rejected:
         return 'Call declined';
       case CallState.missed:
-        return 'Missed call';
+        return 'No answer';
       default:
         return '';
     }

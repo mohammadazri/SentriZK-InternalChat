@@ -11,7 +11,8 @@ enum CallType { audio, video }
 
 enum CallState {
   idle,
-  outgoing,   // caller waiting for receiver to pick up
+  outgoing,   // caller waiting — receiver status unknown
+  ringing,    // caller sees "Ringing..." — receiver is online
   incoming,   // receiver sees the ringing UI
   connecting, // WebRTC handshake in progress
   active,     // media flowing
@@ -55,6 +56,9 @@ class CallService {
   Function(MediaStream stream)? onRemoteStream;
   Function(CallState state)? onStateChanged;
   Function(CallInfo info)? onIncomingCall;
+  /// Reports whether the receiver is online, so the UI can show
+  /// "Ringing..." (true) or "Calling..." (false).
+  Function(bool isReceiverOnline)? onRingingStatusChanged;
 
   // ── Internal state ──
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -64,10 +68,13 @@ class CallService {
   CallState _state = CallState.idle;
   CallInfo? _currentCall;
   String? _currentUserId;
+  bool _receiverOnline = false;
 
   StreamSubscription? _callDocSub;
   StreamSubscription? _iceSub;
   StreamSubscription? _incomingCallSub;
+  StreamSubscription? _receiverStatusSub;
+  Timer? _missedCallTimer;
 
   // ── ICE config with STUN + free TURN ──
   // For production, swap with Twilio or Metered TURN credentials.
@@ -100,6 +107,8 @@ class CallService {
     _incomingCallSub?.cancel();
     _callDocSub?.cancel();
     _iceSub?.cancel();
+    _receiverStatusSub?.cancel();
+    _missedCallTimer?.cancel();
     _cleanup();
   }
 
@@ -155,6 +164,12 @@ class CallService {
     // 6. Listen for answer & remote ICE
     _listenForCallDoc(callId);
     _listenForRemoteIce(callId, receiverId);
+
+    // 7. Check if receiver is online → update "Ringing" vs "Calling"
+    _watchReceiverStatus(receiverId);
+
+    // 8. Auto-timeout after 45 seconds → missed call
+    _startMissedCallTimer();
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -301,7 +316,7 @@ class CallService {
     _incomingCallSub = _firestore
         .collection('calls')
         .where('receiverId', isEqualTo: _currentUserId)
-        .where('status', isEqualTo: 'outgoing')
+        .where('status', whereIn: ['outgoing', 'ringing'])
         .snapshots()
         .listen((snapshot) {
       for (final change in snapshot.docChanges) {
@@ -317,6 +332,11 @@ class CallService {
           _setState(CallState.incoming);
           _currentCall = callInfo;
           onIncomingCall?.call(callInfo);
+
+          // Tell the caller we are online → update status to 'ringing'
+          _firestore.collection('calls').doc(change.doc.id).update({
+            'status': 'ringing',
+          }).catchError((_) {});
         }
       }
     });
@@ -330,10 +350,17 @@ class CallService {
       final data = snap.data()!;
       final status = data['status'] as String?;
 
+      // Receiver came online and set status to 'ringing'
+      if (status == 'ringing' && _state == CallState.outgoing) {
+        _setState(CallState.ringing);
+      }
+
+      // Receiver accepted → set remote SDP
       if (status == 'active' && data['answer'] != null && _pc != null) {
         final answerData = data['answer'] as Map<String, dynamic>;
         final remoteDesc = await _pc!.getRemoteDescription();
         if (remoteDesc == null) {
+          _missedCallTimer?.cancel(); // They answered, cancel timeout
           await _pc!.setRemoteDescription(
             RTCSessionDescription(answerData['sdp'], answerData['type']),
           );
@@ -341,7 +368,12 @@ class CallService {
         }
       }
 
+      // Call ended, rejected, or missed
       if (status == 'ended' || status == 'rejected') {
+        await _cleanup();
+      }
+      if (status == 'missed') {
+        _setState(CallState.missed);
         await _cleanup();
       }
     });
@@ -391,11 +423,51 @@ class CallService {
     });
   }
 
+  /// Watch the receiver's Firestore activityStatus to determine
+  /// "Ringing..." (online) vs "Calling..." (offline).
+  void _watchReceiverStatus(String receiverId) {
+    _receiverStatusSub?.cancel();
+    _receiverStatusSub = _firestore
+        .collection('users')
+        .doc(receiverId)
+        .snapshots()
+        .listen((snap) {
+      if (!snap.exists) return;
+      final data = snap.data()!;
+      final status = data['activityStatus'] as String? ?? 'Offline';
+      _receiverOnline = (status == 'Online');
+      onRingingStatusChanged?.call(_receiverOnline);
+    });
+  }
+
+  /// Auto-timeout: if no one answers within 45 seconds → missed call.
+  void _startMissedCallTimer() {
+    _missedCallTimer?.cancel();
+    _missedCallTimer = Timer(const Duration(seconds: 45), () {
+      if (_state == CallState.outgoing || _state == CallState.ringing) {
+        // Mark as missed
+        if (_currentCall != null) {
+          _firestore.collection('calls').doc(_currentCall!.callId).update({
+            'status': 'missed',
+            'endedAt': FieldValue.serverTimestamp(),
+          }).catchError((_) {});
+        }
+        _setState(CallState.missed);
+        _cleanup();
+      }
+    });
+  }
+
   Future<void> _cleanup() async {
     _callDocSub?.cancel();
     _iceSub?.cancel();
+    _receiverStatusSub?.cancel();
+    _missedCallTimer?.cancel();
     _callDocSub = null;
     _iceSub = null;
+    _receiverStatusSub = null;
+    _missedCallTimer = null;
+    _receiverOnline = false;
 
     _localStream?.getTracks().forEach((t) => t.stop());
     _localStream?.dispose();
