@@ -3,11 +3,15 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:mobile/utils/time_utils.dart';
 import '../models/message.dart';
 import '../services/chat_service.dart';
 import '../services/message_security_service.dart';
 import '../services/message_scan_service.dart';
+import '../services/call_service.dart';
 import '../config/app_config.dart';
+import 'call_screen.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'package:isar/isar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -115,6 +119,44 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {});
   }
 
+  Future<void> _startCall(CallType type) async {
+    // Request permissions
+    final permissions = type == CallType.video
+        ? [Permission.camera, Permission.microphone]
+        : [Permission.microphone];
+
+    final statuses = await permissions.request();
+    final allGranted = statuses.values.every((s) => s.isGranted);
+
+    if (!allGranted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(type == CallType.video
+                ? 'Camera and microphone permissions are required'
+                : 'Microphone permission is required'),
+            backgroundColor: const Color(0xFFEF4444),
+          ),
+        );
+      }
+      return;
+    }
+
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CallScreen(
+            currentUserId: widget.username,
+            peerId: widget.peerId,
+            peerName: widget.peerName,
+            callType: type,
+          ),
+        ),
+      );
+    }
+  }
+
   Future<void> _saveMessageLocally(
     Message msg, {
     String status = 'sent',
@@ -186,7 +228,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             return const Text(
                               'typing...',
                               style: TextStyle(
-                                color: Color(0xFF10B981), // Emerald 500
+                                color: Color(0xFF10B981),
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 fontStyle: FontStyle.italic,
@@ -208,6 +250,19 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ],
           ),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.call_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), size: 22),
+              tooltip: 'Audio Call',
+              onPressed: () => _startCall(CallType.audio),
+            ),
+            IconButton(
+              icon: Icon(Icons.videocam_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), size: 24),
+              tooltip: 'Video Call',
+              onPressed: () => _startCall(CallType.video),
+            ),
+            const SizedBox(width: 4),
+          ],
         ),
       ),
       body: Column(
@@ -362,7 +417,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 Text(
-                                  msg.timestamp.toLocal().toString().substring(11, 16),
+                                  TimeUtils.formatChatTime(msg.timestamp),
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: isMe ? Colors.white.withOpacity(0.7) : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),

@@ -2,23 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
+import 'package:mobile/utils/time_utils.dart';
 import 'chat_screen.dart';
 import 'auth_screen.dart';
 
 import '../services/user_service.dart';
 import '../services/auth_service.dart';
 import '../services/chat_service.dart';
+import '../services/call_service.dart';
 import '../services/message_security_service.dart';
 import '../models/local_message.dart';
-import '../models/message.dart';
+import '../widgets/incoming_call_overlay.dart';
 import 'dart:async';
 import 'package:isar/isar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserListScreen extends StatefulWidget {
   final String currentUserId;
-  const UserListScreen({Key? key, required this.currentUserId})
-    : super(key: key);
+  const UserListScreen({super.key, required this.currentUserId});
 
   @override
   State<UserListScreen> createState() => _UserListScreenState();
@@ -29,13 +30,15 @@ class _UserListScreenState extends State<UserListScreen>
   final UserService _userService = UserService();
   final AuthService _authService = AuthService();
   final ChatService _chatService = ChatService();
+  Map<String, String> _drafts = {};
+  String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   
-  String _searchQuery = '';
   Isar? _isar;
-  StreamSubscription<List<Message>>? _globalMessageSub;
-  StreamSubscription<List<Map<String, dynamic>>>? _receiptSub;
-  Map<String, String> _drafts = {};
+  StreamSubscription? _globalMessageSub;
+  StreamSubscription? _receiptSub;
+  StreamSubscription? _localMessagesSub;
+  Map<String, LocalMessage> _lastMessages = {};
 
   @override
   void initState() {
@@ -44,6 +47,35 @@ class _UserListScreenState extends State<UserListScreen>
     _setOnlineStatus(true);
     _initBackgroundSync();
     _loadDrafts();
+    _initCallService();
+  }
+
+  void _initCallService() {
+    final callService = CallService();
+    callService.init(widget.currentUserId);
+
+    callService.onIncomingCall = (callInfo) {
+      if (!mounted) return;
+      // Fetch the offer data from Firestore to pass to the overlay
+      FirebaseFirestore.instance
+          .collection('calls')
+          .doc(callInfo.callId)
+          .get()
+          .then((doc) {
+        if (doc.exists && mounted) {
+          final offerData = doc.data()!['offer'] as Map<String, dynamic>;
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => IncomingCallOverlay(
+                callInfo: callInfo,
+                offerData: offerData,
+              ),
+            ),
+          );
+        }
+      });
+    };
   }
 
   Future<void> _loadDrafts() async {
@@ -72,6 +104,14 @@ class _UserListScreenState extends State<UserListScreen>
     final isar = await MessageSecurityService.getInstance();
     if (!mounted) return;
     _isar = isar;
+    
+    // Initial load of last messages
+    await _updateLastMessages();
+
+    // Listen to local changes to refresh the "Last Message" snippets
+    _localMessagesSub = isar.localMessages.watchLazy().listen((_) {
+      _updateLastMessages();
+    });
 
     // Start listening globally for all incoming messages
     _globalMessageSub = _chatService
@@ -129,6 +169,26 @@ class _UserListScreenState extends State<UserListScreen>
     });
   }
 
+  Future<void> _updateLastMessages() async {
+    if (_isar == null) return;
+    
+    final allMessages = await _isar!.localMessages.where().sortByTimestampDesc().findAll();
+    final Map<String, LocalMessage> lastMsgs = {};
+    
+    for (var msg in allMessages) {
+      final peerId = msg.senderId == widget.currentUserId ? msg.receiverId : msg.senderId;
+      if (!lastMsgs.containsKey(peerId)) {
+        lastMsgs[peerId] = msg;
+      }
+    }
+    
+    if (mounted) {
+      setState(() {
+        _lastMessages = lastMsgs;
+      });
+    }
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -159,6 +219,7 @@ class _UserListScreenState extends State<UserListScreen>
     );
   }
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -206,6 +267,16 @@ class _UserListScreenState extends State<UserListScreen>
                 .toLowerCase();
             return name.contains(search);
           }).toList();
+
+          // WhatsApp Style: Sort by last message timestamp (most recent first)
+          filtered.sort((a, b) {
+            final lastA = _lastMessages[a['id']]?.timestamp;
+            final lastB = _lastMessages[b['id']]?.timestamp;
+            if (lastA == null && lastB == null) return 0;
+            if (lastA == null) return 1; // Put new/empty chats at bottom
+            if (lastB == null) return -1;
+            return lastB.compareTo(lastA);
+          });
 
           return CustomScrollView(
             physics: const BouncingScrollPhysics(),
@@ -335,6 +406,14 @@ class _UserListScreenState extends State<UserListScreen>
                         final draftText = _drafts[user['id']];
                         final isTyping = user['typingTo'] == widget.currentUserId;
 
+                        final lastMsg = _lastMessages[user['id']];
+                        final timeString = lastMsg != null 
+                            ? TimeUtils.formatChatTime(lastMsg.timestamp)
+                            : '';
+                        final snippet = isTyping 
+                            ? 'typing...' 
+                            : (draftText != null ? 'Draft: $draftText' : (lastMsg?.content ?? ''));
+
                         return _UserRow(
                           name: displayName,
                           username: cryptoUsername,
@@ -343,6 +422,8 @@ class _UserListScreenState extends State<UserListScreen>
                           initials: initials,
                           draft: draftText,
                           isTyping: isTyping,
+                          time: timeString,
+                          lastMessage: snippet,
                           onTap: () async {
                             await Navigator.push(
                               context,
@@ -411,6 +492,8 @@ class _UserRow extends StatelessWidget {
   final String initials;
   final String? draft;
   final bool isTyping;
+  final String time;
+  final String lastMessage;
   final VoidCallback onTap;
 
   const _UserRow({
@@ -421,6 +504,8 @@ class _UserRow extends StatelessWidget {
     required this.initials,
     this.draft,
     this.isTyping = false,
+    required this.time,
+    required this.lastMessage,
     required this.onTap,
   });
 
@@ -480,6 +565,7 @@ class _UserRow extends StatelessWidget {
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -496,66 +582,35 @@ class _UserRow extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      Text(
-                        '12:45 PM', // Placeholder for dynamic timestamp integration later
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                          fontSize: 12,
+                      if (time.isNotEmpty)
+                        Text(
+                          time,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      if (isTyping) ...[
-                        const Text(
-                          'typing...',
+                      Expanded(
+                        child: Text(
+                          lastMessage,
                           style: TextStyle(
-                            color: Color(0xFF10B981), // Emerald 500
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            fontStyle: FontStyle.italic,
+                            color: isTyping
+                                ? const Color(0xFF10B981)
+                                : (draft != null
+                                    ? const Color(0xFFFACC15)
+                                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                            fontSize: 14,
+                            fontWeight: (isTyping || draft != null) ? FontWeight.w600 : FontWeight.normal,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ] else if (draft != null) ...[
-                        const Icon(
-                          Icons.edit_note_rounded,
-                          size: 16,
-                          color: Colors.redAccent,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            'Draft: $draft',
-                            style: const TextStyle(
-                              color: Colors.redAccent,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ] else ...[
-                        Icon(
-                          Icons.shield_outlined,
-                          size: 14,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            '@$username • Tap to chat',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                              fontSize: 13,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                      ),
                     ],
                   ),
                 ],
