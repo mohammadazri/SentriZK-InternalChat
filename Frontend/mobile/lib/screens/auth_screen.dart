@@ -35,7 +35,7 @@ class _AuthScreenState extends State<AuthScreen>
   bool _isLoading = false;
   bool _hasNavigatedToDashboard = false;
   bool _isRedirecting = false;
-  String? _lastProcessedToken;
+  static String? _lastProcessedToken;
   StreamSubscription? _linkSubscription;
   IconData _statusIcon = Icons.shield_outlined;
   Color _statusColor = Colors.white70;

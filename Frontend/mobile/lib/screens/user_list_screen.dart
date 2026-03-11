@@ -228,7 +228,12 @@ class _UserListScreenState extends State<UserListScreen>
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('users').snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .snapshots()
+            .handleError((e) {
+          debugPrint('🔒 [USER_LIST] Ignoring users permission-denied during logout.');
+        }),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             // If the user has intentionally signed out, don't flash an error screen while routing

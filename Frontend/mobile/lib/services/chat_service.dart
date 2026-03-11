@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../models/message.dart';
@@ -20,6 +21,9 @@ class ChatService {
         .where('senderId', isEqualTo: peerId)
         .orderBy('timestamp', descending: false)
         .snapshots()
+        .handleError((e) {
+      debugPrint('🔒 [CHAT_SERVICE] Ignoring getMessages permission-denied during logout.');
+    })
         .asyncMap((snapshot) async {
       final List<Message> messages = [];
       for (var doc in snapshot.docs) {

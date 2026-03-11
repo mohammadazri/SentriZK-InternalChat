@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -244,20 +245,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         activityStatus: 'Offline',
       );
       
+      // 2. Destroy the Auth Token locally and on Backend
+      // We do this BEFORE navigating so that AuthScreen doesn't find a valid session
+      await _authService.logout();
+      
       if (!mounted) return;
       
-      // 2. Navigate away FIRST, which destroys UserListScreen and calls its dispose()
-      // This stops all the active Firestore streams that rely on the current Auth token
+      // 3. Navigate away
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const AuthScreen()),
         (route) => false,
       );
-      
-      // 3. Give streams a tiny bit of time to cancel
-      await Future.delayed(const Duration(milliseconds: 300));
-      
-      // 4. Destroy the Auth Token
-      await _authService.logout();
     }
   }
 
@@ -316,7 +314,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 
                 SliverToBoxAdapter(
                   child: StreamBuilder<DocumentSnapshot>(
-                    stream: FirebaseFirestore.instance.collection('users').doc(widget.currentUserId).snapshots(),
+                    stream: FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(widget.currentUserId)
+                        .snapshots()
+                        .handleError((e) {
+                      debugPrint('🔒 [SETTINGS] Ignoring user info permission-denied during logout.');
+                    }),
+
                     builder: (context, snapshot) {
                       if (snapshot.hasError) {
                         if (FirebaseAuth.instance.currentUser == null) {

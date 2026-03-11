@@ -220,7 +220,14 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     ),
                     StreamBuilder<DocumentSnapshot>(
-                      stream: FirebaseFirestore.instance.collection('users').doc(widget.peerId).snapshots(),
+                      stream: FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(widget.peerId)
+                          .snapshots()
+                          .handleError((e) {
+                        debugPrint('🔒 [CHAT] Ignoring peer status permission-denied during logout.');
+                      }),
+
                       builder: (context, snapshot) {
                         if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
                           final peerData = snapshot.data!.data() as Map<String, dynamic>;
