@@ -227,18 +227,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (confirm == true) {
       setState(() => _isLoading = true);
+      
+      // 1. Set status to offline
       await _userService.createOrUpdateUser(
         userId: widget.currentUserId,
         username: widget.currentUserId,
         deviceId: '',
         activityStatus: 'Offline',
       );
-      await _authService.logout();
+      
       if (!mounted) return;
+      
+      // 2. Navigate away FIRST, which destroys UserListScreen and calls its dispose()
+      // This stops all the active Firestore streams that rely on the current Auth token
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const AuthScreen()),
         (route) => false,
       );
+      
+      // 3. Give streams a tiny bit of time to cancel
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      // 4. Destroy the Auth Token
+      await _authService.logout();
     }
   }
 
