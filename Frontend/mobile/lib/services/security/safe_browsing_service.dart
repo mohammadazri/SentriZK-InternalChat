@@ -1,9 +1,9 @@
 /// Google Safe Browsing API Integration
 /// Checks URLs against Google's threat database
 /// Privacy-focused: Only sends URL hash, not full URL
+library;
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:crypto/crypto.dart';
 
 class SafeBrowsingService {
   // TODO: Replace with your actual API key from Google Cloud Console
@@ -114,15 +114,11 @@ class SafeBrowsingService {
     List<String> urls,
   ) async {
     if (_apiKey == 'YOUR_GOOGLE_SAFE_BROWSING_API_KEY') {
-      return Map.fromIterable(
-        urls,
-        key: (url) => url,
-        value: (_) => ThreatCheckResult(
+      return { for (var url in urls) url : ThreatCheckResult(
           isSafe: true,
           threatType: null,
           message: 'Safe Browsing not configured',
-        ),
-      );
+        ) };
     }
 
     try {
@@ -182,15 +178,11 @@ class SafeBrowsingService {
       return results;
     } catch (e) {
       // On error, return all as safe
-      return Map.fromIterable(
-        urls,
-        key: (url) => url,
-        value: (_) => ThreatCheckResult(
+      return { for (var url in urls) url : ThreatCheckResult(
           isSafe: true,
           threatType: null,
           message: 'Verification failed',
-        ),
-      );
+        ) };
     }
   }
 }

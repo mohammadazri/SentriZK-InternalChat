@@ -42,14 +42,14 @@ dependencies:
   # url_launcher already present above (keep existing version)
 
   cloud_firestore: any
+  firebase_core: any
+  firebase_storage: any
+  firebase_messaging: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
   build_runner: ^2.4.13
-  isar_generator: ^3.1.0+1
-  firebase_core: ^4.3.0
-  firebase_messaging: ^16.1.0
-  firebase_storage: ^13.0.5
+  isar_generator: ^3.1.0+1firebase_messaging: ^16.1.0firebase_storage: ^13.0.5
   flutter_lints: ^6.0.0
 
 flutter:

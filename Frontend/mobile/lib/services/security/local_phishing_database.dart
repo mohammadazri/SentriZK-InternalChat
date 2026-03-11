@@ -1,6 +1,7 @@
 /// Local Phishing Database Service
 /// Maintains a local list of known phishing domains for instant detection
 /// No internet required - privacy-first approach
+library;
 import 'dart:convert';
 import 'package:flutter/services.dart';
 

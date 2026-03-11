@@ -2,6 +2,7 @@
 /// Uses the `linkify` package to robustly find URLs and `punycode` to decode
 /// IDN hostnames. `public_suffix` can be added for eTLD+1 extraction if you
 /// want registrable-domain normalization.
+library;
 import 'package:linkify/linkify.dart';
 
 class UrlExtractor {

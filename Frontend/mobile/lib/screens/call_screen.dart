@@ -13,7 +13,7 @@ class CallScreen extends StatefulWidget {
   final Map<String, dynamic>? incomingOfferData;
 
   const CallScreen({
-    Key? key,
+    super.key,
     required this.currentUserId,
     required this.peerId,
     required this.peerName,
@@ -21,7 +21,7 @@ class CallScreen extends StatefulWidget {
     this.isIncoming = false,
     this.incomingCallInfo,
     this.incomingOfferData,
-  }) : super(key: key);
+  });
 
   @override
   State<CallScreen> createState() => _CallScreenState();

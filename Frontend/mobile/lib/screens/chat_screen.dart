@@ -29,11 +29,11 @@ class ChatScreen extends StatefulWidget {
   final String peerId;
   final String peerName;
   const ChatScreen({
-    Key? key,
+    super.key,
     required this.username,
     required this.peerId,
     required this.peerName,
-  }) : super(key: key);
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -569,7 +569,7 @@ class _MessageStatusIndicator extends StatelessWidget {
   final String status;
   final bool isMe;
   
-  const _MessageStatusIndicator({Key? key, required this.status, required this.isMe}) : super(key: key);
+  const _MessageStatusIndicator({required this.status, required this.isMe});
 
   @override
   Widget build(BuildContext context) {

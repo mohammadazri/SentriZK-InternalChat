@@ -9,10 +9,10 @@ class IncomingCallOverlay extends StatefulWidget {
   final Map<String, dynamic> offerData;
 
   const IncomingCallOverlay({
-    Key? key,
+    super.key,
     required this.callInfo,
     required this.offerData,
-  }) : super(key: key);
+  });
 
   @override
   State<IncomingCallOverlay> createState() => _IncomingCallOverlayState();
