@@ -17,6 +17,7 @@ import '../widgets/incoming_call_overlay.dart';
 import 'dart:async';
 import 'package:isar/isar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class UserListScreen extends StatefulWidget {
   final String currentUserId;
