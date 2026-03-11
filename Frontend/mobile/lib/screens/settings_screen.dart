@@ -12,6 +12,8 @@ import '../providers/theme_provider.dart';
 import '../services/user_service.dart';
 import '../services/auth_service.dart';
 import '../services/message_security_service.dart';
+import '../models/local_message.dart';
+import 'package:isar/isar.dart';
 import 'auth_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
