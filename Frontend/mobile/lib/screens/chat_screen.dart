@@ -370,7 +370,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             // Show threat warning for RECEIVED messages only
-                            if (!isMe && msg.threatScore != null && msg.threatScore! > 0.65)
+                            if (!isMe && msg.threatScore != null && msg.threatScore! > AppConfig.mlThreatThreshold)
                               Container(
                                 margin: const EdgeInsets.only(bottom: 6),
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
