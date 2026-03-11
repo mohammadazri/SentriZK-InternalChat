@@ -315,12 +315,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               context,
                               child: Column(
                                 children: [
-                                  Stack(
-                                    alignment: Alignment.bottomRight,
-                                    children: [
-                                      GestureDetector(
-                                        onTap: _updateAvatar,
-                                        child: CircleAvatar(
+                                  GestureDetector(
+                                    onTap: _updateAvatar,
+                                    child: Stack(
+                                      alignment: Alignment.bottomRight,
+                                      children: [
+                                        CircleAvatar(
                                           radius: 50,
                                           backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                                           backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
@@ -331,17 +331,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                 )
                                               : null,
                                         ),
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context).colorScheme.primary,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 3),
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context).colorScheme.primary,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 3),
+                                          ),
+                                          child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
                                         ),
-                                        child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                   const SizedBox(height: 16),
                                   Row(
