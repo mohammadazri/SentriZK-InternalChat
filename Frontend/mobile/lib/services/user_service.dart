@@ -28,7 +28,23 @@ class UserService {
       // Check if the user already has a signalBundle to avoid overwriting all prekeys constantly
       final doc = await _firestore.collection('users').doc(userId).get();
       Map<String, dynamic>? bundle;
+      bool needsNewBundle = false;
+      
       if (!doc.exists || !doc.data()!.containsKey('signalBundle')) {
+        needsNewBundle = true;
+      } else {
+        // Validate if local keys match the remote keys
+        final remoteBundle = doc.data()!['signalBundle'] as Map<String, dynamic>?;
+        final remoteIdentityKey = remoteBundle?['identityKey'] as String?;
+        final localIdentityKey = await signalManager.getLocalIdentityKeyBase64();
+        
+        if (remoteIdentityKey != localIdentityKey) {
+            print('🔐 [E2EE] Local keys do not match remote keys! Re-generating bundle to prevent decryption errors...');
+            needsNewBundle = true;
+        }
+      }
+
+      if (needsNewBundle) {
         print('🔐 [E2EE] Generating new Signal PreKey bundle for user...');
         bundle = await signalManager.generatePreKeyBundle();
       }
