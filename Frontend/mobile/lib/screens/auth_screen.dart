@@ -12,6 +12,7 @@ import 'user_list_screen.dart';
 import 'profile_setup_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -225,13 +226,17 @@ class _AuthScreenState extends State<AuthScreen>
 
         final token = uri.queryParameters['token'] ?? "";
         
+        final prefs = await SharedPreferences.getInstance();
+        final storedToken = prefs.getString('last_processed_token');
+        
         // Deduplicate: prevent the exact same token from triggering the backend validation API twice
-        if (token.isNotEmpty && token == _lastProcessedToken) {
+        if (token.isNotEmpty && (token == _lastProcessedToken || token == storedToken)) {
           debugPrint('📱 Skipping duplicate login deep link processing for token: $token');
           return;
         }
         if (token.isNotEmpty) {
           _lastProcessedToken = token;
+          await prefs.setString('last_processed_token', token);
         }
 
         final username = uri.queryParameters['username'] ?? "";
