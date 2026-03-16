@@ -275,11 +275,18 @@ class _UserListScreenState extends State<UserListScreen>
 
           final filtered = users.where((u) {
             final search = _searchQuery.trim().toLowerCase();
-            if (search.isEmpty) return true;
+            final hasHistory = _lastMessages.containsKey(u['id']) || _drafts.containsKey(u['id']);
+
+            if (search.isEmpty) {
+              return hasHistory;
+            }
+
             final name = (u['displayName'] ?? u['username'] ?? u['id'] ?? '')
                 .toString()
                 .toLowerCase();
-            return name.contains(search);
+            final username = (u['username'] ?? '').toString().toLowerCase();
+
+            return name.contains(search) || username.contains(search);
           }).toList();
 
           // WhatsApp Style: Sort by last message timestamp (most recent first)
