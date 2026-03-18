@@ -40,13 +40,8 @@ export default function AdminLoginPage() {
     }}>
       <div style={{ width: "100%", maxWidth: 420, padding: "0 24px" }}>
         {/* Logo */}
-        <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: 18,
-            background: "linear-gradient(135deg, #2563EB, #7C3AED)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 32, margin: "0 auto 16px",
-          }}>🛡️</div>
+        <div style={{ textAlign: "center", marginBottom: 40, display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <img src="/logo.png" alt="SentriZK Logo" style={{ height: 64, objectFit: "contain", marginBottom: 16 }} />
           <h1 style={{ color: "#fff", fontSize: 26, fontWeight: 700, margin: 0 }}>SentriZK Admin</h1>
           <p style={{ color: "#64748b", marginTop: 6, fontSize: 14 }}>Secure administrative access</p>
         </div>

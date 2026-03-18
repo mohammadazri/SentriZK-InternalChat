@@ -7,18 +7,8 @@ export default function HomePage() {
     <div className={styles.container}>
       <ThemeToggle />
       <div className={styles.hero}>
-        <div className={styles.logo}>
-          <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-            <rect x="10" y="20" width="60" height="40" rx="8" fill="var(--surface)" opacity="0.95" />
-            <path d="M40 15L25 25V40C25 48 40 55 40 55C40 55 55 48 55 40V25L40 15Z" fill="url(#shieldGrad)" stroke="var(--bg-primary)" strokeWidth="2" />
-            <path d="M35 40L38 43L45 36" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-            <defs>
-              <linearGradient id="shieldGrad" x1="25" y1="15" x2="55" y2="55" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#60a5fa" />
-                <stop offset="1" stopColor="#a78bfa" />
-              </linearGradient>
-            </defs>
-          </svg>
+        <div className={styles.logo} style={{ background: "transparent", border: "none" }}>
+          <img src="/logo.png" alt="SentriZK Logo" style={{ width: 80, height: 80, objectFit: "contain" }} />
         </div>
         <h1 className={styles.title}>SentriZK</h1>
         <p className={styles.subtitle}>

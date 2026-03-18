@@ -34,18 +34,9 @@ function InnerAdminShell({ children }: { children: React.ReactNode }) {
         display: "flex", flexDirection: "column", flexShrink: 0, transition: "background 0.2s, border-color 0.2s"
       }}>
         {/* Brand */}
-        <div style={{ padding: "32px 24px 24px", display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg, #3B82F6, #8B5CF6)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)"
-          }}>
-             <ShieldCheck color="#fff" size={22} strokeWidth={2.5} />
-          </div>
-          <div>
-            <div style={{ color: "var(--admin-text-main)", fontWeight: 700, fontSize: 18, letterSpacing: "-0.5px" }}>SentriZK</div>
-            <div style={{ color: "var(--admin-text-muted)", fontSize: 12, fontWeight: 500 }}>Command Center</div>
-          </div>
+        <div style={{ padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: 6 }}>
+          <img src="/logo.png" alt="SentriZK Logo" style={{ height: 38, objectFit: "contain", alignSelf: "flex-start" }} />
+          <div style={{ color: "var(--admin-text-muted)", fontSize: 12, fontWeight: 600, letterSpacing: "0.5px", paddingLeft: 6 }}>COMMAND CENTER</div>
         </div>
 
         {/* Nav */}

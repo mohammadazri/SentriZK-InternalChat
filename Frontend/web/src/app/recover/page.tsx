@@ -220,17 +220,8 @@ export default function RecoverPage() {
       <div className={styles.card}>
         <div className={styles.header}>
           <div className={styles.brandLogo}>
-            <div className={styles.logoGradient}>
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                <path d="M24 4L42 14V34L24 44L6 34V14L24 4Z" fill="url(#gradR)" stroke="white" strokeWidth="2" />
-                <circle cx="24" cy="24" r="8" fill="white" />
-                <defs>
-                  <linearGradient id="gradR" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#10b981" />
-                    <stop offset="1" stopColor="#06b6d4" />
-                  </linearGradient>
-                </defs>
-              </svg>
+            <div className={styles.logoGradient} style={{ background: "transparent", padding: 0 }}>
+              <img src="/logo.png" alt="SentriZK Logo" style={{ width: 48, height: 48, objectFit: "contain" }} />
             </div>
             <div>
               <h1 className={styles.brandName}>SentriZK</h1>
