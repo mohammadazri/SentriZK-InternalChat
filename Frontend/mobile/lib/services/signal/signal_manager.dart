@@ -170,6 +170,30 @@ class SignalManager {
     return utf8.decode(plaintextBytes);
   }
 
+  /// Checks if the provided remote identity key matches the one we have locally for them
+  Future<bool> hasMatchingIdentity(String remoteUserId, String base64RemoteIdentityKey) async {
+    await _initCheck();
+    final address = SignalProtocolAddress(remoteUserId, 1);
+    final key = await _store.getIdentity(address);
+    if (key == null) return false;
+    
+    return base64Encode(key.serialize()) == base64RemoteIdentityKey;
+  }
+
+  /// Deletes a session and its associated trusted identity to force a fresh re-establishment
+  Future<void> deleteSessionAndIdentity(String remoteUserId) async {
+    await _initCheck();
+    final address = SignalProtocolAddress(remoteUserId, 1);
+    
+    // Delete session
+    await _store.deleteSession(address);
+    
+    // Delete trusted identity
+    if (_store is IsarSignalStore) {
+      await (_store as IsarSignalStore).deleteIdentity(address);
+    }
+  }
+
   /// Generate a unique device 14-bit registration Id
   static int generateRandomRegistrationId() {
     return Random.secure().nextInt(16380) + 1;
