@@ -248,7 +248,7 @@ class ChatService {
     }).map((snapshot) {
       final List<Map<String, dynamic>> newReceipts = [];
       for (var change in snapshot.docChanges) {
-        if (change.type == DocumentChangeType.added) {
+        if (change.type == DocumentChangeType.added || change.type == DocumentChangeType.modified) {
           newReceipts.add({
             'messageId': change.doc.id,
             'status': change.doc.data()!['status'] as String,

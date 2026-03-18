@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
@@ -410,6 +411,7 @@ class _UserListScreenState extends State<UserListScreen>
                           status: isOnline ? 'Online' : 'Offline',
                           isOnline: isOnline,
                           initials: initials,
+                          avatarUrl: user['avatarUrl'] as String?,
                           draft: draftText,
                           isTyping: isTyping,
                           time: timeString,
@@ -483,6 +485,7 @@ class _UserRow extends StatelessWidget {
   final String status;
   final bool isOnline;
   final String initials;
+  final String? avatarUrl;
   final String? draft;
   final bool isTyping;
   final String time;
@@ -495,12 +498,26 @@ class _UserRow extends StatelessWidget {
     required this.status,
     required this.isOnline,
     required this.initials,
+    this.avatarUrl,
     this.draft,
     this.isTyping = false,
     required this.time,
     required this.lastMessage,
     required this.onTap,
   });
+
+  ImageProvider? _getAvatarProvider() {
+    if (avatarUrl == null || avatarUrl!.isEmpty) return null;
+    if (avatarUrl!.startsWith('data:image')) {
+      try {
+        final base64String = avatarUrl!.split(',').last;
+        return MemoryImage(base64Decode(base64String));
+      } catch (_) {
+        return null;
+      }
+    }
+    return NetworkImage(avatarUrl!);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -514,27 +531,20 @@ class _UserRow extends StatelessWidget {
           children: [
             Stack(
               children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF2563EB), Color(0xFF3B82F6)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1)),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    initials.length > 2 ? initials.substring(0, 2) : initials,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 18,
-                    ),
-                  ),
+                CircleAvatar(
+                  radius: 26,
+                  backgroundImage: _getAvatarProvider(),
+                  backgroundColor: const Color(0xFF2563EB),
+                  child: _getAvatarProvider() == null
+                      ? Text(
+                          initials.length > 2 ? initials.substring(0, 2) : initials,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 18,
+                          ),
+                        )
+                      : null,
                 ),
                 Positioned(
                   right: 0,
