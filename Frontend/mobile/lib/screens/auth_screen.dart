@@ -278,7 +278,9 @@ class _AuthScreenState extends State<AuthScreen>
 
           // Security: Clear sensitive data from memory
           HapticFeedback.mediumImpact();
-          await _showRecoveryPhraseDialog(result.mnemonic);
+          if (result.mnemonic.isNotEmpty) {
+            await _showRecoveryPhraseDialog(result.mnemonic);
+          }
         } else if (callbackType.contains('login-success')) {
           // Login callback
           debugPrint('📱 Processing login callback...');
@@ -1001,25 +1003,96 @@ class _AuthScreenState extends State<AuthScreen>
   }
 
   Future<void> _showFirstTimeSignInOptions() async {
-    _updateStatus(
-      'Opening recovery portal...',
-      Icons.lock_clock,
-      Colors.blueAccent,
+    final choice = await showDialog<String>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white24, width: 1),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Account Not Found',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'No saved credentials were found on this device. Would you like to create a new account or recover an existing one?',
+                style: TextStyle(color: Colors.white70),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.pop(context, 'recover'),
+                  icon: const Icon(Icons.key),
+                  label: const Text('Recover Account'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6366F1),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.pop(context, 'create'),
+                  icon: const Icon(Icons.person_add),
+                  label: const Text('Create New Account'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(context, 'cancel'),
+                child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
 
-    // Open web /recover page directly — mirrors how registration works
-    final opened = await _authService.openUrlWithMAT(
-      AppConfig.recoverUrl,
-      'login',
-    );
-
-    _updateStatus(
-      opened
-          ? 'Opening recovery portal...'
-          : 'Failed to open recovery page',
-      opened ? Icons.open_in_browser : Icons.error,
-      opened ? Colors.cyan : Colors.redAccent,
-    );
+    if (choice == 'recover') {
+      _updateStatus('Opening recovery portal...', Icons.lock_clock, Colors.blueAccent);
+      final opened = await _authService.openUrlWithMAT(AppConfig.recoverUrl, 'login');
+      _updateStatus(
+        opened ? 'Opening recovery portal...' : 'Failed to open recovery page',
+        opened ? Icons.open_in_browser : Icons.error,
+        opened ? Colors.cyan : Colors.redAccent,
+      );
+    } else if (choice == 'create') {
+      await _openWebRegistration();
+    } else {
+      _updateStatus('Sign-in cancelled', Icons.info_outline, Colors.white70);
+    }
   }
 
   InputDecoration _inputDeco(String label) {
