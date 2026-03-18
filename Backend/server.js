@@ -774,7 +774,7 @@ app.get("/admin/users", verifyAdminJWT, (req, res) => {
 });
 
 // POST /admin/users/hold — suspend a user (block login)
-app.post("/admin/users/hold", verifyAdminJWT, (req, res) => {
+app.post("/admin/users/hold", verifyAdminJWT, async (req, res) => {
   try {
     const { username } = req.body;
     if (!username) return res.status(400).json({ error: "username required" });
@@ -784,8 +784,12 @@ app.post("/admin/users/hold", verifyAdminJWT, (req, res) => {
     db.users[username].heldAt = Date.now();
     db.users[username].heldBy = req.adminUser;
     saveDB(db);
-    // Force offline in Firestore
-    setUserOffline(username);
+    // Write accountStatus to Firestore so mobile app detects it instantly
+    await admin.firestore().collection("users").doc(username).set({
+      accountStatus: "held",
+      activityStatus: "Offline",
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
     console.log(`🔒 [ADMIN] User held: ${username} by ${req.adminUser}`);
     res.json({ status: "ok", message: `${username} is now on hold` });
   } catch (err) {
@@ -794,7 +798,7 @@ app.post("/admin/users/hold", verifyAdminJWT, (req, res) => {
 });
 
 // POST /admin/users/restore — restore a held user
-app.post("/admin/users/restore", verifyAdminJWT, (req, res) => {
+app.post("/admin/users/restore", verifyAdminJWT, async (req, res) => {
   try {
     const { username } = req.body;
     if (!username) return res.status(400).json({ error: "username required" });
@@ -804,6 +808,11 @@ app.post("/admin/users/restore", verifyAdminJWT, (req, res) => {
     delete db.users[username].heldAt;
     delete db.users[username].heldBy;
     saveDB(db);
+    // Clear accountStatus in Firestore
+    await admin.firestore().collection("users").doc(username).set({
+      accountStatus: "active",
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
     console.log(`✅ [ADMIN] User restored: ${username} by ${req.adminUser}`);
     res.json({ status: "ok", message: `${username} has been restored` });
   } catch (err) {
@@ -825,13 +834,19 @@ app.post("/admin/users/revoke", verifyAdminJWT, async (req, res) => {
       if (session.username === username) delete db.sessions[sid];
     }
     saveDB(db);
-    // Remove from Firestore
+    // Write accountStatus: revoked FIRST so mobile listener fires before doc deletion
     try {
+      await admin.firestore().collection("users").doc(username).set({
+        accountStatus: "revoked",
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      // Brief delay so the mobile snapshot listener can fire
+      await new Promise(r => setTimeout(r, 1500));
       await admin.firestore().collection("users").doc(username).delete();
       // Try to delete Firebase Auth account too (non-fatal if fails)
       await admin.auth().deleteUser(username).catch(() => {});
     } catch (fsErr) {
-      console.warn(`⚠️ [ADMIN] Firestore delete for ${username} failed (non-fatal):`, fsErr.message);
+      console.warn(`⚠️ [ADMIN] Firestore ops for ${username} failed (non-fatal):`, fsErr.message);
     }
     console.log(`🗑️ [ADMIN] User revoked: ${username} by ${req.adminUser}`);
     res.json({ status: "ok", message: `${username} has been permanently revoked` });

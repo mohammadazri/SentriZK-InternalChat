@@ -40,6 +40,7 @@ class _UserListScreenState extends State<UserListScreen>
   StreamSubscription? _globalMessageSub;
   StreamSubscription? _receiptSub;
   StreamSubscription? _localMessagesSub;
+  StreamSubscription? _accountStatusSub;
   Map<String, LocalMessage> _lastMessages = {};
 
   @override
@@ -50,6 +51,71 @@ class _UserListScreenState extends State<UserListScreen>
     _initBackgroundSync();
     _loadDrafts();
     _initCallService();
+    _initAccountStatusListener();
+  }
+
+  /// Listens to the current user's Firestore doc for accountStatus changes.
+  /// If admin holds or revokes, force logout immediately.
+  void _initAccountStatusListener() {
+    _accountStatusSub = FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.currentUserId)
+        .snapshots()
+        .listen((snapshot) {
+      if (!mounted) return;
+      if (!snapshot.exists) return;
+      final data = snapshot.data();
+      if (data == null) return;
+      final status = data['accountStatus'] as String?;
+      if (status == 'held' || status == 'revoked') {
+        _forceLogout(status!);
+      }
+    });
+  }
+
+  Future<void> _forceLogout(String reason) async {
+    // Cancel all subscriptions immediately to prevent further operations
+    _globalMessageSub?.cancel();
+    _receiptSub?.cancel();
+    _localMessagesSub?.cancel();
+    _accountStatusSub?.cancel();
+
+    final msg = reason == 'held'
+        ? 'Your account has been suspended by an administrator.\nContact support for assistance.'
+        : 'Your account has been permanently revoked by an administrator.';
+
+    // Sign out
+    await _authService.logout();
+
+    if (!mounted) return;
+
+    // Show un-dismissable dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.block_rounded, color: Colors.redAccent, size: 28),
+            const SizedBox(width: 10),
+            const Text('Account Blocked'),
+          ],
+        ),
+        content: Text(msg),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const AuthScreen()),
+                (_) => false,
+              );
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _initCallService() {
@@ -196,9 +262,10 @@ class _UserListScreenState extends State<UserListScreen>
     WidgetsBinding.instance.removeObserver(this);
     _setOnlineStatus(false);
     _searchController.dispose();
-    _globalMessageSub?.cancel();  // Stop background sync on exit
+    _globalMessageSub?.cancel();
     _receiptSub?.cancel();
     _localMessagesSub?.cancel();
+    _accountStatusSub?.cancel();
     CallService().dispose();
     super.dispose();
   }
