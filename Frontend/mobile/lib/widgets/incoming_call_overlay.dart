@@ -1,4 +1,7 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/call_service.dart';
 import '../screens/call_screen.dart';
 
@@ -21,6 +24,7 @@ class IncomingCallOverlay extends StatefulWidget {
 class _IncomingCallOverlayState extends State<IncomingCallOverlay>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
+  StreamSubscription? _callDocSub;
 
   @override
   void initState() {
@@ -29,12 +33,42 @@ class _IncomingCallOverlayState extends State<IncomingCallOverlay>
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     )..repeat(reverse: true);
+    
+    // Auto-dismiss if caller hangs up or times out
+    _callDocSub = FirebaseFirestore.instance
+        .collection('calls')
+        .doc(widget.callInfo.callId)
+        .snapshots()
+        .listen((snap) {
+      if (snap.exists) {
+        final status = snap.data()?['status'] as String?;
+        if (status == 'ended' || status == 'missed' || status == 'rejected') {
+          if (mounted) Navigator.of(context).pop();
+        }
+      } else {
+        if (mounted) Navigator.of(context).pop();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _callDocSub?.cancel();
     _pulseController.dispose();
     super.dispose();
+  }
+
+  ImageProvider? _getAvatarProvider(String? url) {
+    if (url == null || url.isEmpty) return null;
+    if (url.startsWith('data:image')) {
+      try {
+        final base64String = url.split(',').last;
+        return MemoryImage(base64Decode(base64String));
+      } catch (e) {
+        return null;
+      }
+    }
+    return NetworkImage(url);
   }
 
   String _getInitials(String name) {
@@ -46,7 +80,8 @@ class _IncomingCallOverlayState extends State<IncomingCallOverlay>
   @override
   Widget build(BuildContext context) {
     final isVideo = widget.callInfo.type == CallType.video;
-    final callerName = widget.callInfo.callerId;
+    final callerName = widget.callInfo.callerName;
+    final callerAvatar = widget.callInfo.callerAvatarUrl;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
@@ -114,8 +149,12 @@ class _IncomingCallOverlayState extends State<IncomingCallOverlay>
                         spreadRadius: 8,
                       ),
                     ],
+                    image: _getAvatarProvider(callerAvatar) != null ? DecorationImage(
+                      image: _getAvatarProvider(callerAvatar)!,
+                      fit: BoxFit.cover,
+                    ) : null,
                   ),
-                  child: Center(
+                  child: _getAvatarProvider(callerAvatar) == null ? Center(
                     child: Text(
                       _getInitials(callerName),
                       style: const TextStyle(
@@ -124,7 +163,7 @@ class _IncomingCallOverlayState extends State<IncomingCallOverlay>
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                  ),
+                  ) : null,
                 ),
               ),
 
@@ -139,6 +178,8 @@ class _IncomingCallOverlayState extends State<IncomingCallOverlay>
                   fontWeight: FontWeight.w600,
                   letterSpacing: -0.5,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
 
               const SizedBox(height: 12),

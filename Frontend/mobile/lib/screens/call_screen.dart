@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/call_service.dart';
 
 class CallScreen extends StatefulWidget {
@@ -40,6 +42,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   bool _isReceiverOnline = false;
   Timer? _durationTimer;
   int _callDuration = 0;
+  String? _peerAvatarUrl;
 
   late AnimationController _pulseController;
 
@@ -51,6 +54,17 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     )..repeat(reverse: true);
+    
+    // Fetch caller's avatar or peer's avatar
+    if (widget.isIncoming && widget.incomingCallInfo?.callerAvatarUrl != null) {
+        _peerAvatarUrl = widget.incomingCallInfo!.callerAvatarUrl;
+    } else {
+        FirebaseFirestore.instance.collection('users').doc(widget.peerId).get().then((doc) {
+           if (doc.exists && mounted) {
+              setState(() { _peerAvatarUrl = doc.data()?['avatarUrl']; });
+           }
+        });
+    }
   }
 
   Future<void> _initRenderers() async {
@@ -188,8 +202,12 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                               spreadRadius: 5,
                             ),
                           ],
+                          image: _getAvatarProvider(_peerAvatarUrl) != null ? DecorationImage(
+                            image: _getAvatarProvider(_peerAvatarUrl)!,
+                            fit: BoxFit.cover,
+                          ) : null,
                         ),
-                        child: Center(
+                        child: _getAvatarProvider(_peerAvatarUrl) == null ? Center(
                           child: Text(
                             _getInitials(widget.peerName),
                             style: const TextStyle(
@@ -198,7 +216,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                        ),
+                        ) : null,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -366,6 +384,19 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }
     return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  }
+
+  ImageProvider? _getAvatarProvider(String? url) {
+    if (url == null || url.isEmpty) return null;
+    if (url.startsWith('data:image')) {
+      try {
+        final base64String = url.split(',').last;
+        return MemoryImage(base64Decode(base64String));
+      } catch (e) {
+        return null;
+      }
+    }
+    return NetworkImage(url);
   }
 
   String _getStatusText() {

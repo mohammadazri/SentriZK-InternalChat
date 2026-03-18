@@ -28,6 +28,8 @@ enum CallState {
 class CallInfo {
   final String callId;
   final String callerId;
+  final String callerName;
+  final String? callerAvatarUrl;
   final String receiverId;
   final CallType type;
   final DateTime startedAt;
@@ -35,6 +37,8 @@ class CallInfo {
   const CallInfo({
     required this.callId,
     required this.callerId,
+    required this.callerName,
+    this.callerAvatarUrl,
     required this.receiverId,
     required this.type,
     required this.startedAt,
@@ -121,9 +125,17 @@ class CallService {
     final callerId = _currentUserId!;
 
     final callId = '${callerId}_${receiverId}_${DateTime.now().millisecondsSinceEpoch}';
+    
+    // Fetch caller profile
+    final docSnap = await _firestore.collection('users').doc(callerId).get();
+    final cName = docSnap.data()?['displayName'] ?? docSnap.data()?['username'] ?? callerId;
+    final cAvatar = docSnap.data()?['avatarUrl'];
+
     _currentCall = CallInfo(
       callId: callId,
       callerId: callerId,
+      callerName: cName,
+      callerAvatarUrl: cAvatar,
       receiverId: receiverId,
       type: type,
       startedAt: DateTime.now(),
@@ -154,6 +166,8 @@ class CallService {
     // 5. Write call document to Firestore (plain SDP — secured by Firestore rules + WebRTC DTLS)
     await _firestore.collection('calls').doc(callId).set({
       'callerId': callerId,
+      'callerName': _currentCall!.callerName,
+      'callerAvatarUrl': _currentCall!.callerAvatarUrl,
       'receiverId': receiverId,
       'type': type.name,
       'status': 'outgoing',
@@ -331,6 +345,8 @@ class CallService {
           final callInfo = CallInfo(
             callId: change.doc.id,
             callerId: data['callerId'],
+            callerName: data['callerName'] ?? data['callerId'],
+            callerAvatarUrl: data['callerAvatarUrl'],
             receiverId: data['receiverId'],
             type: data['type'] == 'video' ? CallType.video : CallType.audio,
             startedAt: DateTime.now(),
@@ -343,6 +359,17 @@ class CallService {
           _firestore.collection('calls').doc(change.doc.id).update({
             'status': 'ringing',
           }).catchError((_) {});
+        } else if (change.type == DocumentChangeType.modified || change.type == DocumentChangeType.removed) {
+          final data = change.doc.data();
+          if (data == null) continue;
+          final status = data['status'];
+          if (status == 'ended' || status == 'missed' || status == 'rejected') {
+            if (_currentCall?.callId == change.doc.id) {
+               _setState(status == 'ended' ? CallState.ended : 
+                         status == 'missed' ? CallState.missed : CallState.rejected);
+               _cleanup();
+            }
+          }
         }
       }
     });
