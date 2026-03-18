@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import AdminShell from "@/components/admin/AdminShell";
 import Link from "next/link";
+import { useSmartPolling } from "@/hooks/useSmartPolling";
 
 function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color: string }) {
   return (
@@ -23,25 +24,24 @@ export default function AdminDashboard() {
   const [threatCount, setThreatCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     const token = sessionStorage.getItem("adminToken");
     if (!token) { router.replace("/admin"); return; }
-    async function load() {
-      try {
-        const [uRes, tRes] = await Promise.all([
-          fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } }),
-          fetch("/api/admin/threat-logs", { headers: { Authorization: `Bearer ${token}` } }),
-        ]);
-        if (uRes.status === 401) { router.replace("/admin"); return; }
-        const uData = await uRes.json();
-        const tData = await tRes.json();
-        setUsers(uData.users || []);
-        setThreatCount(tData.total || 0);
-      } catch { /* ignore */ }
-      finally { setLoading(false); }
-    }
-    load();
+    try {
+      const [uRes, tRes] = await Promise.all([
+        fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/api/admin/threat-logs", { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+      if (uRes.status === 401) { router.replace("/admin"); return; }
+      const uData = await uRes.json();
+      const tData = await tRes.json();
+      setUsers(uData.users || []);
+      setThreatCount(tData.total || 0);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
   }, [router]);
+
+  useSmartPolling(load, 10000);
 
   const activeCount = users.filter(u => u.status === "active").length;
   const heldCount = users.filter(u => u.status === "held").length;

@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import AdminShell from "@/components/admin/AdminShell";
+import { useSmartPolling } from "@/hooks/useSmartPolling";
 
 type User = { username: string; status: string; registeredAt: number | null; lastLogin: number | null };
 
@@ -45,7 +46,7 @@ export default function UsersPage() {
     } finally { setLoading(false); }
   }, [router]);
 
-  useEffect(() => { load(); }, [load]);
+  useSmartPolling(load, 10000);
 
   async function doAction(action: string, username: string) {
     setActionLoading(username + action);

@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import AdminShell from "@/components/admin/AdminShell";
+import { useSmartPolling } from "@/hooks/useSmartPolling";
 
 type ThreatLog = {
   id: string;
@@ -45,7 +46,7 @@ export default function ThreatsPage() {
     } finally { setLoading(false); }
   }, [router]);
 
-  useEffect(() => { load(); }, [load]);
+  useSmartPolling(load, 10000);
 
   const filtered = logs.filter(l =>
     l.senderId.toLowerCase().includes(search.toLowerCase()) ||
