@@ -836,15 +836,38 @@ app.post("/admin/users/revoke", verifyAdminJWT, async (req, res) => {
     saveDB(db);
     // Write accountStatus: revoked FIRST so mobile listener fires before doc deletion
     try {
-      await admin.firestore().collection("users").doc(username).set({
+      const fs = admin.firestore();
+      await fs.collection("users").doc(username).set({
         accountStatus: "revoked",
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
-      // Brief delay so the mobile snapshot listener can fire
+      
+      // Brief delay so the mobile snapshot listener can fire and kick out the user
       await new Promise(r => setTimeout(r, 1500));
-      await admin.firestore().collection("users").doc(username).delete();
-      // Try to delete Firebase Auth account too (non-fatal if fails)
+      
+      // 1. Delete all messages sent BY this user (collectionGroup)
+      try {
+        const sentMsgs = await fs.collectionGroup("messages").where("senderId", "==", username).get();
+        await Promise.all(sentMsgs.docs.map(doc => doc.ref.delete()));
+        console.log(`[REVOKE] Deleted ${sentMsgs.docs.length} messages sent by ${username} globally.`);
+      } catch (e) { console.error("Error deleting sent messages:", e.message); }
+
+      // 2. Delete the user's own `chats/{username}/messages` and `chats/{username}`
+      try {
+        const ownMsgs = await fs.collection("chats").doc(username).collection("messages").get();
+        await Promise.all(ownMsgs.docs.map(doc => doc.ref.delete()));
+        await fs.collection("chats").doc(username).delete();
+        console.log(`[REVOKE] Deleted ${ownMsgs.docs.length} inbox messages and chat document for ${username}.`);
+      } catch (e) { console.error("Error deleting own chats:", e.message); }
+
+      // 3. Delete the user document
+      try {
+        await fs.collection("users").doc(username).delete();
+      } catch (e) { console.error("Error deleting user doc:", e.message); }
+
+      // 4. Try to delete Firebase Auth account too (non-fatal if fails)
       await admin.auth().deleteUser(username).catch(() => {});
+      
     } catch (fsErr) {
       console.warn(`⚠️ [ADMIN] Firestore ops for ${username} failed (non-fatal):`, fsErr.message);
     }
