@@ -8,6 +8,7 @@
 // 🔒 Minimal file-based DB persistence
 // =======================
 
+require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const snarkjs = require("snarkjs");
@@ -18,6 +19,8 @@ const crypto = require("crypto");
 const circomlibjs = require("circomlibjs");
 const rateLimit = require("express-rate-limit");
 const admin = require("firebase-admin");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 // =======================
 // --- Firebase Admin SDK ---
@@ -43,6 +46,23 @@ const SESSION_TTL = 30 * 60 * 1000; // 30 minutes
 const MOBILE_ACCESS_TOKEN_TTL = 5 * 60 * 1000; // 5 minutes - for mobile to web access
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX = 10; // max requests per IP
+
+// =======================
+// --- Admin Config ---
+// =======================
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_TTL = process.env.JWT_TTL;
+
+// =======================
+// --- Admin SSE Stream ---
+// =======================
+let adminClients = [];
+function broadcastAdminUpdate() {
+  const payload = `data: ${JSON.stringify({ type: "UPDATE", timestamp: Date.now() })}\n\n`;
+  adminClients.forEach(client => client.write(payload));
+}
 
 // =======================
 // --- Middlewares ---
@@ -394,6 +414,7 @@ app.post("/register", async (req, res) => {
     const expires = Date.now() + TOKEN_TTL;
     db.tokens[token] = { username, expires, type: "registration" };
     saveDB(db);
+    broadcastAdminUpdate();
 
     res.json({ status: "ok", token });
   } catch (err) {
@@ -415,6 +436,11 @@ app.post("/login", async (req, res) => {
 
     const user = getUser(db, username);
     if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Check if user is on hold
+    if (user.status === "held") {
+      return res.status(403).json({ error: "Account suspended. Contact your administrator." });
+    }
 
     // Check nonce expiration
     if (!user.nonce || (user.nonceTime && Date.now() - user.nonceTime > NONCE_TTL)) {
@@ -531,6 +557,7 @@ app.post("/threat-log", (req, res) => {
 
     db.threat_logs.push(logEntry);
     saveDB(db);
+    broadcastAdminUpdate();
 
     console.log(`🚨 [THREAT] Logged threat from "${senderId}" to "${receiverId}" (score: ${threatScore})`);
     res.json({ status: "ok", logId: logEntry.id });
@@ -688,6 +715,261 @@ app.post("/logout", (req, res) => {
   }
 
   res.json({ status: "ok", message: "Logged out successfully" });
+});
+
+// =======================
+// --- Admin JWT Middleware ---
+// =======================
+function verifyAdminJWT(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Admin authentication required" });
+  }
+  const token = authHeader.slice(7);
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    if (payload.role !== "admin") throw new Error("Not an admin token");
+    req.adminUser = payload.username;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid or expired admin token" });
+  }
+}
+
+// =======================
+// --- Admin Routes ---
+// =======================
+
+// POST /admin/login
+app.post("/admin/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: "username and password required" });
+    }
+    if (username !== ADMIN_USERNAME) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+    // Support both plain-text (for easy dev setup) and bcrypt hash
+    let valid = false;
+    if (ADMIN_PASSWORD.startsWith("$2")) {
+      valid = await bcrypt.compare(password, ADMIN_PASSWORD);
+    } else {
+      valid = password === ADMIN_PASSWORD;
+    }
+    if (!valid) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+    const token = jwt.sign({ username, role: "admin" }, JWT_SECRET, { expiresIn: JWT_TTL });
+    console.log(`🔐 [ADMIN] Login successful for: ${username}`);
+    res.json({ token, expiresIn: JWT_TTL });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", details: String(err) });
+  }
+});
+
+// GET /admin/stream — Server-Sent Events for real-time dashboard pushing
+app.get("/admin/stream", verifyAdminJWT, (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders(); // Establish SSE
+
+  adminClients.push(res);
+  console.log(`📡 [ADMIN] SSE stream connected. Total active: ${adminClients.length}`);
+
+  // Send initial ping to confirm connection
+  res.write(`data: ${JSON.stringify({ type: "CONNECTED" })}\n\n`);
+
+  // Remove client on disconnect
+  req.on("close", () => {
+    adminClients = adminClients.filter(client => client !== res);
+    console.log(`📡 [ADMIN] SSE stream closed. Remaining: ${adminClients.length}`);
+  });
+});
+
+// GET /admin/users — list all registered users
+app.get("/admin/users", verifyAdminJWT, (req, res) => {
+  try {
+    const db = loadDB();
+    const users = Object.entries(db.users).map(([username, data]) => ({
+      username,
+      status: data.status || "active",
+      registeredAt: data.registeredAt || null,
+      lastLogin: data.lastLogin || null,
+    }));
+    res.json({ users });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", details: String(err) });
+  }
+});
+
+// POST /admin/users/hold — suspend a user (block login)
+app.post("/admin/users/hold", verifyAdminJWT, async (req, res) => {
+  try {
+    const { username } = req.body;
+    if (!username) return res.status(400).json({ error: "username required" });
+    const db = loadDB();
+    if (!db.users[username]) return res.status(404).json({ error: "User not found" });
+    db.users[username].status = "held";
+    db.users[username].heldAt = Date.now();
+    db.users[username].heldBy = req.adminUser;
+    saveDB(db);
+    broadcastAdminUpdate();
+    // Write accountStatus to Firestore so mobile app detects it instantly
+    await admin.firestore().collection("users").doc(username).set({
+      accountStatus: "held",
+      activityStatus: "Offline",
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    console.log(`🔒 [ADMIN] User held: ${username} by ${req.adminUser}`);
+    res.json({ status: "ok", message: `${username} is now on hold` });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", details: String(err) });
+  }
+});
+
+// POST /admin/users/restore — restore a held user
+app.post("/admin/users/restore", verifyAdminJWT, async (req, res) => {
+  try {
+    const { username } = req.body;
+    if (!username) return res.status(400).json({ error: "username required" });
+    const db = loadDB();
+    if (!db.users[username]) return res.status(404).json({ error: "User not found" });
+    db.users[username].status = "active";
+    delete db.users[username].heldAt;
+    delete db.users[username].heldBy;
+    saveDB(db);
+    broadcastAdminUpdate();
+    // Clear accountStatus in Firestore
+    await admin.firestore().collection("users").doc(username).set({
+      accountStatus: "active",
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    console.log(`✅ [ADMIN] User restored: ${username} by ${req.adminUser}`);
+    res.json({ status: "ok", message: `${username} has been restored` });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", details: String(err) });
+  }
+});
+
+// POST /admin/users/revoke — permanently delete a user
+app.post("/admin/users/revoke", verifyAdminJWT, async (req, res) => {
+  try {
+    const { username } = req.body;
+    if (!username) return res.status(400).json({ error: "username required" });
+    const db = loadDB();
+    if (!db.users[username]) return res.status(404).json({ error: "User not found" });
+    // Remove from db.json
+    delete db.users[username];
+    // Also remove any active sessions for this user
+    for (const [sid, session] of Object.entries(db.sessions)) {
+      if (session.username === username) delete db.sessions[sid];
+    }
+    saveDB(db);
+    broadcastAdminUpdate();
+    // Write accountStatus: revoked FIRST so mobile listener fires before doc deletion
+    try {
+      const fs = admin.firestore();
+      await fs.collection("users").doc(username).set({
+        accountStatus: "revoked",
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      
+      // Brief delay so the mobile snapshot listener can fire and kick out the user
+      await new Promise(r => setTimeout(r, 1500));
+      
+      // 1. Delete all messages sent BY this user (collectionGroup)
+      try {
+        const sentMsgs = await fs.collectionGroup("messages").where("senderId", "==", username).get();
+        await Promise.all(sentMsgs.docs.map(doc => doc.ref.delete()));
+        console.log(`[REVOKE] Deleted ${sentMsgs.docs.length} messages sent by ${username} globally.`);
+      } catch (e) { console.error("Error deleting sent messages:", e.message); }
+
+      // 2. Delete the user's own `chats/{username}/messages` and `chats/{username}`
+      try {
+        const ownMsgs = await fs.collection("chats").doc(username).collection("messages").get();
+        await Promise.all(ownMsgs.docs.map(doc => doc.ref.delete()));
+        await fs.collection("chats").doc(username).delete();
+        console.log(`[REVOKE] Deleted ${ownMsgs.docs.length} inbox messages and chat document for ${username}.`);
+      } catch (e) { console.error("Error deleting own chats:", e.message); }
+
+      // 3. Delete the user document
+      try {
+        await fs.collection("users").doc(username).delete();
+      } catch (e) { console.error("Error deleting user doc:", e.message); }
+
+      // 4. Try to delete Firebase Auth account too (non-fatal if fails)
+      await admin.auth().deleteUser(username).catch(() => {});
+      
+    } catch (fsErr) {
+      console.warn(`⚠️ [ADMIN] Firestore ops for ${username} failed (non-fatal):`, fsErr.message);
+    }
+    console.log(`🗑️ [ADMIN] User revoked: ${username} by ${req.adminUser}`);
+    res.json({ status: "ok", message: `${username} has been permanently revoked` });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", details: String(err) });
+  }
+});
+
+// GET /admin/threat-logs — return all ML threat logs
+app.get("/admin/threat-logs", verifyAdminJWT, (req, res) => {
+  try {
+    const db = loadDB();
+    const logs = (db.threat_logs || []).slice().reverse(); // newest first
+    res.json({ logs, total: logs.length });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", details: String(err) });
+  }
+});
+
+// POST /admin/threat-logs/:id/status — mark as false positive or true positive
+app.post("/admin/threat-logs/:id/status", verifyAdminJWT, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!["false-positive", "true-positive", "pending"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+    
+    const db = loadDB();
+    if (!db.threat_logs) return res.status(404).json({ error: "No logs found" });
+    
+    const logIndex = db.threat_logs.findIndex(l => l.id === id);
+    if (logIndex === -1) return res.status(404).json({ error: "Log not found" });
+    
+    db.threat_logs[logIndex].resolutionStatus = status;
+    db.threat_logs[logIndex].resolvedBy = req.adminUser;
+    db.threat_logs[logIndex].resolvedAt = Date.now();
+    saveDB(db);
+    broadcastAdminUpdate();
+    
+    console.log(`🛡️ [ADMIN] Threat log ${id} marked as ${status} by ${req.adminUser}`);
+    res.json({ status: "ok", message: `Log marked as ${status.replace('-', ' ')}` });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", details: String(err) });
+  }
+});
+
+// DELETE /admin/threat-logs/:id — permanently delete a threat log
+app.delete("/admin/threat-logs/:id", verifyAdminJWT, (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = loadDB();
+    if (!db.threat_logs) return res.status(404).json({ error: "No logs found" });
+    
+    const logIndex = db.threat_logs.findIndex(l => l.id === id);
+    if (logIndex === -1) return res.status(404).json({ error: "Log not found" });
+    
+    db.threat_logs.splice(logIndex, 1);
+    saveDB(db);
+    broadcastAdminUpdate();
+    
+    console.log(`🗑️ [ADMIN] Threat log ${id} deleted by ${req.adminUser}`);
+    res.json({ status: "ok", message: "Log permanently removed" });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", details: String(err) });
+  }
 });
 
 // =======================

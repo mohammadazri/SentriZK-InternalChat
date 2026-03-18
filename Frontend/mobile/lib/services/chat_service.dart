@@ -99,7 +99,13 @@ class ChatService {
                 _decryptedCache[doc.id] = plaintext;
               } catch (e) {
                 print('🔐 [E2EE] Failed to decrypt message globally: $e');
-                plaintext = '🔒 [Decryption Failed]';
+                
+                // Heal the session by deleting the stale identity/session. 
+                // The next message we SEND to them will fetch a fresh bundle.
+                // The next PreKeyMessage they send us will use TOFU.
+                await _signalManager.deleteSessionAndIdentity(senderId);
+                
+                plaintext = '🔒 [Decryption Failed - Session Resynced]';
                 _decryptedCache[doc.id] = plaintext;
               }
             }
@@ -151,6 +157,15 @@ class ChatService {
       final userDoc = await _firestore.collection('users').doc(receiverId).get();
       if (userDoc.exists && userDoc.data()!.containsKey('signalBundle')) {
         final bundle = userDoc.data()!['signalBundle'];
+        
+        // Auto-Heal: Check if the remote user has a NEW identity key (e.g. they recovered account)
+        final remoteIdentityKey = bundle['identityKey'];
+        final isMatch = await _signalManager.hasMatchingIdentity(receiverId, remoteIdentityKey);
+        if (!isMatch) {
+          print('🔐 [E2EE] Remote identity changed for $receiverId. Rebuilding session...');
+          await _signalManager.deleteSessionAndIdentity(receiverId);
+        }
+        
         await _signalManager.establishSession(receiverId, bundle);
         final encrypted = await _signalManager.encryptMessage(receiverId, content);
 

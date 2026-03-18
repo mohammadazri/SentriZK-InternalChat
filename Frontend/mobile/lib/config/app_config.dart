@@ -65,6 +65,7 @@ class AppConfig {
 
   static String get registerUrl => "$webUrl/register";
   static String get loginUrl => "$webUrl/login";
+  static String get recoverUrl => "$webUrl/recover";
 
   // API Endpoints
   static String get generateMATEndpoint =>

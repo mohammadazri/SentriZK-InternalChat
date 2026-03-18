@@ -232,17 +232,8 @@ export default function RegisterPage() {
       <div className={styles.card}>
         <div className={styles.header}>
           <div className={styles.brandLogo}>
-            <div className={styles.logoGradient}>
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                <path d="M24 4L42 14V34L24 44L6 34V14L24 4Z" fill="url(#grad1)" stroke="white" strokeWidth="2" />
-                <circle cx="24" cy="24" r="8" fill="white" />
-                <defs>
-                  <linearGradient id="grad1" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#6366f1" />
-                    <stop offset="1" stopColor="#8b5cf6" />
-                  </linearGradient>
-                </defs>
-              </svg>
+            <div className={styles.logoGradient} style={{ background: "transparent", padding: 0 }}>
+              <img src="/logo.png" alt="SentriZK Logo" style={{ width: 48, height: 48, objectFit: "contain" }} />
             </div>
             <div>
               <h1 className={styles.brandName}>SentriZK</h1>

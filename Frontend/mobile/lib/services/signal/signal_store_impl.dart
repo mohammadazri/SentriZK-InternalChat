@@ -65,6 +65,13 @@ class IsarSignalStore implements SignalProtocolStore {
     return IdentityKey.fromBytes(Uint8List.fromList(existing.identityKey), 0);
   }
 
+  Future<void> deleteIdentity(SignalProtocolAddress address) async {
+    final addressName = '${address.getName()}:${address.getDeviceId()}';
+    await isar.writeTxn(() async {
+      await isar.signalIdentitys.filter().addressNameEqualTo(addressName).deleteAll();
+    });
+  }
+
   // --- PreKeyStore ---
 
   @override
