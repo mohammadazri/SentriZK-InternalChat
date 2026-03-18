@@ -5,6 +5,7 @@ import '../providers/theme_provider.dart';
 import 'package:mobile/utils/time_utils.dart';
 import 'chat_screen.dart';
 import 'auth_screen.dart';
+import 'settings_screen.dart';
 
 import '../services/user_service.dart';
 import '../services/auth_service.dart';
@@ -16,6 +17,7 @@ import '../widgets/incoming_call_overlay.dart';
 import 'dart:async';
 import 'package:isar/isar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class UserListScreen extends StatefulWidget {
   final String currentUserId;
@@ -196,6 +198,8 @@ class _UserListScreenState extends State<UserListScreen>
     _searchController.dispose();
     _globalMessageSub?.cancel();  // Stop background sync on exit
     _receiptSub?.cancel();
+    _localMessagesSub?.cancel();
+    CallService().dispose();
     super.dispose();
   }
 
@@ -223,10 +227,73 @@ class _UserListScreenState extends State<UserListScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('users').snapshots(),
+      body: Column(
+        children: [
+          // AppBar and Search Field (Extracted from StreamBuilder)
+          Container(
+            padding: const EdgeInsets.only(top: 48, left: 16, right: 16, bottom: 16),
+            color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.95),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Messages',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 22,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        // Online count badge will be built inside stream
+                      ],
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.settings_outlined,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                      tooltip: 'Settings',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SettingsScreen(
+                              currentUserId: widget.currentUserId,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _SearchField(
+                  controller: _searchController,
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .snapshots()
+            .handleError((e) {
+          debugPrint('🔒 [USER_LIST] Ignoring users permission-denied during logout.');
+        }),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
+            // If the user has intentionally signed out, don't flash an error screen while routing
+            if (FirebaseAuth.instance.currentUser == null) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
@@ -261,11 +328,18 @@ class _UserListScreenState extends State<UserListScreen>
 
           final filtered = users.where((u) {
             final search = _searchQuery.trim().toLowerCase();
-            if (search.isEmpty) return true;
+            final hasHistory = _lastMessages.containsKey(u['id']) || _drafts.containsKey(u['id']);
+
+            if (search.isEmpty) {
+              return hasHistory;
+            }
+
             final name = (u['displayName'] ?? u['username'] ?? u['id'] ?? '')
                 .toString()
                 .toLowerCase();
-            return name.contains(search);
+            final username = (u['username'] ?? '').toString().toLowerCase();
+
+            return name.contains(search) || username.contains(search);
           }).toList();
 
           // WhatsApp Style: Sort by last message timestamp (most recent first)
@@ -281,90 +355,6 @@ class _UserListScreenState extends State<UserListScreen>
           return CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              SliverAppBar(
-                expandedHeight: 140.0,
-                floating: true,
-                pinned: true,
-                backgroundColor: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.95),
-                elevation: 0,
-                flexibleSpace: FlexibleSpaceBar(
-                  titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-                  title: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Messages',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 22,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.3)),
-                        ),
-                        child: Text(
-                          '$onlineCount Online',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                actions: [
-                  Consumer<ThemeProvider>(
-                    builder: (context, themeProvider, child) {
-                      final isDark = themeProvider.themeMode == ThemeMode.dark ||
-                          (themeProvider.themeMode == ThemeMode.system &&
-                              MediaQuery.of(context).platformBrightness == Brightness.dark);
-                      return IconButton(
-                        icon: Icon(
-                          isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                        ),
-                        onPressed: () => themeProvider.toggleTheme(),
-                        tooltip: 'Toggle Theme',
-                      );
-                    },
-                  ),
-                  IconButton(
-                    tooltip: 'Logout',
-                    icon: Icon(Icons.logout_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-                    onPressed: () async {
-                      await _setOnlineStatus(false);
-                      await _authService.logout();
-                      if (!mounted) return;
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (_) => const AuthScreen()),
-                        (route) => false,
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                bottom: PreferredSize(
-                  preferredSize: const Size.fromHeight(70),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                    child: _SearchField(
-                      controller: _searchController,
-                      onChanged: (value) => setState(() => _searchQuery = value),
-                    ),
-                  ),
-                ),
-              ),
-
               // User List
               if (filtered.isEmpty)
                 SliverFillRemaining(
@@ -447,6 +437,9 @@ class _UserListScreenState extends State<UserListScreen>
             ],
           );
         },
+      ),
+          ),
+        ],
       ),
     );
   }

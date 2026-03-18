@@ -45,18 +45,31 @@ dependencies:
   firebase_core: any
   firebase_storage: any
   firebase_messaging: any
+  
+  # Settings & Profile Additions
+  image_picker: ^1.1.2
+  share_plus: ^10.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   build_runner: ^2.4.13
   isar_generator: ^3.1.0+1
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/mobil_logo_no_bg.png"
+  adaptive_icon_background: "#0f172a" # Slate 900 (Dark background to match your app theme)
+  adaptive_icon_foreground: "assets/mobil_logo_padded.png"
+  remove_alpha_ios: true
 
 flutter:
   uses-material-design: true
   assets:
     - assets/
     - assets/security/
-    - assets/models/
     - assets/ml/
 

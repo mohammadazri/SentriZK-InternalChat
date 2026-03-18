@@ -1,18 +1,15 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
+import '../config/app_config.dart';
 
-/// Singleton service that loads the TFLite Bi-LSTM model and vocab,
+/// Singleton service that loads the TFLite model and vocab,
 /// then scores messages for insider threat detection.
 class MessageScanService {
   static MessageScanService? _instance;
   Interpreter? _interpreter;
   Map<String, int>? _vocab;
   bool _isReady = false;
-
-  static const int _maxLen = 120;
-  static const int _oovIndex = 1; // <OOV> token index
-  static const double _threatThreshold = 0.5;
 
   MessageScanService._();
 
@@ -30,15 +27,13 @@ class MessageScanService {
     try {
       // Load TFLite model
       final options = InterpreterOptions()..addDelegate(GpuDelegateV2());
-      // By default adding GpuDelegateV2 without specifying the flex delegate works sometimes 
-      // but to force Flex ops in tflite_flutter 0.12+ we configure the options correctly.
       options.useNnApiForAndroid = true;
 
-      _interpreter = await Interpreter.fromAsset('assets/ml/sentrizk_model.tflite', options: options);
+      _interpreter = await Interpreter.fromAsset(AppConfig.mlModelAsset, options: options);
       print('✅ [ML] TFLite model loaded');
 
       // Load vocabulary
-      final vocabJson = await rootBundle.loadString('assets/ml/vocab.json');
+      final vocabJson = await rootBundle.loadString(AppConfig.mlVocabAsset);
       _vocab = Map<String, int>.from(jsonDecode(vocabJson));
       print('✅ [ML] Vocabulary loaded (${_vocab!.length} words)');
 
@@ -52,26 +47,33 @@ class MessageScanService {
   /// Tokenize text: lowercase → split → map to vocab indices → pad/truncate
   List<double> _tokenize(String text) {
     final words = text.toLowerCase().replaceAll(RegExp(r'[^\w\s]'), '').split(RegExp(r'\s+'));
-    final indices = words.map((word) => (_vocab?[word] ?? _oovIndex).toDouble()).toList();
+    final indices = words.map((word) => (_vocab?[word] ?? AppConfig.mlOovIndex).toDouble()).toList();
 
-    // Pad or truncate to _maxLen
-    if (indices.length >= _maxLen) {
-      return indices.sublist(0, _maxLen);
+    // Pad or truncate to maxLen
+    if (indices.length >= AppConfig.mlMaxLen) {
+      return indices.sublist(0, AppConfig.mlMaxLen);
     } else {
-      return [...indices, ...List.filled(_maxLen - indices.length, 0.0)];
+      return [...indices, ...List.filled(AppConfig.mlMaxLen - indices.length, 0.0)];
     }
   }
 
   /// Scan a message and return the threat score (0.0 = safe, 1.0 = threat).
-  /// Returns 0.0 if the model is not ready.
+  /// Returns 0.0 if the model is not ready or message is too short.
   Future<double> scanMessage(String text) async {
     if (!_isReady || _interpreter == null) {
       print('⚠️ [ML] Model not ready, skipping scan');
       return 0.0;
     }
 
+    // Skip very short messages — they produce unreliable OOV-heavy scores
+    final words = text.trim().split(RegExp(r'\s+'));
+    if (words.length < AppConfig.mlMinWordCount) {
+      print('⏭️ [ML] Message too short (${words.length} words), skipping scan');
+      return 0.0;
+    }
+
     try {
-      final input = [_tokenize(text)]; // shape: [1, 120]
+      final input = [_tokenize(text)]; // shape: [1, maxLen]
       final output = [
         [0.0]
       ]; // shape: [1, 1]
@@ -88,7 +90,7 @@ class MessageScanService {
   }
 
   /// Check if a score exceeds the threat threshold
-  bool isThreat(double score) => score > _threatThreshold;
+  bool isThreat(double score) => score > AppConfig.mlThreatThreshold;
 
   void dispose() {
     _interpreter?.close();
@@ -96,3 +98,4 @@ class MessageScanService {
     _isReady = false;
   }
 }
+

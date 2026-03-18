@@ -220,7 +220,14 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     ),
                     StreamBuilder<DocumentSnapshot>(
-                      stream: FirebaseFirestore.instance.collection('users').doc(widget.peerId).snapshots(),
+                      stream: FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(widget.peerId)
+                          .snapshots()
+                          .handleError((e) {
+                        debugPrint('🔒 [CHAT] Ignoring peer status permission-denied during logout.');
+                      }),
+
                       builder: (context, snapshot) {
                         if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
                           final peerData = snapshot.data!.data() as Map<String, dynamic>;
@@ -370,7 +377,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             // Show threat warning for RECEIVED messages only
-                            if (!isMe && msg.threatScore != null && msg.threatScore! > 0.5)
+                            if (!isMe && msg.threatScore != null && msg.threatScore! > AppConfig.mlThreatThreshold)
                               Container(
                                 margin: const EdgeInsets.only(bottom: 6),
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

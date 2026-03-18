@@ -16,14 +16,14 @@ class SignalSession {
 
 @collection
 class SignalPreKey {
-  Id id = Isar.autoIncrement; // Maps directly to preKeyId
+  Id id = 0; // Maps directly to preKeyId
 
   late List<int> serializedKey;
 }
 
 @collection
 class SignalSignedPreKey {
-  Id id = Isar.autoIncrement; // Maps directly to signedPreKeyId
+  Id id = 0; // Maps directly to signedPreKeyId
 
   late List<int> serializedKey;
 }

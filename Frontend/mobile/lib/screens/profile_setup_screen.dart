@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import '../services/user_service.dart';
 import 'user_list_screen.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
@@ -14,8 +17,45 @@ class ProfileSetupScreen extends StatefulWidget {
 
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _displayNameController = TextEditingController();
+  final _userService = UserService();
   bool _isLoading = false;
   String? _error;
+  File? _selectedImage;
+  String? _uploadedAvatarUrl;
+
+  Future<void> _pickImage() async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 75,
+      );
+
+      if (pickedFile != null) {
+        setState(() => _selectedImage = File(pickedFile.path));
+        
+        // Immediately upload the image so it's ready when they hit Continue
+        setState(() => _isLoading = true);
+        final dataUri = await _userService.updateProfileAvatar(widget.username, _selectedImage!);
+        
+        if (mounted) {
+          setState(() {
+            _uploadedAvatarUrl = dataUri;
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = "Failed to pick image: $e";
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   Future<void> _saveProfile() async {
     final displayName = _displayNameController.text.trim();
@@ -95,54 +135,72 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               const SizedBox(height: 48),
 
               // Avatar placeholder (Premium Design)
-              Center(
-                child: Stack(
-                  alignment: Alignment.bottomRight,
-                  children: [
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2563EB), Color(0xFF3B82F6)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.1),
-                          width: 4,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF2563EB).withOpacity(0.3),
-                            blurRadius: 24,
-                            offset: const Offset(0, 8),
+              GestureDetector(
+                onTap: _isLoading ? null : _pickImage,
+                child: Center(
+                  child: Stack(
+                    alignment: Alignment.bottomRight,
+                    children: [
+                      Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          image: _selectedImage != null 
+                              ? DecorationImage(
+                                  image: FileImage(_selectedImage!),
+                                  fit: BoxFit.cover,
+                                )
+                              : null,
+                          gradient: _selectedImage == null ? const LinearGradient(
+                            colors: [Color(0xFF2563EB), Color(0xFF3B82F6)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ) : null,
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.1),
+                            width: 4,
                           ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.person,
-                          size: 64,
-                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF2563EB).withOpacity(0.3),
+                              blurRadius: 24,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
                         ),
+                        child: _selectedImage == null ? const Center(
+                          child: Icon(
+                            Icons.person,
+                            size: 64,
+                            color: Colors.white,
+                          ),
+                        ) : null,
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981), // Emerald for action
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFF0B0F19), width: 3),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981), // Emerald for action
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFF0B0F19), width: 3),
+                        ),
+                        child: _isLoading && _selectedImage != null
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : const Icon(
+                                Icons.camera_alt,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                       ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 48),

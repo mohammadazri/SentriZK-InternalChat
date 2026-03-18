@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'security/homograph_detector.dart';
 import 'security/safe_browsing_service.dart';
 import 'security/local_phishing_database.dart';
+import '../config/app_config.dart';
 import '../utils/url_extractor.dart';
 import '../models/security_scan_cache.dart';
 import '../models/local_message.dart';
@@ -121,7 +122,7 @@ class MessageSecurityService {
       ..hasSuspiciousUrls = result.hasSuspiciousUrls
       ..warnings = allWarnings.isEmpty ? null : jsonEncode(allWarnings)
       ..scanDate = DateTime.now()
-      ..expiresAt = DateTime.now().add(const Duration(days: 7));
+      ..expiresAt = DateTime.now().add(Duration(days: AppConfig.scanCacheDays));
 
     await _isar!.writeTxn(() async {
       await _isar!.securityScanCaches.put(cache);

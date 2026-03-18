@@ -12,7 +12,7 @@
 [![TensorFlow](https://img.shields.io/badge/TensorFlow_Lite-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white)](https://www.tensorflow.org/lite)
 [![ZKP](https://img.shields.io/badge/Zero--Knowledge_Proofs-6F42C1?style=for-the-badge&logo=blockchain&logoColor=white)](#)
 
-<img src="Doc/Images/logo.png" width="700" alt="SentriZK Logo"/>
+<img src="Doc/Images/logo_latest.png" width="700" alt="SentriZK Logo"/>
 
 **🎓 Final Year Project | Bachelor of Information Technology in Computer Systems Security (BCSS)**
 

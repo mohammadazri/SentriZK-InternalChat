@@ -29,19 +29,38 @@ class SignalManager {
     // Generate local identity if missing
     final local = await isar.localSignalIdentitys.get(0);
     if (local == null) {
-      final identityKeyPair = generateIdentityKeyPair();
+      print('🔐 [E2EE] No local identity found. Generating new keys...');
       
-      final entity = LocalSignalIdentity()
-        ..id = 0
-        ..identityKeyPair = identityKeyPair.serialize().toList()
-        ..registrationId = localRegistrationId;
+      final identityKeyPair = generateIdentityKeyPair();
+      final registrationId = generateRandomRegistrationId();
 
       await isar.writeTxn(() async {
-        await isar.localSignalIdentitys.put(entity);
+        await isar.localSignalIdentitys.put(
+          LocalSignalIdentity()
+            ..id = 0
+            ..identityKeyPair = identityKeyPair.serialize().toList()
+            ..registrationId = registrationId,
+        );
       });
+      print('🔐 [E2EE] Local identity generated successfully.');
+    } else {
+      // Identity exists, but check if PreKeys exist (fixes Isar autoIncrement bug recovery)
+      final preKeyCount = await isar.signalPreKeys.count();
+      if (preKeyCount == 0) {
+        print('🔐 [E2EE] Local identity exists but PreKeys are missing. Rebuilding PreKeys...');
+        // We defer this so it doesn't block init entirely, but it ensures they get created
+        Future.microtask(() => generatePreKeyBundle());
+      }
     }
 
     _initialized = true;
+  }
+
+  /// Retrieves the public identity key for this specific device
+  Future<String> getLocalIdentityKeyBase64() async {
+    await _initCheck();
+    final identityKeyPair = await _store.getIdentityKeyPair();
+    return base64Encode(identityKeyPair.getPublicKey().serialize());
   }
 
   /// Generates the initial PreKey bundle for X3DH to upload to Firestore

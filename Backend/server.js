@@ -118,6 +118,13 @@ function setUser(db, username, data) {
   db.users[username] = data;
   saveDB(db);
 }
+function setUserOffline(username) {
+  if (!username) return;
+  admin.firestore().collection("users").doc(username).set({
+    activityStatus: "Offline",
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  }, { merge: true }).catch(err => console.error(`🔥 [server] Failed to set offline status for ${username}:`, err));
+}
 
 // =======================
 // --- Utility Helpers ---
@@ -166,6 +173,7 @@ function cleanupExpiredTokens(db) {
   // Cleanup sessions
   for (const [sessionId, data] of Object.entries(db.sessions)) {
     if (data.expires && now > data.expires) {
+      if (data.username) setUserOffline(data.username);
       delete db.sessions[sessionId];
       cleaned++;
     }
@@ -673,6 +681,8 @@ app.post("/logout", (req, res) => {
   const db = loadDB();
 
   if (db.sessions[sessionId]) {
+    const username = db.sessions[sessionId].username;
+    if (username) setUserOffline(username);
     delete db.sessions[sessionId];
     saveDB(db);
   }
