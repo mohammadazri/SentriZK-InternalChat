@@ -246,3 +246,7 @@ venv.bak/
 
 # Cython debug symbols
 cython_debug/
+
+# Next.js
+Frontend/web/.next/
+Frontend/web/node_modules/
