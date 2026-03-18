@@ -227,7 +227,60 @@ class _UserListScreenState extends State<UserListScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: StreamBuilder<QuerySnapshot>(
+      body: Column(
+        children: [
+          // AppBar and Search Field (Extracted from StreamBuilder)
+          Container(
+            padding: const EdgeInsets.only(top: 48, left: 16, right: 16, bottom: 16),
+            color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.95),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Messages',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 22,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        // Online count badge will be built inside stream
+                      ],
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.settings_outlined,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                      tooltip: 'Settings',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SettingsScreen(
+                              currentUserId: widget.currentUserId,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _SearchField(
+                  controller: _searchController,
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
             .snapshots()
@@ -302,79 +355,6 @@ class _UserListScreenState extends State<UserListScreen>
           return CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              SliverAppBar(
-                expandedHeight: 140.0,
-                floating: true,
-                pinned: true,
-                backgroundColor: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.95),
-                elevation: 0,
-                flexibleSpace: FlexibleSpaceBar(
-                  titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-                  title: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Messages',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 22,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.3)),
-                        ),
-                        child: Text(
-                          '$onlineCount Online',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                actions: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.settings_outlined,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                    ),
-                    tooltip: 'Settings',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => SettingsScreen(
-                            currentUserId: widget.currentUserId,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                bottom: PreferredSize(
-                  preferredSize: const Size.fromHeight(70),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                    child: _SearchField(
-                      controller: _searchController,
-                      onChanged: (value) => setState(() => _searchQuery = value),
-                    ),
-                  ),
-                ),
-              ),
-
               // User List
               if (filtered.isEmpty)
                 SliverFillRemaining(
@@ -457,6 +437,9 @@ class _UserListScreenState extends State<UserListScreen>
             ],
           );
         },
+      ),
+          ),
+        ],
       ),
     );
   }
