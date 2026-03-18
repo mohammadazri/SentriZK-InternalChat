@@ -889,6 +889,53 @@ app.get("/admin/threat-logs", verifyAdminJWT, (req, res) => {
   }
 });
 
+// POST /admin/threat-logs/:id/status — mark as false positive or true positive
+app.post("/admin/threat-logs/:id/status", verifyAdminJWT, (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!["false-positive", "true-positive", "pending"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+    
+    const db = loadDB();
+    if (!db.threat_logs) return res.status(404).json({ error: "No logs found" });
+    
+    const logIndex = db.threat_logs.findIndex(l => l.id === id);
+    if (logIndex === -1) return res.status(404).json({ error: "Log not found" });
+    
+    db.threat_logs[logIndex].resolutionStatus = status;
+    db.threat_logs[logIndex].resolvedBy = req.adminUser;
+    db.threat_logs[logIndex].resolvedAt = Date.now();
+    saveDB(db);
+    
+    console.log(`🛡️ [ADMIN] Threat log ${id} marked as ${status} by ${req.adminUser}`);
+    res.json({ status: "ok", message: `Log marked as ${status.replace('-', ' ')}` });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", details: String(err) });
+  }
+});
+
+// DELETE /admin/threat-logs/:id — permanently delete a threat log
+app.delete("/admin/threat-logs/:id", verifyAdminJWT, (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = loadDB();
+    if (!db.threat_logs) return res.status(404).json({ error: "No logs found" });
+    
+    const logIndex = db.threat_logs.findIndex(l => l.id === id);
+    if (logIndex === -1) return res.status(404).json({ error: "Log not found" });
+    
+    db.threat_logs.splice(logIndex, 1);
+    saveDB(db);
+    
+    console.log(`🗑️ [ADMIN] Threat log ${id} deleted by ${req.adminUser}`);
+    res.json({ status: "ok", message: "Log permanently removed" });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", details: String(err) });
+  }
+});
+
 // =======================
 // --- Periodic Cleanup ---
 // =======================

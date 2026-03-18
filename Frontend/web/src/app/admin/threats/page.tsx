@@ -12,6 +12,9 @@ type ThreatLog = {
   threatScore: number;
   timestamp: number;
   reportedAt: number;
+  resolutionStatus?: "false-positive" | "true-positive" | "pending";
+  resolvedBy?: string;
+  resolvedAt?: number;
 };
 
 function ScoreBar({ score }: { score: number }) {
@@ -33,6 +36,62 @@ export default function ThreatsPage() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+
+  const showToast = (msg: string, ok: boolean) => {
+    setToast({ msg, ok });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  async function updateStatus(id: string, status: string) {
+    setActionLoading(id + status);
+    const token = sessionStorage.getItem("adminToken");
+    try {
+      const res = await fetch(`/api/admin/threat-logs/${id}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status }),
+      });
+      const data = await res.json();
+      if (res.ok) { showToast(data.message, true); load(); }
+      else showToast(data.error || "Error", false);
+    } catch { showToast("Network error", false); }
+    finally { setActionLoading(null); }
+  }
+
+  async function deleteLog(id: string) {
+    if (!confirm("Are you sure you want to permanently delete this threat log?")) return;
+    setActionLoading(id + "delete");
+    const token = sessionStorage.getItem("adminToken");
+    try {
+      const res = await fetch(`/api/admin/threat-logs/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) { showToast(data.message, true); load(); }
+      else showToast(data.error || "Error", false);
+    } catch { showToast("Network error", false); }
+    finally { setActionLoading(null); }
+  }
+
+  async function holdSender(username: string) {
+    if (!confirm(`Are you sure you want to suspend ${username}? They will be logged out instantly.`)) return;
+    setActionLoading(username + "hold");
+    const token = sessionStorage.getItem("adminToken");
+    try {
+      const res = await fetch(`/api/admin/users/hold`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ username }),
+      });
+      const data = await res.json();
+      if (res.ok) { showToast(data.message, true); }
+      else showToast(data.error || "Error", false);
+    } catch { showToast("Network error", false); }
+    finally { setActionLoading(null); }
+  }
 
   const load = useCallback(async () => {
     const token = sessionStorage.getItem("adminToken");
@@ -62,7 +121,17 @@ export default function ThreatsPage() {
     <AdminShell>
       <div>
         <h1 style={{ color: "#fff", fontSize: 26, fontWeight: 700, margin: "0 0 6px" }}>Threat Logs</h1>
-        <p style={{ color: "#64748b", marginBottom: 28, fontSize: 14 }}>ML-flagged messages reported from mobile devices</p>
+        <p style={{ color: "#64748b", marginBottom: 20, fontSize: 14 }}>ML-flagged messages reported from mobile devices. Admin actions apply immediately.</p>
+
+        {/* Toast */}
+        {toast && (
+          <div style={{
+            position: "fixed", top: 24, right: 24, zIndex: 200, padding: "12px 20px", borderRadius: 10,
+            background: toast.ok ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)",
+            border: `1px solid ${toast.ok ? "rgba(16,185,129,0.4)" : "rgba(239,68,68,0.4)"}`,
+            color: toast.ok ? "#10B981" : "#EF4444", fontWeight: 600, fontSize: 14,
+          }}>{toast.ok ? "✅" : "❌"} {toast.msg}</div>
+        )}
 
         {/* Controls */}
         <div style={{ display: "flex", gap: 12, marginBottom: 24, alignItems: "center", flexWrap: "wrap" }}>
@@ -112,8 +181,17 @@ export default function ThreatsPage() {
                   borderRadius: 14, overflow: "hidden", cursor: "pointer",
                 }} onClick={() => setExpanded(isOpen ? null : log.id)}>
                   {/* Row */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "16px 24px", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "16px 24px", flexWrap: "wrap", background: log.resolutionStatus === 'true-positive' ? 'rgba(239,68,68,0.05)' : log.resolutionStatus === 'false-positive' ? 'rgba(16,185,129,0.05)' : 'transparent' }}>
                     <ScoreBar score={score} />
+                    {log.resolutionStatus && (
+                         <span style={{ 
+                            padding: "2px 8px", borderRadius: 12, fontSize: 11, fontWeight: 700,
+                            background: log.resolutionStatus === 'true-positive' ? "rgba(239,68,68,0.15)" : "rgba(16,185,129,0.15)",
+                            color: log.resolutionStatus === 'true-positive' ? "#EF4444" : "#10B981", border: `1px solid ${log.resolutionStatus === 'true-positive' ? "#EF444450" : "#10B98150"}`
+                         }}>
+                             {log.resolutionStatus === 'true-positive' ? 'CONFIRMED' : 'FALSE ALARM'}
+                         </span>
+                    )}
                     <div style={{ flex: 1, minWidth: 140 }}>
                       <span style={{ color: "#60A5FA", fontWeight: 600 }}>{log.senderId}</span>
                       <span style={{ color: "#64748b", margin: "0 8px" }}>→</span>
@@ -134,7 +212,7 @@ export default function ThreatsPage() {
                         <span style={{ color: "#64748b", fontSize: 12, fontWeight: 600 }}>FULL MESSAGE</span>
                       </div>
                       <p style={{ color: "#E2E8F0", fontSize: 14, lineHeight: 1.7, margin: "0 0 16px", wordBreak: "break-word" }}>{log.content}</p>
-                      <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", gap: 24, flexWrap: "wrap", marginBottom: 24 }}>
                         {[
                           ["Threat Score", `${Math.round(log.threatScore * 100)}%`],
                           ["Sender", log.senderId],
@@ -148,6 +226,43 @@ export default function ThreatsPage() {
                             <div style={{ color: "#94a3b8", fontSize: 13 }}>{v}</div>
                           </div>
                         ))}
+                      </div>
+
+                      {/* ACTIONS */}
+                      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", borderTop: "1px dashed rgba(255,255,255,0.1)", paddingTop: 20 }}>
+                          <button 
+                            disabled={!!actionLoading}
+                            onClick={(e) => { e.stopPropagation(); updateStatus(log.id, "true-positive"); }}
+                            style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.3)", background: log.resolutionStatus === 'true-positive' ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.05)", color: "#EF4444", fontWeight: 600, cursor: actionLoading ? "wait" : "pointer", fontSize: 13 }}
+                          >
+                             {actionLoading === log.id + "true-positive" ? "..." : "🚨 Confirm True Positive"}
+                          </button>
+                          
+                          <button 
+                            disabled={!!actionLoading}
+                            onClick={(e) => { e.stopPropagation(); updateStatus(log.id, "false-positive"); }}
+                            style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid rgba(16,185,129,0.3)", background: log.resolutionStatus === 'false-positive' ? "rgba(16,185,129,0.2)" : "rgba(16,185,129,0.05)", color: "#10B981", fontWeight: 600, cursor: actionLoading ? "wait" : "pointer", fontSize: 13 }}
+                          >
+                             {actionLoading === log.id + "false-positive" ? "..." : "✅ Mark False Positive"}
+                          </button>
+
+                          <button 
+                            disabled={!!actionLoading}
+                            onClick={(e) => { e.stopPropagation(); holdSender(log.senderId); }}
+                            style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid rgba(245,158,11,0.3)", background: "rgba(245,158,11,0.05)", color: "#F59E0B", fontWeight: 600, cursor: actionLoading ? "wait" : "pointer", fontSize: 13 }}
+                          >
+                             {actionLoading === log.senderId + "hold" ? "..." : `⏸️ Suspend ${log.senderId}`}
+                          </button>
+
+                          <div style={{ flex: 1 }} />
+
+                          <button 
+                            disabled={!!actionLoading}
+                            onClick={(e) => { e.stopPropagation(); deleteLog(log.id); }}
+                            style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "transparent", color: "#64748b", fontWeight: 600, cursor: actionLoading ? "wait" : "pointer", fontSize: 13 }}
+                          >
+                             {actionLoading === log.id + "delete" ? "..." : "🗑️ Delete Log"}
+                          </button>
                       </div>
                     </div>
                   )}
