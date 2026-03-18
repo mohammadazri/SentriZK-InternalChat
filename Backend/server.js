@@ -18,6 +18,8 @@ const crypto = require("crypto");
 const circomlibjs = require("circomlibjs");
 const rateLimit = require("express-rate-limit");
 const admin = require("firebase-admin");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 // =======================
 // --- Firebase Admin SDK ---
@@ -43,6 +45,14 @@ const SESSION_TTL = 30 * 60 * 1000; // 30 minutes
 const MOBILE_ACCESS_TOKEN_TTL = 5 * 60 * 1000; // 5 minutes - for mobile to web access
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX = 10; // max requests per IP
+
+// =======================
+// --- Admin Config ---
+// =======================
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+const JWT_SECRET = process.env.JWT_SECRET || "sentrizk-admin-jwt-secret-change-in-prod";
+const JWT_TTL = "1h";
 
 // =======================
 // --- Middlewares ---
@@ -416,6 +426,11 @@ app.post("/login", async (req, res) => {
     const user = getUser(db, username);
     if (!user) return res.status(404).json({ error: "User not found" });
 
+    // Check if user is on hold
+    if (user.status === "held") {
+      return res.status(403).json({ error: "Account suspended. Contact your administrator." });
+    }
+
     // Check nonce expiration
     if (!user.nonce || (user.nonceTime && Date.now() - user.nonceTime > NONCE_TTL)) {
       delete user.nonce;
@@ -688,6 +703,151 @@ app.post("/logout", (req, res) => {
   }
 
   res.json({ status: "ok", message: "Logged out successfully" });
+});
+
+// =======================
+// --- Admin JWT Middleware ---
+// =======================
+function verifyAdminJWT(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Admin authentication required" });
+  }
+  const token = authHeader.slice(7);
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    if (payload.role !== "admin") throw new Error("Not an admin token");
+    req.adminUser = payload.username;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid or expired admin token" });
+  }
+}
+
+// =======================
+// --- Admin Routes ---
+// =======================
+
+// POST /admin/login
+app.post("/admin/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: "username and password required" });
+    }
+    if (username !== ADMIN_USERNAME) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+    // Support both plain-text (for easy dev setup) and bcrypt hash
+    let valid = false;
+    if (ADMIN_PASSWORD.startsWith("$2")) {
+      valid = await bcrypt.compare(password, ADMIN_PASSWORD);
+    } else {
+      valid = password === ADMIN_PASSWORD;
+    }
+    if (!valid) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+    const token = jwt.sign({ username, role: "admin" }, JWT_SECRET, { expiresIn: JWT_TTL });
+    console.log(`🔐 [ADMIN] Login successful for: ${username}`);
+    res.json({ token, expiresIn: JWT_TTL });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", details: String(err) });
+  }
+});
+
+// GET /admin/users — list all registered users
+app.get("/admin/users", verifyAdminJWT, (req, res) => {
+  try {
+    const db = loadDB();
+    const users = Object.entries(db.users).map(([username, data]) => ({
+      username,
+      status: data.status || "active",
+      registeredAt: data.registeredAt || null,
+      lastLogin: data.lastLogin || null,
+    }));
+    res.json({ users });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", details: String(err) });
+  }
+});
+
+// POST /admin/users/hold — suspend a user (block login)
+app.post("/admin/users/hold", verifyAdminJWT, (req, res) => {
+  try {
+    const { username } = req.body;
+    if (!username) return res.status(400).json({ error: "username required" });
+    const db = loadDB();
+    if (!db.users[username]) return res.status(404).json({ error: "User not found" });
+    db.users[username].status = "held";
+    db.users[username].heldAt = Date.now();
+    db.users[username].heldBy = req.adminUser;
+    saveDB(db);
+    // Force offline in Firestore
+    setUserOffline(username);
+    console.log(`🔒 [ADMIN] User held: ${username} by ${req.adminUser}`);
+    res.json({ status: "ok", message: `${username} is now on hold` });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", details: String(err) });
+  }
+});
+
+// POST /admin/users/restore — restore a held user
+app.post("/admin/users/restore", verifyAdminJWT, (req, res) => {
+  try {
+    const { username } = req.body;
+    if (!username) return res.status(400).json({ error: "username required" });
+    const db = loadDB();
+    if (!db.users[username]) return res.status(404).json({ error: "User not found" });
+    db.users[username].status = "active";
+    delete db.users[username].heldAt;
+    delete db.users[username].heldBy;
+    saveDB(db);
+    console.log(`✅ [ADMIN] User restored: ${username} by ${req.adminUser}`);
+    res.json({ status: "ok", message: `${username} has been restored` });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", details: String(err) });
+  }
+});
+
+// POST /admin/users/revoke — permanently delete a user
+app.post("/admin/users/revoke", verifyAdminJWT, async (req, res) => {
+  try {
+    const { username } = req.body;
+    if (!username) return res.status(400).json({ error: "username required" });
+    const db = loadDB();
+    if (!db.users[username]) return res.status(404).json({ error: "User not found" });
+    // Remove from db.json
+    delete db.users[username];
+    // Also remove any active sessions for this user
+    for (const [sid, session] of Object.entries(db.sessions)) {
+      if (session.username === username) delete db.sessions[sid];
+    }
+    saveDB(db);
+    // Remove from Firestore
+    try {
+      await admin.firestore().collection("users").doc(username).delete();
+      // Try to delete Firebase Auth account too (non-fatal if fails)
+      await admin.auth().deleteUser(username).catch(() => {});
+    } catch (fsErr) {
+      console.warn(`⚠️ [ADMIN] Firestore delete for ${username} failed (non-fatal):`, fsErr.message);
+    }
+    console.log(`🗑️ [ADMIN] User revoked: ${username} by ${req.adminUser}`);
+    res.json({ status: "ok", message: `${username} has been permanently revoked` });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", details: String(err) });
+  }
+});
+
+// GET /admin/threat-logs — return all ML threat logs
+app.get("/admin/threat-logs", verifyAdminJWT, (req, res) => {
+  try {
+    const db = loadDB();
+    const logs = (db.threat_logs || []).slice().reverse(); // newest first
+    res.json({ logs, total: logs.length });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", details: String(err) });
+  }
 });
 
 // =======================
