@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -196,66 +197,88 @@ class _ChatScreenState extends State<ChatScreen> {
             icon: Icon(Icons.arrow_back_ios_new_rounded, color: Theme.of(context).colorScheme.onSurface, size: 20),
             onPressed: () => Navigator.pop(context),
           ),
-          title: Row(
-            children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: Theme.of(context).colorScheme.surface,
-                child: Text(
-                  widget.peerName.isNotEmpty ? widget.peerName[0].toUpperCase() : '?',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.peerName,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                      ),
-                    ),
-                    StreamBuilder<DocumentSnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(widget.peerId)
-                          .snapshots()
-                          .handleError((e) {
-                        debugPrint('🔒 [CHAT] Ignoring peer status permission-denied during logout.');
-                      }),
+          title: StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('users')
+                .doc(widget.peerId)
+                .snapshots()
+                .handleError((e) {
+              debugPrint('🔒 [CHAT] Ignoring peer status permission-denied during logout.');
+            }),
+            builder: (context, snapshot) {
+              final peerData = (snapshot.hasData && snapshot.data != null && snapshot.data!.exists)
+                  ? snapshot.data!.data() as Map<String, dynamic>
+                  : <String, dynamic>{};
 
-                      builder: (context, snapshot) {
-                        if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
-                          final peerData = snapshot.data!.data() as Map<String, dynamic>;
-                          if (peerData['typingTo'] == widget.username) {
-                            return const Text(
-                              'typing...',
-                              style: TextStyle(
-                                color: Color(0xFF10B981),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            );
-                          }
-                        }
-                        return Text(
-                          'Secure end-to-end chat',
+              final avatarUrl = peerData['avatarUrl'] as String?;
+              final isTypingToMe = peerData['typingTo'] == widget.username;
+
+              ImageProvider? avatarImg;
+              if (avatarUrl != null && avatarUrl.isNotEmpty) {
+                if (avatarUrl.startsWith('data:image')) {
+                  try {
+                    final Uint8List bytes = base64Decode(avatarUrl.split(',').last);
+                    avatarImg = MemoryImage(bytes);
+                  } catch (_) {}
+                } else {
+                  avatarImg = NetworkImage(avatarUrl);
+                }
+              }
+
+              return Row(
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundImage: avatarImg,
+                    backgroundColor: Theme.of(context).colorScheme.surface,
+                    child: avatarImg == null
+                        ? Text(
+                            widget.peerName.isNotEmpty ? widget.peerName[0].toUpperCase() : '?',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.peerName,
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                            fontSize: 11,
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
                           ),
-                        );
-                      },
+                        ),
+                        if (isTypingToMe)
+                          const Text(
+                            'typing...',
+                            style: TextStyle(
+                              color: Color(0xFF10B981),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          )
+                        else
+                          Text(
+                            'Secure end-to-end chat',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                              fontSize: 11,
+                            ),
+                          ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            ],
+                  ),
+                ],
+              );
+            },
           ),
           actions: [
             IconButton(

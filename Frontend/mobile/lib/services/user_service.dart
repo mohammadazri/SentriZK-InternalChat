@@ -71,7 +71,7 @@ class UserService {
   Future<void> setTypingStatus(String userId, String? typingTo) async {
     try {
       await _firestore.collection('users').doc(userId).set({
-        'typingTo': typingTo,
+        'typingTo': typingTo ?? FieldValue.delete(),
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     } catch (e) {
