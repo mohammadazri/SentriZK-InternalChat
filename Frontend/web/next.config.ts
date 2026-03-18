@@ -6,8 +6,8 @@ const nextConfig: NextConfig = {
   // ✅ Allow both localhost and your LAN IP for Flutter/web bridge
   allowedDevOrigins: [
     "http://localhost:3000",
-    "http://169.254.83.107",
-    "http://10.0.2.2",
+    "http://frontend.a4innovation.shop",
+    "https://frontend.a4innovation.shop",
   ],
 };
 
