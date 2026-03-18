@@ -42,7 +42,11 @@ export default function UsersPage() {
       const res = await fetch("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } });
       if (res.status === 401) { router.replace("/admin"); return; }
       const data = await res.json();
-      setUsers(data.users || []);
+      setUsers(prev => {
+        const newUsers = data.users || [];
+        if (JSON.stringify(prev) === JSON.stringify(newUsers)) return prev;
+        return newUsers;
+      });
     } finally { setLoading(false); }
   }, [router]);
 

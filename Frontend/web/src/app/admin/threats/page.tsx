@@ -42,7 +42,11 @@ export default function ThreatsPage() {
       const res = await fetch("/api/admin/threat-logs", { headers: { Authorization: `Bearer ${token}` } });
       if (res.status === 401) { router.replace("/admin"); return; }
       const data = await res.json();
-      setLogs(data.logs || []);
+      setLogs(prev => {
+        const newLogs = data.logs || [];
+        if (JSON.stringify(prev) === JSON.stringify(newLogs)) return prev;
+        return newLogs;
+      });
     } finally { setLoading(false); }
   }, [router]);
 

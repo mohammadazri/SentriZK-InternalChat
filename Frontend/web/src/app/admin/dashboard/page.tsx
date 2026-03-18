@@ -33,10 +33,21 @@ export default function AdminDashboard() {
         fetch("/api/admin/threat-logs", { headers: { Authorization: `Bearer ${token}` } }),
       ]);
       if (uRes.status === 401) { router.replace("/admin"); return; }
+      
       const uData = await uRes.json();
       const tData = await tRes.json();
-      setUsers(uData.users || []);
-      setThreatCount(tData.total || 0);
+
+      setUsers(prev => {
+        const newUsers = uData.users || [];
+        if (JSON.stringify(prev) === JSON.stringify(newUsers)) return prev;
+        return newUsers;
+      });
+      
+      setThreatCount(prev => {
+        const newTotal = tData.total || 0;
+        if (prev === newTotal) return prev;
+        return newTotal;
+      });
     } catch { /* ignore */ }
     finally { setLoading(false); }
   }, [router]);
