@@ -9,11 +9,11 @@ type User = { username: string; status: string; registeredAt: number | null; las
 
 function ConfirmModal({ message, onConfirm, onCancel, danger }: { message: string; onConfirm: () => void; onCancel: () => void; danger?: boolean }) {
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#0F172A", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: "32px 36px", maxWidth: 440, width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.4)" }}>
-        <p style={{ color: "#F8FAFC", fontSize: 17, marginBottom: 32, fontWeight: 500, lineHeight: 1.5 }}>{message}</p>
+    <div style={{ position: "fixed", inset: 0, background: "var(--admin-modal-bg)", backdropFilter: "blur(6px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "var(--admin-panel-bg)", border: "1px solid var(--admin-border-strong)", borderRadius: 16, padding: "32px 36px", maxWidth: 440, width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.4)" }}>
+        <p style={{ color: "var(--admin-text-main)", fontSize: 17, marginBottom: 32, fontWeight: 500, lineHeight: 1.5 }}>{message}</p>
         <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
-          <button onClick={onCancel} style={{ padding: "10px 20px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "#94a3b8", cursor: "pointer", fontWeight: 600, transition: "background 0.2s" }} onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.05)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>Cancel</button>
+          <button onClick={onCancel} style={{ padding: "10px 20px", borderRadius: 10, border: "1px solid var(--admin-border-strong)", background: "transparent", color: "var(--admin-text-muted)", cursor: "pointer", fontWeight: 600, transition: "background 0.2s" }} onMouseEnter={e=>e.currentTarget.style.background="var(--admin-panel-hover)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>Cancel</button>
           <button onClick={onConfirm} style={{ padding: "10px 24px", borderRadius: 10, border: "none", background: danger ? "#EF4444" : "#F59E0B", color: "#fff", fontWeight: 600, cursor: "pointer", boxShadow: `0 4px 12px ${danger ? "rgba(239,68,68,0.3)" : "rgba(245,158,11,0.3)"}` }}>Confirm</button>
         </div>
       </div>
@@ -99,49 +99,49 @@ export default function UsersPage() {
       )}
 
       <div>
-        <h1 style={{ color: "#F8FAFC", fontSize: 28, fontWeight: 700, margin: "0 0 8px", letterSpacing: "-0.5px" }}>User Directory</h1>
-        <p style={{ color: "#94a3b8", marginBottom: 36, fontSize: 15 }}>Manage network participants, enforce suspensions, or revoke access entirely.</p>
+        <h1 style={{ color: "var(--admin-text-main)", fontSize: 28, fontWeight: 700, margin: "0 0 8px", letterSpacing: "-0.5px" }}>User Directory</h1>
+        <p style={{ color: "var(--admin-text-sub)", marginBottom: 36, fontSize: 15 }}>Manage network participants, enforce suspensions, or revoke access entirely.</p>
 
         {/* Search */}
         <div style={{ display: "flex", gap: 16, marginBottom: 24, alignItems: "center" }}>
           <div style={{ position: "relative", flex: 1, maxWidth: 380 }}>
-            <Search size={18} color="#64748b" style={{ position: "absolute", left: 16, top: 11 }} />
+            <Search size={18} color="var(--admin-text-muted)" style={{ position: "absolute", left: 16, top: 11 }} />
             <input
               placeholder="Search by username…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               style={{
-                width: "100%", padding: "11px 16px 11px 44px", background: "rgba(15,23,42,0.6)",
-                border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "#F8FAFC",
+                width: "100%", padding: "11px 16px 11px 44px", background: "var(--admin-input-bg)",
+                border: "1px solid var(--admin-border)", borderRadius: 12, color: "var(--admin-text-main)",
                 fontSize: 14, outline: "none", transition: "border 0.2s"
               }}
               onFocus={e => e.currentTarget.style.borderColor = "#3B82F6"}
-              onBlur={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}
+              onBlur={e => e.currentTarget.style.borderColor = "var(--admin-border)"}
             />
           </div>
-          <div style={{ color: "#64748b", fontSize: 13, fontWeight: 500 }}>
+          <div style={{ color: "var(--admin-text-muted)", fontSize: 13, fontWeight: 500 }}>
              {filtered.length} {filtered.length === 1 ? "Result" : "Results"}
           </div>
         </div>
 
         {/* Table */}
-        <div style={{ background: "#0F172A", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 16, overflow: "hidden" }}>
+        <div style={{ background: "var(--admin-panel-bg)", border: "1px solid var(--admin-border)", borderRadius: 16, overflow: "hidden", transition: "background 0.2s, border-color 0.2s" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ background: "rgba(30,41,59,0.3)", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+              <tr style={{ background: "rgba(0,0,0,0.02)", borderBottom: "1px solid var(--admin-border)" }}>
                 {["Identity", "Status", "Joined", "Last Activity", "Actions"].map(h => (
-                  <th key={h} style={{ padding: "16px 24px", color: "#64748b", fontSize: 12, fontWeight: 600, textAlign: "left", letterSpacing: 0.5 }}>{h.toUpperCase()}</th>
+                  <th key={h} style={{ padding: "16px 24px", color: "var(--admin-text-muted)", fontSize: 12, fontWeight: 600, textAlign: "left", letterSpacing: 0.5 }}>{h.toUpperCase()}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {loading && users.length === 0 ? (
-                <tr><td colSpan={5} style={{ padding: 60, textAlign: "center", color: "#64748b", fontSize: 15 }}>Fetching directory…</td></tr>
+                <tr><td colSpan={5} style={{ padding: 60, textAlign: "center", color: "var(--admin-text-muted)", fontSize: 15 }}>Fetching directory…</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={5} style={{ padding: 60, textAlign: "center", color: "#64748b", fontSize: 15 }}>No matching identities found.</td></tr>
+                <tr><td colSpan={5} style={{ padding: 60, textAlign: "center", color: "var(--admin-text-muted)", fontSize: 15 }}>No matching identities found.</td></tr>
               ) : (
                 filtered.map((u, i) => (
-                  <tr key={u.username} style={{ borderBottom: "1px solid rgba(255,255,255,0.03)", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                  <tr key={u.username} style={{ borderBottom: "1px solid var(--admin-border)", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "var(--admin-panel-hover)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                     {/* Username */}
                     <td style={{ padding: "18px 24px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -150,7 +150,7 @@ export default function UsersPage() {
                           display: "flex", alignItems: "center", justifyContent: "center",
                           color: "#fff", fontWeight: 700, fontSize: 15, boxShadow: "0 2px 8px rgba(37,99,235,0.3)"
                         }}>{u.username[0].toUpperCase()}</div>
-                        <span style={{ color: "#F8FAFC", fontWeight: 600 }}>{u.username}</span>
+                        <span style={{ color: "var(--admin-text-main)", fontWeight: 600 }}>{u.username}</span>
                       </div>
                     </td>
 
@@ -165,10 +165,10 @@ export default function UsersPage() {
                     </td>
 
                     {/* Dates */}
-                    <td style={{ padding: "18px 24px", color: "#94a3b8", fontSize: 13, fontWeight: 500 }}>
+                    <td style={{ padding: "18px 24px", color: "var(--admin-text-sub)", fontSize: 13, fontWeight: 500 }}>
                       {u.registeredAt ? new Date(u.registeredAt).toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' }) : "—"}
                     </td>
-                    <td style={{ padding: "18px 24px", color: "#94a3b8", fontSize: 13, fontWeight: 500 }}>
+                    <td style={{ padding: "18px 24px", color: "var(--admin-text-sub)", fontSize: 13, fontWeight: 500 }}>
                       {u.lastLogin ? new Date(u.lastLogin).toLocaleString(undefined, { year:'numeric', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : "Never"}
                     </td>
 
