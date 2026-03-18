@@ -49,10 +49,10 @@ const RATE_LIMIT_MAX = 10; // max requests per IP
 // =======================
 // --- Admin Config ---
 // =======================
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
-const JWT_SECRET = process.env.JWT_SECRET || "sentrizk-admin-jwt-secret-change-in-prod";
-const JWT_TTL = "1h";
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_TTL = process.env.JWT_TTL;
 
 // =======================
 // --- Middlewares ---

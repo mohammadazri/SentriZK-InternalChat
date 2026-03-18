@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/FYP_BCSS/SentriZK-InternalChat/Frontend/web/src/app/admin/layout.tsx"],"sourcesContent":["import AdminShell from \"@/components/admin/AdminShell\";\n\nexport default function AdminLayout({ children }: { children: React.ReactNode }) {\n  return children;\n}\n"],"names":[],"mappings":";;;;AAEe,SAAS,YAAY,EAAE,QAAQ,EAAiC;IAC7E,OAAO;AACT","debugId":null}}]
+}
