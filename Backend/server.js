@@ -8,6 +8,7 @@
 // 🔒 Minimal file-based DB persistence
 // =======================
 
+require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const snarkjs = require("snarkjs");
