@@ -56,6 +56,15 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_TTL = process.env.JWT_TTL;
 
 // =======================
+// --- Admin SSE Stream ---
+// =======================
+let adminClients = [];
+function broadcastAdminUpdate() {
+  const payload = `data: ${JSON.stringify({ type: "UPDATE", timestamp: Date.now() })}\n\n`;
+  adminClients.forEach(client => client.write(payload));
+}
+
+// =======================
 // --- Middlewares ---
 // =======================
 app.use(cors());
@@ -405,6 +414,7 @@ app.post("/register", async (req, res) => {
     const expires = Date.now() + TOKEN_TTL;
     db.tokens[token] = { username, expires, type: "registration" };
     saveDB(db);
+    broadcastAdminUpdate();
 
     res.json({ status: "ok", token });
   } catch (err) {
@@ -547,6 +557,7 @@ app.post("/threat-log", (req, res) => {
 
     db.threat_logs.push(logEntry);
     saveDB(db);
+    broadcastAdminUpdate();
 
     console.log(`🚨 [THREAT] Logged threat from "${senderId}" to "${receiverId}" (score: ${threatScore})`);
     res.json({ status: "ok", logId: logEntry.id });
@@ -757,6 +768,26 @@ app.post("/admin/login", async (req, res) => {
   }
 });
 
+// GET /admin/stream — Server-Sent Events for real-time dashboard pushing
+app.get("/admin/stream", verifyAdminJWT, (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders(); // Establish SSE
+
+  adminClients.push(res);
+  console.log(`📡 [ADMIN] SSE stream connected. Total active: ${adminClients.length}`);
+
+  // Send initial ping to confirm connection
+  res.write(`data: ${JSON.stringify({ type: "CONNECTED" })}\n\n`);
+
+  // Remove client on disconnect
+  req.on("close", () => {
+    adminClients = adminClients.filter(client => client !== res);
+    console.log(`📡 [ADMIN] SSE stream closed. Remaining: ${adminClients.length}`);
+  });
+});
+
 // GET /admin/users — list all registered users
 app.get("/admin/users", verifyAdminJWT, (req, res) => {
   try {
@@ -784,6 +815,7 @@ app.post("/admin/users/hold", verifyAdminJWT, async (req, res) => {
     db.users[username].heldAt = Date.now();
     db.users[username].heldBy = req.adminUser;
     saveDB(db);
+    broadcastAdminUpdate();
     // Write accountStatus to Firestore so mobile app detects it instantly
     await admin.firestore().collection("users").doc(username).set({
       accountStatus: "held",
@@ -808,6 +840,7 @@ app.post("/admin/users/restore", verifyAdminJWT, async (req, res) => {
     delete db.users[username].heldAt;
     delete db.users[username].heldBy;
     saveDB(db);
+    broadcastAdminUpdate();
     // Clear accountStatus in Firestore
     await admin.firestore().collection("users").doc(username).set({
       accountStatus: "active",
@@ -834,6 +867,7 @@ app.post("/admin/users/revoke", verifyAdminJWT, async (req, res) => {
       if (session.username === username) delete db.sessions[sid];
     }
     saveDB(db);
+    broadcastAdminUpdate();
     // Write accountStatus: revoked FIRST so mobile listener fires before doc deletion
     try {
       const fs = admin.firestore();
@@ -908,6 +942,7 @@ app.post("/admin/threat-logs/:id/status", verifyAdminJWT, (req, res) => {
     db.threat_logs[logIndex].resolvedBy = req.adminUser;
     db.threat_logs[logIndex].resolvedAt = Date.now();
     saveDB(db);
+    broadcastAdminUpdate();
     
     console.log(`🛡️ [ADMIN] Threat log ${id} marked as ${status} by ${req.adminUser}`);
     res.json({ status: "ok", message: `Log marked as ${status.replace('-', ' ')}` });
@@ -928,6 +963,7 @@ app.delete("/admin/threat-logs/:id", verifyAdminJWT, (req, res) => {
     
     db.threat_logs.splice(logIndex, 1);
     saveDB(db);
+    broadcastAdminUpdate();
     
     console.log(`🗑️ [ADMIN] Threat log ${id} deleted by ${req.adminUser}`);
     res.json({ status: "ok", message: "Log permanently removed" });
