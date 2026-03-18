@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:app_links/app_links.dart';
 import '../services/auth_service.dart';
+import '../services/recovery_service.dart';
 import '../services/user_service.dart';
 import '../services/notification_service.dart';
 
@@ -1201,7 +1202,16 @@ class _AuthScreenState extends State<AuthScreen>
                                 Icons.lock_clock,
                                 Colors.blueAccent,
                               );
-                              final encrypted = await _authService
+
+                              // 1. Derive plaintext salt from mnemonic
+                              final saltHex = await RecoveryService
+                                  .deriveSaltFromMnemonic(
+                                mnemonic,
+                                passphrase: passphrase,
+                              );
+
+                              // 2. Encrypt & store locally for future normal logins
+                              await _authService
                                   .recoverAndStoreEncryptedSalt(
                                     username: username,
                                     mnemonic: mnemonic,
@@ -1219,12 +1229,14 @@ class _AuthScreenState extends State<AuthScreen>
                                 Colors.cyan,
                               );
 
-                              // Open web login with MAT including username & encrypted salt bundle
+                              // 3. Open web login with plaintext saltHex
+                              //    (hex is URL-safe, no encoding issues)
+                              //    Web will skip the password step
                               final baseUrl = Uri.parse(AppConfig.loginUrl)
                                   .replace(
                                     queryParameters: {
                                       'username': username,
-                                      'encryptedSalt': encrypted,
+                                      'saltHex': saltHex,
                                     },
                                   )
                                   .toString();

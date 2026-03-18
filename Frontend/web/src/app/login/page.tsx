@@ -55,6 +55,12 @@ export default function LoginPage() {
       if (userParam) setUsername(userParam);
       if (saltParam) setEncryptedSalt(saltParam);
 
+      // Check if plaintext salt was provided (recovery flow)
+      const directSalt = params.get("saltHex");
+      if (directSalt) {
+        setDecryptedSaltHex(directSalt);
+      }
+
       // Set timeout to redirect after 5 minutes
       const timeout = setTimeout(() => {
         setError("Session expired. Please reopen from the mobile app.");
@@ -91,6 +97,16 @@ export default function LoginPage() {
   };
 
   const validateForm = (): boolean => {
+    // If we already have the decrypted salt (recovery flow), skip salt/password checks
+    if (decryptedSaltHex) {
+      if (!walletAddress) {
+        setError("Please connect your wallet first");
+        return false;
+      }
+      setError(null);
+      return true;
+    }
+
     if (!encryptedSalt) {
       setError("Missing encrypted salt. Please open this page from the mobile app.");
       return false;
@@ -118,11 +134,18 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      // Pre-validation: ensure we have encrypted salt
-      if (!encryptedSalt) {
-        setError("Missing encrypted salt. Please open this page from the mobile app.");
-        setLoading(false);
-        return;
+      // Pre-validation: skip checks for recovery flow (salt already derived)
+      if (!decryptedSaltHex) {
+        if (!encryptedSalt) {
+          setError("Missing encrypted salt. Please open this page from the mobile app.");
+          setLoading(false);
+          return;
+        }
+        if (!password || password.length < 8) {
+          setError("Password must be at least 8 characters");
+          setLoading(false);
+          return;
+        }
       }
 
       if (!walletAddress) {
@@ -131,19 +154,19 @@ export default function LoginPage() {
         return;
       }
 
-      if (!password || password.length < 8) {
-        setError("Password must be at least 8 characters");
-        setLoading(false);
-        return;
-      }
-
       setCurrentStep(3);
 
       // 1️⃣ Prepare login proof
-      setMessage("Decrypting salt and generating proof...");
-      // Always decrypt fresh to avoid stale state
-      const saltHex = await decryptSaltHex(encryptedSalt, password);
-      setDecryptedSaltHex(saltHex);
+      let saltHex = decryptedSaltHex;
+      if (!saltHex) {
+        // Normal flow: decrypt from encrypted salt
+        setMessage("Decrypting salt and generating proof...");
+        saltHex = await decryptSaltHex(encryptedSalt, password);
+        setDecryptedSaltHex(saltHex);
+      } else {
+        // Recovery flow: salt already derived from mnemonic
+        setMessage("Generating zero-knowledge proof...");
+      }
 
       const { proofBundle } = await prepareLogin(username, walletAddress, { saltHex });
 
@@ -319,8 +342,8 @@ export default function LoginPage() {
         {currentStep === 2 && (
           <div className={styles.content}>
             <div className={styles.stepTitle}>
-              <h2>Enter Your Password</h2>
-              <p>Decrypt your credentials to complete authentication</p>
+              <h2>{decryptedSaltHex ? 'Ready to Authenticate' : 'Enter Your Password'}</h2>
+              <p>{decryptedSaltHex ? 'Your credentials were recovered. Just click Login to continue.' : 'Decrypt your credentials to complete authentication'}</p>
             </div>
 
             <div className={styles.statusCards}>
@@ -332,32 +355,34 @@ export default function LoginPage() {
                 </div>
               </div>
               <div className={styles.statusCard}>
-                <KeyRound size={20} color="#f59e0b" />
+                <KeyRound size={20} color={decryptedSaltHex ? '#10b981' : '#f59e0b'} />
                 <div>
                   <span className={styles.statusLabel}>Salt Status</span>
                   <span className={styles.statusValue}>
-                    {decryptedSaltHex ? 'Decrypted' : encryptedSalt ? 'Encrypted' : 'Missing'}
+                    {decryptedSaltHex ? '✅ Recovered' : encryptedSalt ? 'Encrypted' : 'Missing'}
                   </span>
                 </div>
               </div>
             </div>
 
             <form onSubmit={handleLogin} className={styles.form}>
-              <div className={styles.inputGroup}>
-                <label htmlFor="password">Password</label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className={styles.input}
-                  disabled={loading}
-                  required
-                  autoFocus
-                />
-                <span className={styles.hint}>Used to decrypt your salt locally</span>
-              </div>
+              {!decryptedSaltHex && (
+                <div className={styles.inputGroup}>
+                  <label htmlFor="password">Password</label>
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className={styles.input}
+                    disabled={loading}
+                    required
+                    autoFocus
+                  />
+                  <span className={styles.hint}>Used to decrypt your salt locally</span>
+                </div>
+              )}
 
               {error && (
                 <div className={styles.error}>
