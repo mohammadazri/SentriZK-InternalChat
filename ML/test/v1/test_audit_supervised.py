@@ -7,6 +7,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from rich.console import Console
 from rich.table import Table
 from rich.prompt import Prompt
+from rich.panel import Panel
 
 console = Console()
 
@@ -88,7 +89,7 @@ def run_audit():
     test_cases.extend(custom_cases)
 
     # 3. RUN AUDIT
-    table = Table(title="SentriZK Bi-LSTM Native Audit")
+    table = Table(title=audit_title)
     table.add_column("Message snippet", style="dim", width=40)
     table.add_column("Type", style="cyan", width=15)
     table.add_column("Threat Score", justify="right")
@@ -101,7 +102,7 @@ def run_audit():
     # Threshold: Above 0.5 (50%) = Threat
     THRESHOLD = 0.5
 
-    console.print("\n[bold yellow]Running Bi-LSTM Inference...[/bold yellow]")
+    console.print(f"\n[bold yellow]Running {model_label} Inference...[/bold yellow]")
 
     for text, expected_label, source in test_cases:
         # Preprocess
@@ -135,7 +136,7 @@ def run_audit():
     # 4. FINAL SCORE
     accuracy = (correct_count / total_count) * 100
     color = "green" if accuracy > 85 else "red"
-    console.print(Panel(f"[bold {color}]Audit Accuracy: {accuracy:.2f}% ({correct_count}/{total_count})[/bold {color}]", border_style=color))
+    console.print(Panel(f"[bold {color}] {model_label} Audit Accuracy: {accuracy:.2f}% ({correct_count}/{total_count})[/bold {color}]", border_style=color))
 
 if __name__ == "__main__":
     run_audit()
