@@ -6,26 +6,52 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from rich.console import Console
 from rich.table import Table
-from rich.panel import Panel
+from rich.prompt import Prompt
 
 console = Console()
 
 def run_audit():
-    # --- SETUP PATHS ---
+    # --- 0. SELECT TARGET ---
+    console.clear()
+    console.print(Panel.fit(
+        "[bold cyan]SentriZK Supervised Audit System[/bold cyan]\n"
+        "[1] Research Engine (Bi-LSTM)\n"
+        "[2] Production Engine (Conv1D)",
+        title="Audit Target Selector"
+    ))
+    choice = Prompt.ask("Choose engine to audit", choices=["1", "2"], default="2")
+
+    if choice == "1":
+        model_name = 'sentrizk_research_model.keras'
+        audit_title = "SentriZK Research Audit (Bi-LSTM)"
+        model_label = "RESEARCH (Bi-LSTM)"
+    else:
+        model_name = 'sentrizk_production_model.keras'
+        audit_title = "SentriZK Production Audit (Conv1D)"
+        model_label = "PRODUCTION (Conv1D)"
+
+    # --- 1. SETUP PATHS ---
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    # Adjust this path if your CSV is in a different relative location
     DATA_PATH = os.path.join(BASE_DIR, "../../DataSet", "train_ready.csv")
-    MODELS_DIR = os.path.join(BASE_DIR, "../../models")
+    MODELS_DIR = os.path.join(BASE_DIR, "../../models/production")
     
-    # 1. LOAD ARTIFACTS (Switched to Native Keras to fix Windows Flex Error)
+    # 2. LOAD ARTIFACTS
     try:
-        # Load Tokenizer
-        with open(os.path.join(MODELS_DIR, 'sentrizk_tokenizer.pickle'), 'rb') as handle:
-            tokenizer = pickle.load(handle)
+        with console.status(f"[bold white]Loading {model_label} Artifacts..."):
+            # Load Tokenizer
+            token_path = os.path.join(MODELS_DIR, 'sentrizk_tokenizer.pickle')
+            if not os.path.exists(token_path):
+                 raise FileNotFoundError(f"Tokenizer not found at {token_path}")
+            with open(token_path, 'rb') as handle:
+                tokenizer = pickle.load(handle)
+            
+            # Load Keras Model 
+            model_path = os.path.join(MODELS_DIR, model_name)
+            if not os.path.exists(model_path):
+                 raise FileNotFoundError(f"Model not found at {model_path}")
+            model = tf.keras.models.load_model(model_path)
         
-        # Load Native Keras Model 
-        # (This bypasses the tf.lite.Interpreter completely for the local audit)
-        model = tf.keras.models.load_model(os.path.join(MODELS_DIR, 'sentrizk_model.keras'))
+        console.print(f"[green]✔ {model_label} Loaded Successfully.[/green]")
         
     except Exception as e:
         console.print(f"[bold red]Error loading models:[/bold red] {e}")

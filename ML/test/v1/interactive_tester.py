@@ -15,28 +15,44 @@ class SentriZKTester:
     def __init__(self):
         self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         # CRITICAL FIX: Go up two levels (../../) to reach the main ML folder
-        self.MODELS_DIR = os.path.abspath(os.path.join(self.BASE_DIR, "../../models")) 
+        # STABLE PATH: Pointing to the new production subfolder
+        self.MODELS_DIR = os.path.abspath(os.path.join(self.BASE_DIR, "../../models/production")) 
         self.tokenizer = None
         self.model = None 
+        self.model_label = "Unknown"
         self.MAX_LEN = 120
         
-    def load_engine(self):
-        """Loads the Native Keras model and Tokenizer"""
+    def load_engine(self, model_choice):
+        """Loads the selected Keras model and Tokenizer"""
         try:
-            with console.status("[bold cyan]Initializing SentriZK Engine..."):
-                # Load Tokenizer
+            # Model Selection Logic
+            if model_choice == "1":
+                model_name = 'sentrizk_research_model.keras'
+                self.model_label = "RESEARCH (Bi-LSTM)"
+                style = "bold yellow"
+            else:
+                model_name = 'sentrizk_production_model.keras'
+                self.model_label = "PRODUCTION (Conv1D)"
+                style = "bold cyan"
+
+            with console.status(f"[bold white]Initializing {self.model_label} Engine..."):
+                # 1. Load Tokenizer
                 token_path = os.path.join(self.MODELS_DIR, 'sentrizk_tokenizer.pickle')
+                if not os.path.exists(token_path):
+                    raise FileNotFoundError(f"Tokenizer not found at {token_path}")
                 with open(token_path, 'rb') as handle:
                     self.tokenizer = pickle.load(handle)
                 
-                # Load Native Keras Model (Bypasses Windows TFLite Flex Delegate Error)
-                model_path = os.path.join(self.MODELS_DIR, 'sentrizk_model.keras')
+                # 2. Load Native Keras Model (Bypasses Windows TFLite Flex Delegate Error)
+                model_path = os.path.join(self.MODELS_DIR, model_name)
+                if not os.path.exists(model_path):
+                    raise FileNotFoundError(f"Model not found at {model_path}")
                 self.model = tf.keras.models.load_model(model_path)
                 
-                # Warmup inference (Gets the TF graph ready so the first scan isn't slow)
+                # 3. Warmup inference
                 self._predict("warmup")
                 
-            console.print(Panel("[bold green]✔ System Online[/bold green]\nReady for interactive testing.", border_style="green"))
+            console.print(Panel(f"[bold green]✔ {self.model_label} Online[/bold green]\nReady for interactive testing.", border_style="green"))
             return True
             
         except Exception as e:
@@ -56,14 +72,14 @@ class SentriZKTester:
         """Main Interactive Loop"""
         console.clear()
         console.print(Panel.fit(
-            "[bold white]SentriZK Interactive Sandbox[/bold white]\n"
+            f"[bold white]SentriZK Interactive Sandbox ({self.model_label})[/bold white]\n"
             "[dim]Type any message to scan it. Type 'exit' to quit.[/dim]",
             style="blue"
         ))
 
         while True:
             # 1. Get User Input
-            console.print("\n[bold cyan]┌──(Tester)[/bold cyan]")
+            console.print(f"\n[bold cyan]┌──({self.model_label})[/bold cyan]")
             user_input = Prompt.ask("[bold cyan]└─>[/bold cyan] Enter message")
 
             if user_input.lower() in ['exit', 'quit', 'q']:
@@ -106,9 +122,19 @@ class SentriZKTester:
         content.append(f"Confidence: {percentage:.2f}%\n", style="white")
         content.append(f"Risk Level: [{bar}]", style=bar_color)
         
-        console.print(Panel(content, border_style=bar_color, title="Scan Result"))
+        console.print(Panel(content, border_style=bar_color, title=f"Scan Result ({self.model_label})"))
 
 if __name__ == "__main__":
+    console.clear()
+    console.print(Panel.fit(
+        "[bold cyan]SentriZK Machine Learning Sandbox[/bold cyan]\n"
+        "[1] Research Engine (Bi-LSTM)\n"
+        "[2] Production Engine (Conv1D)",
+        title="Engine Selector"
+    ))
+    
+    choice = Prompt.ask("Choose engine", choices=["1", "2"], default="2")
+    
     tester = SentriZKTester()
-    if tester.load_engine():
+    if tester.load_engine(choice):
         tester.start_session()

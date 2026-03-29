@@ -1,5 +1,0 @@
-https://www.kaggle.com/datasets/julian3833/jigsaw-multilingual-toxic-comment-classification
-https://www.kaggle.com/datasets/uciml/sms-spam-collection-dataset
-https://www.kaggle.com/datasets/jivfur/enron-emails
-https://github.com/AbayomiAlli/SMS-Spam-Dataset/blob/main/ExAIS_SMS%20Spam%20Dataset.zip
-https://zenodo.org/records/15235123
