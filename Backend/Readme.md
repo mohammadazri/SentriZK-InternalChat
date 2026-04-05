@@ -4,8 +4,10 @@
 
 ## 1️⃣ Prerequisites
 
-* **Node.js** (v16+ recommended)
+* **Node.js** (v18+ recommended)
 * **npm** (comes with Node.js)
+* **Supabase Account** (for PostgreSQL database)
+* **Firebase Project** (for Admin SDK and Firestore)
 * **snarkjs** (for Groth16 proving/verification)
 * **Circom compiler** (v2.x)
 
@@ -105,6 +107,32 @@ snarkjs groth16 setup login/login.r1cs build/pot12_final.ptau key_generation/log
 snarkjs zkey contribute key_generation/login_0000.zkey key_generation/login_final.zkey
 snarkjs zkey export verificationkey key_generation/login_final.zkey key_generation/login_verification_key.json
 ```
+
+---
+
+## 7️⃣ Database Setup (Supabase)
+
+SentriZK uses **Supabase PostgreSQL** for its primary data store. Follow these steps to initialize your database:
+
+1.  **Create a Supabase Project**: Go to [supabase.com](https://supabase.com/) and create a new project.
+2.  **Run SQL Schema**:
+    *   Open the **SQL Editor** in your Supabase dashboard.
+    *   Click **"New Query"**.
+    *   Open the `Backend/supabase_schema.sql` file from this repository.
+    *   Copy its entire contents and paste it into the Supabase SQL Editor.
+    *   Click **"Run"**.
+3.  **Environment Variables**:
+    *   Copy `.env.example` to `.env`.
+    *   Fill in your `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` found in **Project Settings** -> **API**.
+    *   Fill in your `ADMIN_USERNAME` and `ADMIN_PASSWORD` for the management dashboard.
+
+---
+
+## 8️⃣ Firebase Admin Setup
+
+1.  Go to your **Firebase Console** -> **Project Settings** -> **Service Accounts**.
+2.  Click **"Generate New Private Key"**.
+3.  Save the downloaded JSON file as `Backend/serviceAccountKey.json`.
 
 ---
 
