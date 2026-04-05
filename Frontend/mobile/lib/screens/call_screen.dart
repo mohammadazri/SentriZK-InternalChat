@@ -50,6 +50,9 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    // Set initial state based on whether we are starting or accepting a call
+    _callState = widget.isIncoming ? CallState.connecting : CallState.outgoing;
+    
     _initRenderers();
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1500),
@@ -58,69 +61,82 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _initRenderers() async {
-    await _localRenderer.initialize();
-    await _remoteRenderer.initialize();
+    try {
+      await _localRenderer.initialize();
+      await _remoteRenderer.initialize();
 
-    _callService.onLocalStream = (stream) {
-      setState(() {
-        _localRenderer.srcObject = stream;
-      });
-    };
+      _callService.onLocalStream = (stream) {
+        if (!mounted) return;
+        setState(() {
+          _localRenderer.srcObject = stream;
+        });
+      };
 
-    _callService.onRemoteStream = (stream) {
-      setState(() {
-        _remoteRenderer.srcObject = stream;
-      });
-    };
+      _callService.onRemoteStream = (stream) {
+        if (!mounted) return;
+        setState(() {
+          _remoteRenderer.srcObject = stream;
+        });
+      };
 
-    _callService.onStateChanged = (state) {
-      if (!mounted) return;
-      setState(() {
-        _callState = state;
-      });
+      _callService.onStateChanged = (state) {
+        if (!mounted) return;
+        setState(() {
+          _callState = state;
+        });
 
-      // ── Outgoing dial tone ──────────────────────────────────────────
-      if (state == CallState.outgoing || state == CallState.ringing) {
-        // Only start if we are the caller (not incoming)
-        if (!widget.isIncoming) {
-          SoundService().startDialTone();
+        // ── Outgoing dial tone ──────────────────────────────────────────
+        if (state == CallState.outgoing || state == CallState.ringing) {
+          if (!widget.isIncoming) {
+            SoundService().startDialTone();
+          }
+        } else {
+          SoundService().stopDialTone();
         }
+        // ───────────────────────────────────────────────────────────────
+
+        if (state == CallState.active) {
+          _startDurationTimer();
+        }
+
+        if (state == CallState.ended || state == CallState.rejected ||
+            state == CallState.missed || state == CallState.idle) {
+          _durationTimer?.cancel();
+          if (mounted) {
+            Future.delayed(const Duration(milliseconds: 800), () {
+              if (mounted) Navigator.of(context).pop();
+            });
+          }
+        }
+      };
+
+      _callService.onRingingStatusChanged = (isOnline) {
+        if (!mounted) return;
+        setState(() {
+          _isReceiverOnline = isOnline;
+          if (isOnline && _callState == CallState.outgoing) {
+            _callState = CallState.ringing;
+          }
+        });
+      };
+
+      // Start or accept call
+      if (widget.isIncoming && widget.incomingCallInfo != null && widget.incomingOfferData != null) {
+        await _callService.acceptCall(widget.incomingCallInfo!, widget.incomingOfferData!);
       } else {
-        // Call connected or ended — always stop the dial tone
-        SoundService().stopDialTone();
+        await _callService.startCall(widget.peerId, widget.callType);
       }
-      // ───────────────────────────────────────────────────────────────
-
-      if (state == CallState.active) {
-        _startDurationTimer();
+    } catch (e) {
+      debugPrint('💥 [CALL_SCREEN] Initialization error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Call failed: ${e.toString().contains('Permission') ? 'Microphone/Camera permission required' : 'Connection error'}'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+        Navigator.of(context).pop();
       }
-
-      if (state == CallState.ended || state == CallState.rejected ||
-          state == CallState.missed || state == CallState.idle) {
-        _durationTimer?.cancel();
-        if (mounted) {
-          Future.delayed(const Duration(milliseconds: 800), () {
-            if (mounted) Navigator.of(context).pop();
-          });
-        }
-      }
-    };
-
-    _callService.onRingingStatusChanged = (isOnline) {
-      if (!mounted) return;
-      setState(() {
-        _isReceiverOnline = isOnline;
-        if (isOnline && _callState == CallState.outgoing) {
-          _callState = CallState.ringing;
-        }
-      });
-    };
-
-    // Start or accept call
-    if (widget.isIncoming && widget.incomingCallInfo != null && widget.incomingOfferData != null) {
-      await _callService.acceptCall(widget.incomingCallInfo!, widget.incomingOfferData!);
-    } else {
-      await _callService.startCall(widget.peerId, widget.callType);
     }
   }
 

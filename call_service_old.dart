@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
@@ -69,7 +69,6 @@ class CallService {
   CallInfo? _currentCall;
   String? _currentUserId;
   bool _receiverOnline = false;
-  final List<RTCIceCandidate> _remoteIceBuffer = [];
 
   StreamSubscription? _callDocSub;
   StreamSubscription? _iceSub;
@@ -130,57 +129,47 @@ class CallService {
       startedAt: DateTime.now(),
     );
 
-    debugPrint('📞 [CALL_SERVICE] Starting $type call to $receiverId');
     _setState(CallState.outgoing);
 
-    try {
-      // 1. Get local media
-      _localStream = await _getUserMedia(type);
-      onLocalStream?.call(_localStream!);
+    // 1. Get local media
+    _localStream = await _getUserMedia(type);
+    onLocalStream?.call(_localStream!);
 
-      // 2. Create peer connection
-      _pc = await createPeerConnection(_rtcConfig);
-      _registerPeerCallbacks();
+    // 2. Create peer connection
+    _pc = await createPeerConnection(_rtcConfig);
+    _registerPeerCallbacks();
 
-      // 3. Add tracks
-      for (final track in _localStream!.getTracks()) {
-        await _pc!.addTrack(track, _localStream!);
-      }
-
-      // 4. Create offer
-      final offer = await _pc!.createOffer({
-        'offerToReceiveAudio': true,
-        'offerToReceiveVideo': type == CallType.video,
-      });
-      await _pc!.setLocalDescription(offer);
-
-      // 5. Write call document to Firestore
-      await _firestore.collection('calls').doc(callId).set({
-        'callerId': callerId,
-        'receiverId': receiverId,
-        'type': type.name,
-        'status': 'outgoing',
-        'offer': {'type': offer.type, 'sdp': offer.sdp},
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      // 6. Listen for answer & remote ICE
-      _listenForCallDoc(callId);
-      _listenForRemoteIce(callId, receiverId);
-
-      // 7. Check if receiver is online → update "Ringing" vs "Calling"
-      _watchReceiverStatus(receiverId);
-
-      // 8. Auto-timeout after 45 seconds → missed call
-      _startMissedCallTimer();
-      
-      debugPrint('✅ [CALL_SERVICE] Offer sent and listeners started.');
-    } catch (e) {
-      debugPrint('💥 [CALL_SERVICE] Error starting call: $e');
-      _setState(CallState.ended);
-      await _cleanup();
-      rethrow;
+    // 3. Add tracks
+    for (final track in _localStream!.getTracks()) {
+      await _pc!.addTrack(track, _localStream!);
     }
+
+    // 4. Create offer
+    final offer = await _pc!.createOffer({
+      'offerToReceiveAudio': true,
+      'offerToReceiveVideo': type == CallType.video,
+    });
+    await _pc!.setLocalDescription(offer);
+
+    // 5. Write call document to Firestore (plain SDP — secured by Firestore rules + WebRTC DTLS)
+    await _firestore.collection('calls').doc(callId).set({
+      'callerId': callerId,
+      'receiverId': receiverId,
+      'type': type.name,
+      'status': 'outgoing',
+      'offer': {'type': offer.type, 'sdp': offer.sdp},
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    // 6. Listen for answer & remote ICE
+    _listenForCallDoc(callId);
+    _listenForRemoteIce(callId, receiverId);
+
+    // 7. Check if receiver is online → update "Ringing" vs "Calling"
+    _watchReceiverStatus(receiverId);
+
+    // 8. Auto-timeout after 45 seconds → missed call
+    _startMissedCallTimer();
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -192,50 +181,35 @@ class CallService {
     _currentCall = call;
     _setState(CallState.connecting);
 
-    debugPrint('📞 [CALL_SERVICE] Accepting call from ${call.callerId}');
+    // 1. Get local media
+    _localStream = await _getUserMedia(call.type);
+    onLocalStream?.call(_localStream!);
 
-    try {
-      // 1. Get local media
-      _localStream = await _getUserMedia(call.type);
-      onLocalStream?.call(_localStream!);
+    // 2. Create peer connection
+    _pc = await createPeerConnection(_rtcConfig);
+    _registerPeerCallbacks();
 
-      // 2. Create peer connection
-      _pc = await createPeerConnection(_rtcConfig);
-      _registerPeerCallbacks();
-
-      for (final track in _localStream!.getTracks()) {
-        await _pc!.addTrack(track, _localStream!);
-      }
-
-      // 3. Set remote description (the offer)
-      debugPrint('📡 [CALL_SERVICE] Setting remote offer...');
-      await _pc!.setRemoteDescription(
-        RTCSessionDescription(offerData['sdp'], offerData['type']),
-      );
-
-      // 4. Create answer
-      final answer = await _pc!.createAnswer();
-      await _pc!.setLocalDescription(answer);
-
-      // 5. Write answer to Firestore
-      await _firestore.collection('calls').doc(call.callId).update({
-        'status': 'active',
-        'answer': {'type': answer.type, 'sdp': answer.sdp},
-      });
-
-      // 6. Listen for remote ICE
-      _listenForRemoteIce(call.callId, call.callerId);
-      
-      // 7. Process any buffered ICE candidates that might have arrived early
-      await _processBufferedIceCandidates();
-      
-      debugPrint('✅ [CALL_SERVICE] Answer sent and connection setup.');
-    } catch (e) {
-      debugPrint('💥 [CALL_SERVICE] Error accepting call: $e');
-      _setState(CallState.ended);
-      await _cleanup();
-      rethrow;
+    for (final track in _localStream!.getTracks()) {
+      await _pc!.addTrack(track, _localStream!);
     }
+
+    // 3. Set remote description (the offer)
+    await _pc!.setRemoteDescription(
+      RTCSessionDescription(offerData['sdp'], offerData['type']),
+    );
+
+    // 4. Create answer
+    final answer = await _pc!.createAnswer();
+    await _pc!.setLocalDescription(answer);
+
+    // 5. Write answer to Firestore
+    await _firestore.collection('calls').doc(call.callId).update({
+      'status': 'active',
+      'answer': {'type': answer.type, 'sdp': answer.sdp},
+    });
+
+    // 6. Listen for remote ICE
+    _listenForRemoteIce(call.callId, call.callerId);
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -302,12 +276,6 @@ class CallService {
   void _registerPeerCallbacks() {
     _pc!.onIceCandidate = (candidate) async {
       if (_currentCall == null) return;
-      if (candidate == null) {
-        debugPrint('📡 [CALL_SERVICE] ICE gathering complete (null candidate).');
-        return;
-      }
-      
-      debugPrint('📡 [CALL_SERVICE] Local ICE candidate found: ${candidate.candidate?.substring(0, 20)}...');
       await _firestore
           .collection('calls')
           .doc(_currentCall!.callId)
@@ -379,9 +347,8 @@ class CallService {
           // Track the call continuously to catch if the caller hangs up
           _listenForCallDoc(change.doc.id);
         } else if (change.type == DocumentChangeType.removed) {
-          // If the caller hangs up before we answer, it leaves the "outgoing/ringing" query
-          if (_currentCall?.callId == change.doc.id && _state == CallState.incoming) {
-            debugPrint('📡 [CALL_SERVICE] Caller hung up before answer.');
+          // If the caller hangs up, it leaves the "outgoing/ringing" state query
+          if (_currentCall?.callId == change.doc.id) {
             _setState(CallState.missed);
             _cleanup();
           }
@@ -413,24 +380,12 @@ class CallService {
       if (status == 'active' && data['answer'] != null && _pc != null) {
         final answerData = data['answer'] as Map<String, dynamic>;
         final remoteDesc = await _pc!.getRemoteDescription();
-        
         if (remoteDesc == null) {
-          debugPrint('📡 [CALL_SERVICE] Received Answer. Setting remote description...');
           _missedCallTimer?.cancel(); // They answered, cancel timeout
-          
-          try {
-            await _pc!.setRemoteDescription(
-              RTCSessionDescription(answerData['sdp'], answerData['type']),
-            );
-            debugPrint('✅ [CALL_SERVICE] Remote description set successfully.');
-            _setState(CallState.connecting);
-            
-            // Process any buffered ICE candidates that arrived before the answer
-            await _processBufferedIceCandidates();
-          } catch (e) {
-            debugPrint('💥 [CALL_SERVICE] Error setting remote description: $e');
-            endCall();
-          }
+          await _pc!.setRemoteDescription(
+            RTCSessionDescription(answerData['sdp'], answerData['type']),
+          );
+          _setState(CallState.connecting);
         }
       }
 
@@ -470,36 +425,11 @@ class CallService {
               candidateMap['sdpMid'],
               candidateMap['sdpMLineIndex'],
             );
-
-            if (_pc != null) {
-              final remoteDesc = await _pc!.getRemoteDescription();
-              if (remoteDesc != null) {
-                debugPrint('📡 [CALL_SERVICE] Adding remote ICE candidate: ${candidate.candidate}');
-                await _pc!.addCandidate(candidate);
-              } else {
-                debugPrint('⏳ [CALL_SERVICE] Buffering ICE candidate (remote description not set)');
-                _remoteIceBuffer.add(candidate);
-              }
-            }
+            await _pc?.addCandidate(candidate);
           }
         }
       }
     });
-  }
-
-  Future<void> _processBufferedIceCandidates() async {
-    if (_pc == null || _remoteIceBuffer.isEmpty) return;
-    
-    debugPrint('📡 [CALL_SERVICE] Applying ${_remoteIceBuffer.length} buffered ICE candidates...');
-    for (final candidate in _remoteIceBuffer) {
-      try {
-        await _pc!.addCandidate(candidate);
-        debugPrint('📡 [CALL_SERVICE] Applied buffered ICE candidate: ${candidate.candidate}');
-      } catch (e) {
-        debugPrint('💥 [CALL_SERVICE] Error applying buffered ICE candidate: $e');
-      }
-    }
-    _remoteIceBuffer.clear();
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -581,7 +511,6 @@ class CallService {
     await _pc?.close();
     _pc = null;
 
-    _remoteIceBuffer.clear();
     _currentCall = null;
     _setState(CallState.idle);
   }
