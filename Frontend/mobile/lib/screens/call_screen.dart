@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import '../services/call_service.dart';
@@ -11,6 +12,7 @@ class CallScreen extends StatefulWidget {
   final bool isIncoming;
   final CallInfo? incomingCallInfo;
   final Map<String, dynamic>? incomingOfferData;
+  final String? peerAvatarUrl;
 
   const CallScreen({
     super.key,
@@ -21,6 +23,7 @@ class CallScreen extends StatefulWidget {
     this.isIncoming = false,
     this.incomingCallInfo,
     this.incomingOfferData,
+    this.peerAvatarUrl,
   });
 
   @override
@@ -124,6 +127,19 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
     return '$m:$s';
   }
 
+  ImageProvider? _getAvatarProvider() {
+    if (widget.peerAvatarUrl == null || widget.peerAvatarUrl!.isEmpty) return null;
+    if (widget.peerAvatarUrl!.startsWith('data:image')) {
+      try {
+        final base64String = widget.peerAvatarUrl!.split(',').last;
+        return MemoryImage(base64Decode(base64String));
+      } catch (_) {
+        return null;
+      }
+    }
+    return NetworkImage(widget.peerAvatarUrl!);
+  }
+
   @override
   void dispose() {
     _pulseController.dispose();
@@ -189,15 +205,19 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
                             ),
                           ],
                         ),
-                        child: Center(
-                          child: Text(
-                            _getInitials(widget.peerName),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 40,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                        child: ClipOval(
+                          child: _getAvatarProvider() != null
+                            ? Image(image: _getAvatarProvider()!, fit: BoxFit.cover)
+                            : Center(
+                                child: Text(
+                                  _getInitials(widget.peerName),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 40,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
                         ),
                       ),
                     ),

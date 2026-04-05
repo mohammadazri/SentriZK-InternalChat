@@ -48,6 +48,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Stream<List<LocalMessage>>? _localMessagesStream;
   Timer? _typingTimer;
   bool _isTyping = false;
+  String? _peerAvatarUrl;
 
   @override
   void initState() {
@@ -151,6 +152,7 @@ class _ChatScreenState extends State<ChatScreen> {
             currentUserId: widget.username,
             peerId: widget.peerId,
             peerName: widget.peerName,
+            peerAvatarUrl: _peerAvatarUrl,
             callType: type,
           ),
         ),
@@ -212,6 +214,12 @@ class _ChatScreenState extends State<ChatScreen> {
 
               final avatarUrl = peerData['avatarUrl'] as String?;
               final isTypingToMe = peerData['typingTo'] == widget.username;
+
+              if (_peerAvatarUrl != avatarUrl) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) _peerAvatarUrl = avatarUrl;
+                });
+              }
 
               ImageProvider? avatarImg;
               if (avatarUrl != null && avatarUrl.isNotEmpty) {

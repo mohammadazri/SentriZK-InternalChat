@@ -343,6 +343,15 @@ class CallService {
           _firestore.collection('calls').doc(change.doc.id).update({
             'status': 'ringing',
           }).catchError((_) {});
+          
+          // Track the call continuously to catch if the caller hangs up
+          _listenForCallDoc(change.doc.id);
+        } else if (change.type == DocumentChangeType.removed) {
+          // If the caller hangs up, it leaves the "outgoing/ringing" state query
+          if (_currentCall?.callId == change.doc.id) {
+            _setState(CallState.missed);
+            _cleanup();
+          }
         }
       }
     });

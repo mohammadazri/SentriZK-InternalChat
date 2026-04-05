@@ -130,15 +130,32 @@ class _UserListScreenState extends State<UserListScreen>
           .collection('calls')
           .doc(callInfo.callId)
           .get()
-          .then((doc) {
+          .then((doc) async {
         if (doc.exists && mounted) {
           final offerData = doc.data()!['offer'] as Map<String, dynamic>;
+          
+          // Fetch Caller Info for UI
+          String peerName = callInfo.callerId;
+          String? peerAvatarUrl;
+          try {
+            final userDoc = await FirebaseFirestore.instance.collection('users').doc(callInfo.callerId).get();
+            if (userDoc.exists && userDoc.data() != null) {
+               final userData = userDoc.data()!;
+               peerName = userData['displayName'] ?? userData['username'] ?? callInfo.callerId;
+               peerAvatarUrl = userData['avatarUrl'];
+            }
+          } catch(e) {}
+
+          if (!mounted) return;
+
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => IncomingCallOverlay(
                 callInfo: callInfo,
                 offerData: offerData,
+                peerName: peerName,
+                peerAvatarUrl: peerAvatarUrl,
               ),
             ),
           );

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../services/call_service.dart';
 import '../screens/call_screen.dart';
@@ -7,11 +8,15 @@ import '../screens/call_screen.dart';
 class IncomingCallOverlay extends StatefulWidget {
   final CallInfo callInfo;
   final Map<String, dynamic> offerData;
+  final String peerName;
+  final String? peerAvatarUrl;
 
   const IncomingCallOverlay({
     super.key,
     required this.callInfo,
     required this.offerData,
+    required this.peerName,
+    this.peerAvatarUrl,
   });
 
   @override
@@ -29,6 +34,14 @@ class _IncomingCallOverlayState extends State<IncomingCallOverlay>
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     )..repeat(reverse: true);
+
+    // Close the overlay if the caller hangs up before we answer
+    CallService().onStateChanged = (state) {
+      if (!mounted) return;
+      if (state == CallState.missed || state == CallState.ended || state == CallState.idle) {
+        Navigator.of(context).pop();
+      }
+    };
   }
 
   @override
@@ -43,10 +56,23 @@ class _IncomingCallOverlayState extends State<IncomingCallOverlay>
     return name.isNotEmpty ? name[0].toUpperCase() : '?';
   }
 
+  ImageProvider? _getAvatarProvider() {
+    if (widget.peerAvatarUrl == null || widget.peerAvatarUrl!.isEmpty) return null;
+    if (widget.peerAvatarUrl!.startsWith('data:image')) {
+      try {
+        final base64String = widget.peerAvatarUrl!.split(',').last;
+        return MemoryImage(base64Decode(base64String));
+      } catch (_) {
+        return null;
+      }
+    }
+    return NetworkImage(widget.peerAvatarUrl!);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isVideo = widget.callInfo.type == CallType.video;
-    final callerName = widget.callInfo.callerId;
+    final callerName = widget.peerName;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
@@ -115,15 +141,19 @@ class _IncomingCallOverlayState extends State<IncomingCallOverlay>
                       ),
                     ],
                   ),
-                  child: Center(
-                    child: Text(
-                      _getInitials(callerName),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 48,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                  child: ClipOval(
+                    child: _getAvatarProvider() != null
+                        ? Image(image: _getAvatarProvider()!, fit: BoxFit.cover)
+                        : Center(
+                            child: Text(
+                              _getInitials(callerName),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 48,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -182,7 +212,8 @@ class _IncomingCallOverlayState extends State<IncomingCallOverlay>
                             builder: (_) => CallScreen(
                               currentUserId: widget.callInfo.receiverId,
                               peerId: widget.callInfo.callerId,
-                              peerName: widget.callInfo.callerId,
+                              peerName: widget.peerName,
+                              peerAvatarUrl: widget.peerAvatarUrl,
                               callType: widget.callInfo.type,
                               isIncoming: true,
                               incomingCallInfo: widget.callInfo,
