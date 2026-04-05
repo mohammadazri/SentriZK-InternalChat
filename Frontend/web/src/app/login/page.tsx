@@ -213,9 +213,13 @@ export default function LoginPage() {
         }
       }, 500)
 
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error(err);
-      setError(err instanceof Error ? err.message : String(err));
+      let errMsg = err instanceof Error ? err.message : String(err);
+      if (err.response?.data?.error) {
+        errMsg = err.response.data.error;
+      }
+      setError(errMsg);
       setCurrentStep(2); // Go back to form
     } finally {
       setLoading(false);

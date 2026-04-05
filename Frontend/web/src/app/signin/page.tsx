@@ -77,8 +77,12 @@ export default function SignInPage() {
       if (!resp.token) throw new Error("Login failed: no token received");
 
       setMessage("✅ Login successful. You may now close this tab.");
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
+    } catch (err: any) {
+      let errMsg = err instanceof Error ? err.message : String(err);
+      if (err.response?.data?.error) {
+        errMsg = err.response.data.error;
+      }
+      setError(errMsg);
     } finally {
       setLoading(false);
     }

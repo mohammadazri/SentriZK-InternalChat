@@ -183,8 +183,12 @@ export default function RegisterPage() {
           document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;text-align:center;"><div><h2>✅ Registration Complete</h2><p>You can now close this tab and return to the app.</p></div></div>';
         }
       }, 500)
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
+    } catch (err: any) {
+      let errMsg = err instanceof Error ? err.message : String(err);
+      if (err.response?.data?.error) {
+        errMsg = err.response.data.error;
+      }
+      setError(errMsg);
       setCurrentStep(2); // Go back to form
     } finally {
       setBusy(false);

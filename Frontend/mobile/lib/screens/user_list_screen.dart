@@ -38,7 +38,7 @@ class _UserListScreenState extends State<UserListScreen>
   Map<String, String> _drafts = {};
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
-  
+
   Isar? _isar;
   StreamSubscription? _globalMessageSub;
   StreamSubscription? _receiptSub;
@@ -65,15 +65,15 @@ class _UserListScreenState extends State<UserListScreen>
         .doc(widget.currentUserId)
         .snapshots()
         .listen((snapshot) {
-      if (!mounted) return;
-      if (!snapshot.exists) return;
-      final data = snapshot.data();
-      if (data == null) return;
-      final status = data['accountStatus'] as String?;
-      if (status == 'held' || status == 'revoked') {
-        _forceLogout(status!);
-      }
-    });
+          if (!mounted) return;
+          if (!snapshot.exists) return;
+          final data = snapshot.data();
+          if (data == null) return;
+          final status = data['accountStatus'] as String?;
+          if (status == 'held' || status == 'revoked') {
+            _forceLogout(status!);
+          }
+        });
   }
 
   Future<void> _forceLogout(String reason) async {
@@ -87,8 +87,13 @@ class _UserListScreenState extends State<UserListScreen>
         ? 'Your account has been suspended by an administrator.\nContact support for assistance.'
         : 'Your account has been permanently revoked by an administrator.';
 
-    // Wipe all local identity credentials securely
-    await _authService.clearAccountData();
+    if (reason == 'revoked') {
+      // Wipe all local identity credentials securely
+      await _authService.clearAccountData();
+    } else {
+      // Only clear active session, leave info intact on phone so they can login later upon reactivation
+      await _authService.logout();
+    }
 
     if (!mounted) return;
 
@@ -133,36 +138,42 @@ class _UserListScreenState extends State<UserListScreen>
           .doc(callInfo.callId)
           .get()
           .then((doc) async {
-        if (doc.exists && mounted) {
-          final offerData = doc.data()!['offer'] as Map<String, dynamic>;
-          
-          // Fetch Caller Info for UI
-          String peerName = callInfo.callerId;
-          String? peerAvatarUrl;
-          try {
-            final userDoc = await FirebaseFirestore.instance.collection('users').doc(callInfo.callerId).get();
-            if (userDoc.exists && userDoc.data() != null) {
-               final userData = userDoc.data()!;
-               peerName = userData['displayName'] ?? userData['username'] ?? callInfo.callerId;
-               peerAvatarUrl = userData['avatarUrl'];
+            if (doc.exists && mounted) {
+              final offerData = doc.data()!['offer'] as Map<String, dynamic>;
+
+              // Fetch Caller Info for UI
+              String peerName = callInfo.callerId;
+              String? peerAvatarUrl;
+              try {
+                final userDoc = await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(callInfo.callerId)
+                    .get();
+                if (userDoc.exists && userDoc.data() != null) {
+                  final userData = userDoc.data()!;
+                  peerName =
+                      userData['displayName'] ??
+                      userData['username'] ??
+                      callInfo.callerId;
+                  peerAvatarUrl = userData['avatarUrl'];
+                }
+              } catch (e) {}
+
+              if (!mounted) return;
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => IncomingCallOverlay(
+                    callInfo: callInfo,
+                    offerData: offerData,
+                    peerName: peerName,
+                    peerAvatarUrl: peerAvatarUrl,
+                  ),
+                ),
+              );
             }
-          } catch(e) {}
-
-          if (!mounted) return;
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => IncomingCallOverlay(
-                callInfo: callInfo,
-                offerData: offerData,
-                peerName: peerName,
-                peerAvatarUrl: peerAvatarUrl,
-              ),
-            ),
-          );
-        }
-      });
+          });
     };
   }
 
@@ -170,7 +181,7 @@ class _UserListScreenState extends State<UserListScreen>
     final prefs = await SharedPreferences.getInstance();
     final keys = prefs.getKeys();
     final newDrafts = <String, String>{};
-    
+
     for (var key in keys) {
       if (key.startsWith('draft_${widget.currentUserId}_')) {
         final peerId = key.replaceAll('draft_${widget.currentUserId}_', '');
@@ -180,7 +191,7 @@ class _UserListScreenState extends State<UserListScreen>
         }
       }
     }
-    
+
     if (mounted) {
       setState(() {
         _drafts = newDrafts;
@@ -192,7 +203,7 @@ class _UserListScreenState extends State<UserListScreen>
     final isar = await MessageSecurityService.getInstance();
     if (!mounted) return;
     _isar = isar;
-    
+
     // Initial load of last messages
     await _updateLastMessages();
 
@@ -204,77 +215,90 @@ class _UserListScreenState extends State<UserListScreen>
     // Start listening globally for all incoming messages
     _globalMessageSub = _chatService
         .getAllIncomingMessages(widget.currentUserId)
-        .listen((messages) async {
-      
-      if (messages.isNotEmpty) {
-         SoundService().playNotification();
-      }
-      
-      // ... same processing logic ...
-      for (final msg in messages) {
-        await isar.writeTxn(() async {
-          await isar.localMessages.put(
-            LocalMessage()
-              ..firebaseId = msg.id
-              ..content = msg.content
-              ..senderId = msg.senderId
-              ..receiverId = msg.receiverId
-              ..timestamp = msg.timestamp
-              ..attachmentUrl = msg.attachmentUrl
-              ..status = 'delivered'
-              ..threatScore = msg.threatScore,
-          );
-        });
-        await _chatService.sendReceipt(msg.senderId, msg.id, 'delivered');
-        await _chatService.deleteMessageAfterLocalSave(
-          widget.currentUserId,
-          msg.id,
+        .listen(
+          (messages) async {
+            if (messages.isNotEmpty) {
+              SoundService().playNotification();
+            }
+
+            // ... same processing logic ...
+            for (final msg in messages) {
+              await isar.writeTxn(() async {
+                await isar.localMessages.put(
+                  LocalMessage()
+                    ..firebaseId = msg.id
+                    ..content = msg.content
+                    ..senderId = msg.senderId
+                    ..receiverId = msg.receiverId
+                    ..timestamp = msg.timestamp
+                    ..attachmentUrl = msg.attachmentUrl
+                    ..status = 'delivered'
+                    ..threatScore = msg.threatScore,
+                );
+              });
+              await _chatService.sendReceipt(msg.senderId, msg.id, 'delivered');
+              await _chatService.deleteMessageAfterLocalSave(
+                widget.currentUserId,
+                msg.id,
+              );
+            }
+          },
+          onError: (e) {
+            debugPrint('🔥 [SYNC] Global message listener error: $e');
+          },
         );
-      }
-    }, onError: (e) {
-      debugPrint('🔥 [SYNC] Global message listener error: $e');
-    });
 
     // Start listening globally for delivery/read receipts
     _receiptSub = _chatService
         .listenForReceipts(widget.currentUserId)
-        .listen((receipts) async {
-      for (final receipt in receipts) {
-        final messageId = receipt['messageId'] as String;
-        final status = receipt['status'] as String;
+        .listen(
+          (receipts) async {
+            for (final receipt in receipts) {
+              final messageId = receipt['messageId'] as String;
+              final status = receipt['status'] as String;
 
-        await isar.writeTxn(() async {
-          final localMessage = await isar.localMessages
-              .filter()
-              .firebaseIdEqualTo(messageId)
-              .findFirst(); 
+              await isar.writeTxn(() async {
+                final localMessage = await isar.localMessages
+                    .filter()
+                    .firebaseIdEqualTo(messageId)
+                    .findFirst();
 
-          if (localMessage != null) {
-            if (localMessage.status == 'read') return;
-            localMessage.status = status;
-            await isar.localMessages.put(localMessage);
-          }
-        });
-        await _chatService.deleteReceiptAfterLocalSave(widget.currentUserId, messageId);
-      }
-    }, onError: (e) {
-      debugPrint('🔥 [SYNC] Global receipt listener error: $e');
-    });
+                if (localMessage != null) {
+                  if (localMessage.status == 'read') return;
+                  localMessage.status = status;
+                  await isar.localMessages.put(localMessage);
+                }
+              });
+              await _chatService.deleteReceiptAfterLocalSave(
+                widget.currentUserId,
+                messageId,
+              );
+            }
+          },
+          onError: (e) {
+            debugPrint('🔥 [SYNC] Global receipt listener error: $e');
+          },
+        );
   }
 
   Future<void> _updateLastMessages() async {
     if (_isar == null) return;
-    
-    final allMessages = await _isar!.localMessages.where().sortByTimestampDesc().findAll();
+
+    final allMessages = await _isar!.localMessages
+        .where()
+        .sortByTimestampDesc()
+        .findAll();
     final Map<String, LocalMessage> lastMsgs = {};
-    
+
     for (var msg in allMessages) {
-      final peerId = msg.senderId == widget.currentUserId ? msg.receiverId : msg.senderId;
+      final peerId = msg.senderId == widget.currentUserId
+          ? msg.receiverId
+          : msg.senderId;
       if (!lastMsgs.containsKey(peerId)) {
         lastMsgs[peerId] = msg;
       }
     }
-    
+
     if (mounted) {
       setState(() {
         _lastMessages = lastMsgs;
@@ -323,7 +347,12 @@ class _UserListScreenState extends State<UserListScreen>
         children: [
           // AppBar and Search Field (Extracted from StreamBuilder)
           Container(
-            padding: const EdgeInsets.only(top: 48, left: 16, right: 16, bottom: 16),
+            padding: const EdgeInsets.only(
+              top: 48,
+              left: 16,
+              right: 16,
+              bottom: 16,
+            ),
             color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.95),
             child: Column(
               children: [
@@ -347,7 +376,9 @@ class _UserListScreenState extends State<UserListScreen>
                     IconButton(
                       icon: Icon(
                         Icons.settings_outlined,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.7),
                       ),
                       tooltip: 'Settings',
                       onPressed: () {
@@ -373,174 +404,201 @@ class _UserListScreenState extends State<UserListScreen>
           ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('users')
-            .snapshots()
-            .handleError((e) {
-          debugPrint('🔒 [USER_LIST] Ignoring users permission-denied during logout.');
-        }),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            // If the user has intentionally signed out, don't flash an error screen while routing
-            if (FirebaseAuth.instance.currentUser == null) {
-              return const Center(child: CircularProgressIndicator());
-            }
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .snapshots()
+                  .handleError((e) {
+                    debugPrint(
+                      '🔒 [USER_LIST] Ignoring users permission-denied during logout.',
+                    );
+                  }),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  // If the user has intentionally signed out, don't flash an error screen while routing
+                  if (FirebaseAuth.instance.currentUser == null) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.lock_person, size: 48, color: Colors.orangeAccent),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Access Restricted: ${snapshot.error}',
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-                      textAlign: TextAlign.center,
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.lock_person,
+                            size: 48,
+                            color: Colors.orangeAccent,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Access Restricted: ${snapshot.error}',
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
-              ),
-            );
-          }
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+                  );
+                }
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-          final docs = snapshot.data?.docs ?? [];
-          final users = docs
-              .map((d) => d.data() as Map<String, dynamic>)
-              .where((u) => u['id'] != widget.currentUserId)
-              .toList();
+                final docs = snapshot.data?.docs ?? [];
+                final users = docs
+                    .map((d) => d.data() as Map<String, dynamic>)
+                    .where((u) => u['id'] != widget.currentUserId)
+                    .toList();
 
-          final onlineCount = users
-              .where((u) => u['activityStatus'] == 'Online')
-              .length;
+                final onlineCount = users
+                    .where((u) => u['activityStatus'] == 'Online')
+                    .length;
 
-          final filtered = users.where((u) {
-            final search = _searchQuery.trim().toLowerCase();
-            final hasHistory = _lastMessages.containsKey(u['id']) || _drafts.containsKey(u['id']);
+                final filtered = users.where((u) {
+                  final search = _searchQuery.trim().toLowerCase();
+                  final hasHistory =
+                      _lastMessages.containsKey(u['id']) ||
+                      _drafts.containsKey(u['id']);
 
-            if (search.isEmpty) {
-              return hasHistory;
-            }
+                  if (search.isEmpty) {
+                    return hasHistory;
+                  }
 
-            // 🔒 Search by username only — username is the ZK identity
-            // (the Firebase document ID is the username, e.g. "azri", "alice")
-            // displayName is cosmetic — teammates should be found by their real identity.
-            final username = (u['username'] ?? u['id'] ?? '')
-                .toString()
-                .toLowerCase();
+                  // 🔒 Search by username only — username is the ZK identity
+                  // (the Firebase document ID is the username, e.g. "azri", "alice")
+                  // displayName is cosmetic — teammates should be found by their real identity.
+                  final username = (u['username'] ?? u['id'] ?? '')
+                      .toString()
+                      .toLowerCase();
 
-            return username.contains(search);
-          }).toList();
+                  return username.contains(search);
+                }).toList();
 
-          // WhatsApp Style: Sort by last message timestamp (most recent first)
-          filtered.sort((a, b) {
-            final lastA = _lastMessages[a['id']]?.timestamp;
-            final lastB = _lastMessages[b['id']]?.timestamp;
-            if (lastA == null && lastB == null) return 0;
-            if (lastA == null) return 1; // Put new/empty chats at bottom
-            if (lastB == null) return -1;
-            return lastB.compareTo(lastA);
-          });
+                // WhatsApp Style: Sort by last message timestamp (most recent first)
+                filtered.sort((a, b) {
+                  final lastA = _lastMessages[a['id']]?.timestamp;
+                  final lastB = _lastMessages[b['id']]?.timestamp;
+                  if (lastA == null && lastB == null) return 0;
+                  if (lastA == null) return 1; // Put new/empty chats at bottom
+                  if (lastB == null) return -1;
+                  return lastB.compareTo(lastA);
+                });
 
-          return CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              // User List
-              if (filtered.isEmpty)
-                SliverFillRemaining(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.inbox_outlined, size: 64, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No messages found',
-                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 16),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final user = filtered[index];
-                        final isOnline = user['activityStatus'] == 'Online';
-                        // Prioritize displayName, fallback to username
-                        final displayName =
-                            user['displayName'] ?? user['username'] ?? user['id'] ?? '';
-                        final cryptoUsername = user['username'] ?? '';
-                        
-                        final initials = displayName.isNotEmpty
-                            ? displayName
-                                  .trim()
-                                  .split(' ')
-                                  .map((e) => e.isNotEmpty ? e[0] : '')
-                                  .join()
-                                  .toUpperCase()
-                            : '?';
-                        final draftText = _drafts[user['id']];
-                        final isTyping = user['typingTo'] == widget.currentUserId;
-
-                        final lastMsg = _lastMessages[user['id']];
-                        final timeString = lastMsg != null 
-                            ? TimeUtils.formatChatTime(lastMsg.timestamp)
-                            : '';
-                        final snippet = isTyping 
-                            ? 'typing...' 
-                            : (draftText != null ? 'Draft: $draftText' : (lastMsg?.content ?? ''));
-
-                        return _UserRow(
-                          name: displayName,
-                          username: cryptoUsername,
-                          status: isOnline ? 'Online' : 'Offline',
-                          isOnline: isOnline,
-                          initials: initials,
-                          avatarUrl: user['avatarUrl'] as String?,
-                          draft: draftText,
-                          isTyping: isTyping,
-                          time: timeString,
-                          lastMessage: snippet,
-                          onTap: () async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ChatScreen(
-                                  username: widget.currentUserId,
-                                  peerId: user['id'],
-                                  peerName: displayName,
+                return CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    // User List
+                    if (filtered.isEmpty)
+                      SliverFillRemaining(
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.inbox_outlined,
+                                size: 64,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.2),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No messages found',
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.7),
+                                  fontSize: 16,
                                 ),
                               ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final user = filtered[index];
+                            final isOnline = user['activityStatus'] == 'Online';
+                            // Prioritize displayName, fallback to username
+                            final displayName =
+                                user['displayName'] ??
+                                user['username'] ??
+                                user['id'] ??
+                                '';
+                            final cryptoUsername = user['username'] ?? '';
+
+                            final initials = displayName.isNotEmpty
+                                ? displayName
+                                      .trim()
+                                      .split(' ')
+                                      .map((e) => e.isNotEmpty ? e[0] : '')
+                                      .join()
+                                      .toUpperCase()
+                                : '?';
+                            final draftText = _drafts[user['id']];
+                            final isTyping =
+                                user['typingTo'] == widget.currentUserId;
+
+                            final lastMsg = _lastMessages[user['id']];
+                            final timeString = lastMsg != null
+                                ? TimeUtils.formatChatTime(lastMsg.timestamp)
+                                : '';
+                            final snippet = isTyping
+                                ? 'typing...'
+                                : (draftText != null
+                                      ? 'Draft: $draftText'
+                                      : (lastMsg?.content ?? ''));
+
+                            return _UserRow(
+                              name: displayName,
+                              username: cryptoUsername,
+                              status: isOnline ? 'Online' : 'Offline',
+                              isOnline: isOnline,
+                              initials: initials,
+                              avatarUrl: user['avatarUrl'] as String?,
+                              draft: draftText,
+                              isTyping: isTyping,
+                              time: timeString,
+                              lastMessage: snippet,
+                              onTap: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ChatScreen(
+                                      username: widget.currentUserId,
+                                      peerId: user['id'],
+                                      peerName: displayName,
+                                    ),
+                                  ),
+                                );
+                                // Refresh drafts when returning from ChatScreen
+                                _loadDrafts();
+                              },
                             );
-                            // Refresh drafts when returning from ChatScreen
-                            _loadDrafts();
-                          },
-                        );
-                      },
-                      childCount: filtered.length,
-                    ),
-                  ),
-                ),
-            ],
-          );
-        },
-      ),
+                          }, childCount: filtered.length),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
           ),
         ],
       ),
     );
   }
 }
-
-
 
 class _SearchField extends StatelessWidget {
   final TextEditingController controller;
@@ -554,18 +612,32 @@ class _SearchField extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05)),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+        ),
       ),
       child: TextField(
         controller: controller,
         onChanged: onChanged,
-        style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16),
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontSize: 16,
+        ),
         decoration: InputDecoration(
           hintText: 'Search by username',
-          hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-          prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), size: 20),
+          hintStyle: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+          ),
+          prefixIcon: Icon(
+            Icons.search,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            size: 20,
+          ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
         ),
       ),
     );
@@ -630,7 +702,9 @@ class _UserRow extends StatelessWidget {
                   backgroundColor: const Color(0xFF2563EB),
                   child: _getAvatarProvider() == null
                       ? Text(
-                          initials.length > 2 ? initials.substring(0, 2) : initials,
+                          initials.length > 2
+                              ? initials.substring(0, 2)
+                              : initials,
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
@@ -646,10 +720,14 @@ class _UserRow extends StatelessWidget {
                     height: 14,
                     width: 14,
                     decoration: BoxDecoration(
-                      color: isOnline ? const Color(0xFF10B981) : const Color(0xFF475569), // Emerald or Slate
+                      color: isOnline
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFF475569), // Emerald or Slate
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Theme.of(context).scaffoldBackgroundColor, // Match background color for cutout effect
+                        color: Theme.of(
+                          context,
+                        ).scaffoldBackgroundColor, // Match background color for cutout effect
                         width: 2.5,
                       ),
                     ),
@@ -682,7 +760,9 @@ class _UserRow extends StatelessWidget {
                         Text(
                           time,
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.4),
                             fontSize: 12,
                           ),
                         ),
@@ -698,10 +778,13 @@ class _UserRow extends StatelessWidget {
                             color: isTyping
                                 ? const Color(0xFF10B981)
                                 : (draft != null
-                                    ? const Color(0xFFFACC15)
-                                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                                      ? const Color(0xFFFACC15)
+                                      : Theme.of(context).colorScheme.onSurface
+                                            .withOpacity(0.5)),
                             fontSize: 14,
-                            fontWeight: (isTyping || draft != null) ? FontWeight.w600 : FontWeight.normal,
+                            fontWeight: (isTyping || draft != null)
+                                ? FontWeight.w600
+                                : FontWeight.normal,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
