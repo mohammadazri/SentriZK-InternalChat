@@ -130,14 +130,20 @@ class _AuthScreenState extends State<AuthScreen>
       });
     } catch (e) {
       debugPrint('Error navigating to dashboard: $e');
-      // If permission denied, we might need to show an error or try a different ID
+      // If permission denied or user deleted, wipe local session to break the loop!
       if (mounted) {
+        await _authService.logout();
+        setState(() {
+          _isLoggedIn = false;
+          _hasNavigatedToDashboard = false;
+          _isRedirecting = false;
+          _username = null;
+        });
         _updateStatus(
-          "Permission Denied: Firebase configuration issue.",
-          Icons.error_outline,
-          Colors.redAccent,
+           "Account access restricted or removed.",
+           Icons.block_rounded,
+           Colors.redAccent,
         );
-        setState(() => _isRedirecting = false);
       }
     }
   }
