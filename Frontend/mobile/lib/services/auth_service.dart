@@ -75,12 +75,18 @@ class AuthService {
         return data;
       } else {
         throw Exception(
-          'Failed to generate mobile access token: ${response.statusCode} - ${response.body}',
+          'Backend Error: ${response.statusCode}',
         );
       }
+    } on http.ClientException catch (e) {
+      print('❌ Network/DNS Error generating MAT: $e');
+      throw Exception('No internet connection or cannot reach server.');
     } catch (e) {
-      print('❌ Error generating MAT: $e');
-      throw Exception('Error generating mobile access token: $e');
+      print('❌ Unexpected Error generating MAT: $e');
+      if (e.toString().contains('SocketException') || e.toString().contains('host lookup')) {
+        throw Exception('No internet connection. Please check your WiFi/Data.');
+      }
+      throw Exception('Failed to connect to authentication server.');
     }
   }
 
@@ -464,8 +470,7 @@ class AuthService {
       final deviceId = await getDeviceId();
 
       if (mat == null || mat.isEmpty) {
-        print('❌ MAT is empty!');
-        return false;
+        throw Exception('Server returned empty access token.');
       }
 
       // Append MAT to URL
@@ -490,7 +495,8 @@ class AuthService {
       return launched;
     } catch (e) {
       print('❌ Error opening URL with MAT: $e');
-      return false;
+      // Rethrow so the UI can catch and show the message
+      rethrow;
     }
   }
 

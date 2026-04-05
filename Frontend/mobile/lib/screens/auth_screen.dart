@@ -973,16 +973,34 @@ class _AuthScreenState extends State<AuthScreen>
       Colors.blueAccent,
     );
 
-    final opened = await _authService.openUrlWithMAT(
-      AppConfig.registerUrl,
-      "register",
-    );
+    try {
+      final opened = await _authService.openUrlWithMAT(
+        AppConfig.registerUrl,
+        "register",
+      );
 
-    _updateStatus(
-      opened ? "Opening secure portal..." : "Failed to open registration",
-      opened ? Icons.open_in_browser : Icons.error,
-      opened ? Colors.cyan : Colors.redAccent,
-    );
+      _updateStatus(
+        opened ? "Opening secure portal..." : "Failed to open registration",
+        opened ? Icons.open_in_browser : Icons.error,
+        opened ? Colors.cyan : Colors.redAccent,
+      );
+    } catch (e) {
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      _updateStatus(
+        errorMsg,
+        Icons.cloud_off,
+        Colors.redAccent,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMsg),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _openWebLogin() async {
@@ -1010,13 +1028,31 @@ class _AuthScreenState extends State<AuthScreen>
         )
         .toString();
 
-    final opened = await _authService.openUrlWithMAT(baseUrl, "login");
+    try {
+      final opened = await _authService.openUrlWithMAT(baseUrl, "login");
 
-    _updateStatus(
-      opened ? "Opening secure portal..." : "Failed to open login",
-      opened ? Icons.open_in_browser : Icons.error,
-      opened ? Colors.cyan : Colors.redAccent,
-    );
+      _updateStatus(
+        opened ? "Opening secure portal..." : "Failed to open login",
+        opened ? Icons.open_in_browser : Icons.error,
+        opened ? Colors.cyan : Colors.redAccent,
+      );
+    } catch (e) {
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      _updateStatus(
+        errorMsg,
+        Icons.cloud_off,
+        Colors.redAccent,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMsg),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _handleSignIn() async {
@@ -1108,12 +1144,22 @@ class _AuthScreenState extends State<AuthScreen>
 
     if (choice == 'recover') {
       _updateStatus('Opening recovery portal...', Icons.lock_clock, Colors.blueAccent);
-      final opened = await _authService.openUrlWithMAT(AppConfig.recoverUrl, 'login');
-      _updateStatus(
-        opened ? 'Opening recovery portal...' : 'Failed to open recovery page',
-        opened ? Icons.open_in_browser : Icons.error,
-        opened ? Colors.cyan : Colors.redAccent,
-      );
+      try {
+        final opened = await _authService.openUrlWithMAT(AppConfig.recoverUrl, 'login');
+        _updateStatus(
+          opened ? 'Opening recovery portal...' : 'Failed to open recovery page',
+          opened ? Icons.open_in_browser : Icons.error,
+          opened ? Colors.cyan : Colors.redAccent,
+        );
+      } catch (e) {
+        final errorMsg = e.toString().replaceAll('Exception: ', '');
+        _updateStatus(errorMsg, Icons.cloud_off, Colors.redAccent);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMsg), backgroundColor: Colors.redAccent),
+          );
+        }
+      }
     } else if (choice == 'create') {
       await _openWebRegistration();
     } else {
