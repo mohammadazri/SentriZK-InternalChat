@@ -19,6 +19,7 @@ import 'dart:async';
 import 'package:isar/isar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 
 class UserListScreen extends StatefulWidget {
   final String currentUserId;
@@ -203,6 +204,11 @@ class _UserListScreenState extends State<UserListScreen>
     _globalMessageSub = _chatService
         .getAllIncomingMessages(widget.currentUserId)
         .listen((messages) async {
+      
+      if (messages.isNotEmpty) {
+         FlutterRingtonePlayer().playNotification();
+      }
+      
       // ... same processing logic ...
       for (final msg in messages) {
         await isar.writeTxn(() async {

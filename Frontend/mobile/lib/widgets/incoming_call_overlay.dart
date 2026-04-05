@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 import '../services/call_service.dart';
 import '../screens/call_screen.dart';
 
@@ -35,10 +36,14 @@ class _IncomingCallOverlayState extends State<IncomingCallOverlay>
       vsync: this,
     )..repeat(reverse: true);
 
+    // Start playing system ringtone continuously
+    FlutterRingtonePlayer().playRingtone(looping: true);
+
     // Close the overlay if the caller hangs up before we answer
     CallService().onStateChanged = (state) {
       if (!mounted) return;
       if (state == CallState.missed || state == CallState.ended || state == CallState.idle) {
+        FlutterRingtonePlayer().stop();
         Navigator.of(context).pop();
       }
     };
@@ -46,6 +51,7 @@ class _IncomingCallOverlayState extends State<IncomingCallOverlay>
 
   @override
   void dispose() {
+    FlutterRingtonePlayer().stop();
     _pulseController.dispose();
     super.dispose();
   }
@@ -196,6 +202,7 @@ class _IncomingCallOverlayState extends State<IncomingCallOverlay>
                       label: 'Decline',
                       color: const Color(0xFFEF4444),
                       onTap: () {
+                        FlutterRingtonePlayer().stop();
                         CallService().rejectCall(widget.callInfo.callId);
                         Navigator.of(context).pop();
                       },
@@ -207,6 +214,7 @@ class _IncomingCallOverlayState extends State<IncomingCallOverlay>
                       label: 'Accept',
                       color: const Color(0xFF10B981),
                       onTap: () {
+                        FlutterRingtonePlayer().stop();
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
                             builder: (_) => CallScreen(
