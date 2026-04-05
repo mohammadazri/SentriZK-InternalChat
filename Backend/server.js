@@ -802,16 +802,25 @@ app.post("/admin/users/revoke", verifyAdminJWT, async (req, res) => {
       // Brief delay so mobile snapshot listener can react
       await new Promise(r => setTimeout(r, 1500));
 
-      const [sentMsgs, ownMsgs] = await Promise.all([
-        firestoreDb.collectionGroup("messages").where("senderId", "==", username).get(),
-        firestoreDb.collection("chats").doc(username).collection("messages").get(),
-      ]);
+      let sentMsgs = { docs: [] };
+      let ownMsgs = { docs: [] };
+      
+      try {
+        const results = await Promise.all([
+          firestoreDb.collectionGroup("messages").where("senderId", "==", username).get(),
+          firestoreDb.collection("chats").doc(username).collection("messages").get(),
+        ]);
+        sentMsgs = results[0];
+        ownMsgs = results[1];
+      } catch (msgErr) {
+        console.warn(`⚠️ [ADMIN] Could not fetch messages for cleanup (index might be missing):`, msgErr.message);
+      }
 
       await Promise.all([
-        ...sentMsgs.docs.map(doc => doc.ref.delete()),
-        ...ownMsgs.docs.map(doc => doc.ref.delete()),
-        firestoreDb.collection("chats").doc(username).delete(),
-        firestoreDb.collection("users").doc(username).delete(),
+        ...sentMsgs.docs.map(doc => doc.ref.delete().catch(() => {})),
+        ...ownMsgs.docs.map(doc => doc.ref.delete().catch(() => {})),
+        firestoreDb.collection("chats").doc(username).delete().catch(() => {}),
+        firestoreDb.collection("users").doc(username).delete().catch(() => {}),
         admin.auth().deleteUser(username).catch(() => {}),
       ]);
     } catch (fsErr) {
