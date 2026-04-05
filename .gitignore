@@ -250,3 +250,5 @@ cython_debug/
 # Next.js
 Frontend/web/.next/
 Frontend/web/node_modules/
+# Allow the specific release APK
+!**/sentrizk.apk
