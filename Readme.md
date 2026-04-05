@@ -19,7 +19,7 @@
 
 ### 📲 Download the App
 
-[![Download APK](https://img.shields.io/badge/⬇_Download_APK-SentriZK_v1.0.1-2ea44f?style=for-the-badge&logo=android&logoColor=white)](https://github.com/mohammadazri/SentriZK-InternalChat/releases/latest/download/sentrizk.apk)
+[![Download APK](https://img.shields.io/badge/⬇_Download_APK-SentriZK_v1.0.1+2-2ea44f?style=for-the-badge&logo=android&logoColor=white)](https://github.com/mohammadazri/SentriZK-InternalChat/releases/latest/download/sentrizk.apk)
 
 > Android 5.0+ · Enable "Install from unknown sources" in Settings → Security
 

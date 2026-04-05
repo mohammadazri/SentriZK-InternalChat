@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -20,7 +22,7 @@ class AuthService {
   Timer? _refreshTimer;
   String? _cachedDeviceId;
 
-  // Generate a unique device ID (public)
+  // Get a stable hardware-backed device ID
   Future<String> getDeviceId() async {
     if (_cachedDeviceId != null) return _cachedDeviceId!;
 
@@ -28,13 +30,30 @@ class AuthService {
     String? deviceId = prefs.getString('device_id');
 
     if (deviceId == null) {
-      // Generate new device ID
-      deviceId = _generateRandomString(32);
+      try {
+        final deviceInfo = DeviceInfoPlugin();
+        if (Platform.isAndroid) {
+          final androidInfo = await deviceInfo.androidInfo;
+          deviceId = androidInfo.id; // Unique per device/app signature
+        } else if (Platform.isIOS) {
+          final iosInfo = await deviceInfo.iosInfo;
+          deviceId = iosInfo.identifierForVendor;
+        }
+      } catch (e) {
+        print('⚠️ Failed to get hardware device info: $e');
+      }
+
+      // Fallback if hardware ID fails
+      if (deviceId == null || deviceId.isEmpty) {
+        deviceId = _generateRandomString(32);
+      }
+
       await prefs.setString('device_id', deviceId);
     }
 
     _cachedDeviceId = deviceId;
-    return deviceId;
+    print('📱 Initialized Device ID: $_cachedDeviceId');
+    return deviceId!;
   }
 
   String _generateRandomString(int length) {
@@ -74,16 +93,15 @@ class AuthService {
         print('✅ MAT generated successfully');
         return data;
       } else {
-        throw Exception(
-          'Backend Error: ${response.statusCode}',
-        );
+        throw Exception('Backend Error: ${response.statusCode}');
       }
     } on http.ClientException catch (e) {
       print('❌ Network/DNS Error generating MAT: $e');
       throw Exception('No internet connection or cannot reach server.');
     } catch (e) {
       print('❌ Unexpected Error generating MAT: $e');
-      if (e.toString().contains('SocketException') || e.toString().contains('host lookup')) {
+      if (e.toString().contains('SocketException') ||
+          e.toString().contains('host lookup')) {
         throw Exception('No internet connection. Please check your WiFi/Data.');
       }
       throw Exception('Failed to connect to authentication server.');
@@ -211,17 +229,14 @@ class AuthService {
 
   /// Fast parallel validation for boot up sequence
   Future<Map<String, dynamic>> validateLocalSession() async {
-    final results = await Future.wait([
-      getSessionId(),
-      loadLoginData(),
-    ]);
-    
+    final results = await Future.wait([getSessionId(), loadLoginData()]);
+
     final sessionId = results[0] as String?;
     final loginData = results[1] as Map<String, String?>;
-    
+
     final hasValidSession = sessionId != null && sessionId.isNotEmpty;
     final username = loginData['username'];
-    
+
     return {
       'isValid': hasValidSession && username != null,
       'username': username,
@@ -349,7 +364,9 @@ class AuthService {
           throw Exception('No firebaseToken in response');
         }
       } else {
-        throw Exception('Firebase token request failed: ${response.statusCode} - ${response.body}');
+        throw Exception(
+          'Firebase token request failed: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
       print('❌ Firebase sign-in error: $e');
