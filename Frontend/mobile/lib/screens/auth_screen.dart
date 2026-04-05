@@ -132,7 +132,7 @@ class _AuthScreenState extends State<AuthScreen>
       debugPrint('Error navigating to dashboard: $e');
       // If permission denied or user deleted, wipe local session to break the loop!
       if (mounted) {
-        await _authService.logout();
+        await _authService.clearAccountData();
         setState(() {
           _isLoggedIn = false;
           _hasNavigatedToDashboard = false;

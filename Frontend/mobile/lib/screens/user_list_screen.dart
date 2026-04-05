@@ -86,8 +86,8 @@ class _UserListScreenState extends State<UserListScreen>
         ? 'Your account has been suspended by an administrator.\nContact support for assistance.'
         : 'Your account has been permanently revoked by an administrator.';
 
-    // Sign out
-    await _authService.logout();
+    // Wipe all local identity credentials securely
+    await _authService.clearAccountData();
 
     if (!mounted) return;
 
