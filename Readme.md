@@ -19,7 +19,7 @@
 
 ### 📲 Download the App
 
-[![Download APK](https://img.shields.io/badge/⬇_Download_APK-SentriZK_v1.0.1+2-2ea44f?style=for-the-badge&logo=android&logoColor=white)](https://github.com/mohammadazri/SentriZK-InternalChat/releases/latest/download/sentrizk.apk)
+[![Download APK](https://img.shields.io/badge/⬇_Download_APK-SentriZK_v1.0.2+3-2ea44f?style=for-the-badge&logo=android&logoColor=white)](https://github.com/mohammadazri/SentriZK-InternalChat/releases/latest/download/sentrizk.apk)
 
 > Android 5.0+ · Enable "Install from unknown sources" in Settings → Security
 
@@ -74,7 +74,7 @@ SentriZK is a secure internal messaging platform built for **Small and Medium En
 
 ### 💬 Encrypted Messaging
 - **Signal Protocol** (Double Ratchet) for E2EE
-- **WebRTC** peer-to-peer audio/video calling
+- **High-Reliability WebRTC** audio/video calling
 - Real-time messaging via **Firebase Firestore**
 - Per-message forward secrecy
 - Pre-key bundles for asynchronous sessions
@@ -580,7 +580,7 @@ Flagged messages generate a threat log sent to the admin dashboard via `POST /th
 - [x] On-device inference integration in Flutter
 - [x] Threat scoring and admin reporting
 - [x] E2EE chat with Signal Protocol
-- [x] WebRTC audio/video calling
+- [x] WebRTC audio/video calling (High-Reliability Fixed)
 
 ### 🚧 Phase 3 — Hardening & Deployment (Current)
 - [x] Migration from JSON file DB to Supabase PostgreSQL

@@ -2,21 +2,33 @@
 /// Checks URLs against Google's threat database
 /// Privacy-focused: Only sends URL hash, not full URL
 library;
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SafeBrowsingService {
-  // TODO: Replace with your actual API key from Google Cloud Console
-  // Get it from: https://console.cloud.google.com/apis/credentials
-  static const String _apiKey = 'AIzaSyD1TJUdIUK61tRv4IuATaMvPGMsUBVNUiw';
+  // .env is preferred for local automation; dart-define remains as fallback.
+  static const String _apiKeyFallback = String.fromEnvironment(
+    'SAFE_BROWSING_API_KEY',
+    defaultValue: '',
+  );
   static const String _baseUrl = 'https://safebrowsing.googleapis.com/v4';
+
+  static String get _apiKey {
+    final fromEnv = dotenv.env['SAFE_BROWSING_API_KEY']?.trim() ?? '';
+    if (fromEnv.isNotEmpty) {
+      return fromEnv;
+    }
+    return _apiKeyFallback;
+  }
 
   /// Check if URL is malicious using Google Safe Browsing API
   /// Returns threat type or null if safe
   static Future<ThreatCheckResult> checkUrl(String url) async {
     print('🔍 [SafeBrowsing] Checking URL: $url');
 
-    if (_apiKey == 'YOUR_GOOGLE_SAFE_BROWSING_API_KEY') {
+    if (_apiKey.isEmpty) {
       // API key not configured, skip check
       print('⚠️  [SafeBrowsing] API key not configured - skipping check');
       return ThreatCheckResult(
@@ -113,12 +125,15 @@ class SafeBrowsingService {
   static Future<Map<String, ThreatCheckResult>> checkMultipleUrls(
     List<String> urls,
   ) async {
-    if (_apiKey == 'YOUR_GOOGLE_SAFE_BROWSING_API_KEY') {
-      return { for (var url in urls) url : ThreatCheckResult(
-          isSafe: true,
-          threatType: null,
-          message: 'Safe Browsing not configured',
-        ) };
+    if (_apiKey.isEmpty) {
+      return {
+        for (var url in urls)
+          url: ThreatCheckResult(
+            isSafe: true,
+            threatType: null,
+            message: 'Safe Browsing not configured',
+          ),
+      };
     }
 
     try {
@@ -178,11 +193,14 @@ class SafeBrowsingService {
       return results;
     } catch (e) {
       // On error, return all as safe
-      return { for (var url in urls) url : ThreatCheckResult(
-          isSafe: true,
-          threatType: null,
-          message: 'Verification failed',
-        ) };
+      return {
+        for (var url in urls)
+          url: ThreatCheckResult(
+            isSafe: true,
+            threatType: null,
+            message: 'Verification failed',
+          ),
+      };
     }
   }
 }

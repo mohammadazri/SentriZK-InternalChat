@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 import 'screens/auth_screen.dart';
 import 'services/message_security_service.dart';
@@ -10,6 +11,7 @@ import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await _loadLocalEnv();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Initialize security scan cache
@@ -21,6 +23,14 @@ void main() async {
       child: const SentriZKApp(),
     ),
   );
+}
+
+Future<void> _loadLocalEnv() async {
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (_) {
+    // Local .env is optional so CI/clean setups can still run.
+  }
 }
 
 class SentriZKApp extends StatelessWidget {

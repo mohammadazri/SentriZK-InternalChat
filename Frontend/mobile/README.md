@@ -17,8 +17,14 @@ flutter pub get
 # Run on device/emulator
 flutter run
 
+# Run with Safe Browsing key (recommended)
+flutter run --dart-define=SAFE_BROWSING_API_KEY=your_key_here
+
 # Build release APK (Android)
 flutter build apk --release
+
+# Build release APK with Safe Browsing key
+flutter build apk --release --dart-define=SAFE_BROWSING_API_KEY=your_key_here
 ```
 
 ## 📦 Tech Stack
