@@ -63,16 +63,16 @@ class _AuthScreenState extends State<AuthScreen>
 
   Future<void> _checkLoginStatus() async {
     try {
-      final loginData = await _authService.loadLoginData();
-      final username = loginData['username'];
-      // 🔥 PERFORMANCE: Use local check instead of a blocking HTTP request to backend
-      final isValid = await _authService.hasLocalSession();
+      // 🔥 PERFORMANCE: Parallel local cache checks
+      final sessionData = await _authService.validateLocalSession();
+      final isValid = sessionData['isValid'] as bool;
+      final username = sessionData['username'] as String?;
 
       if (mounted) {
         setState(() {
-          _isLoggedIn = isValid && username != null;
+          _isLoggedIn = isValid;
           _username = username;
-          if (_isLoggedIn) {
+          if (_isLoggedIn && _username != null) {
             _updateStatus(
               "Welcome back, $_username!",
               Icons.verified_user,
@@ -87,7 +87,7 @@ class _AuthScreenState extends State<AuthScreen>
     }
   }
 
-  Future<void> _navigateToDashboard() async {
+  Future<void> _navigateToDashboard([Map<String, dynamic>? preloadedData]) async {
     if (_hasNavigatedToDashboard || !mounted || _username == null) return;
     
     // Diagnostic logging for UID mismatch
@@ -101,18 +101,26 @@ class _AuthScreenState extends State<AuthScreen>
     });
 
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(_username)
-          .get()
-          .catchError((e) {
-        debugPrint('🔥 [AUTH] Firestore fetch error: $e');
-        throw e;
-      });
+      bool hasDisplayName = false;
 
-      final hasDisplayName = doc.exists &&
-          doc.data()!.containsKey('displayName') &&
-          doc.data()!['displayName'] != null;
+      // 🔥 PERFORMANCE: Skip Firestore read if we already have the document data
+      if (preloadedData != null) {
+        hasDisplayName = preloadedData.containsKey('displayName') && 
+                         preloadedData['displayName'] != null;
+      } else {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(_username)
+            .get()
+            .catchError((e) {
+          debugPrint('🔥 [AUTH] Firestore fetch error: $e');
+          throw e;
+        });
+
+        hasDisplayName = doc.exists &&
+            doc.data()!.containsKey('displayName') &&
+            doc.data()!['displayName'] != null;
+      }
 
       if (!mounted) return;
 
@@ -329,15 +337,27 @@ class _AuthScreenState extends State<AuthScreen>
               await _authService.signInToFirebase(firebaseSessionId);
             }
 
+            _updateStatus(
+              "Preparing encryption secure keys...",
+              Icons.enhanced_encryption,
+              Colors.blueAccent,
+            );
+
             // Create or update Firestore user profile after successful login
             final deviceId = await _authService.getDeviceId();
             final userService = UserService();
 
-            await userService.createOrUpdateUser(
+            final userData = await userService.createOrUpdateUser(
               userId: username, // Use a unique userId if available
               username: username,
               deviceId: deviceId,
               // Add avatarUrl/phone if available
+            );
+
+            _updateStatus(
+              "Securing connection...",
+              Icons.cloud_sync,
+              Colors.blueAccent,
             );
 
             // Register and save FCM token for push notifications
@@ -355,11 +375,11 @@ class _AuthScreenState extends State<AuthScreen>
                 _mnemonicDisplay = "";
                 _isLoggedIn = true;
                 _username = username;
-                _isLoading = false;
+                // Leave _isLoading = true so the UI doesn't momentarily flash the login button
               });
 
-              // Navigate to UserListScreen after successful login
-              _navigateToDashboard();
+              // Navigate to Dashboard with preloaded user data to save time!
+              _navigateToDashboard(userData);
             }
 
             HapticFeedback.mediumImpact();

@@ -82,11 +82,11 @@ export default function RegisterPage() {
   };
 
   const validateForm = (): boolean => {
-    // Alphanumeric and underscores only, 3-20 chars, no spaces
-    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    // Lowercase alphanumeric and underscores only, 3-20 chars, no spaces
+    const usernameRegex = /^[a-z0-9_]{3,20}$/;
 
     if (!username || !usernameRegex.test(username)) {
-      setError("Username must be 3-20 characters and contain only letters, numbers, and underscores (no spaces).");
+      setError("Username must be 3-20 characters and contain only lowercase letters, numbers, and underscores (no spaces).");
       return false;
     }
 
@@ -295,7 +295,7 @@ export default function RegisterPage() {
                   id="username"
                   type="text"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase())}
                   placeholder="Enter your username"
                   className={styles.input}
                   disabled={busy}

@@ -8,7 +8,7 @@ import 'signal/signal_manager.dart';
 class UserService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<void> createOrUpdateUser({
+  Future<Map<String, dynamic>?> createOrUpdateUser({
     required String userId,
     required String username,
     required String deviceId,
@@ -27,6 +27,7 @@ class UserService {
     try {
       // Check if the user already has a signalBundle to avoid overwriting all prekeys constantly
       final doc = await _firestore.collection('users').doc(userId).get();
+      Map<String, dynamic>? existingData = doc.exists ? doc.data() : null;
       Map<String, dynamic>? bundle;
       bool needsNewBundle = false;
       
@@ -59,12 +60,15 @@ class UserService {
         if (bundle != null) 'signalBundle': bundle,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
+
+      return existingData;
     } catch (e) {
       print('🔥 [USER_SERVICE] Firestore error for $userId: $e');
       // If it's a permission error, we still want the app to function
       if (e.toString().contains('permission-denied')) {
         print('⚠️ [USER_SERVICE] Permission denied. This usually means Request.Auth.UID != Document ID.');
       }
+      return null;
     }
   }
 

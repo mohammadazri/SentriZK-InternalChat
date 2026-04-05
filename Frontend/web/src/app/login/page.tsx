@@ -291,7 +291,7 @@ export default function LoginPage() {
             </div>
             <div className={styles.userInfo}>
               <span className={styles.userLabel}>Logging in as</span>
-              <span className={styles.userName}>{username}</span>
+              <span className={styles.userName}>{username.toLowerCase()}</span>
             </div>
           </div>
         )}

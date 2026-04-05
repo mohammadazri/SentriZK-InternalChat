@@ -18,9 +18,12 @@ class SaveResult {
 class AuthService {
   final _secureStorage = const FlutterSecureStorage();
   Timer? _refreshTimer;
+  String? _cachedDeviceId;
 
   // Generate a unique device ID (public)
   Future<String> getDeviceId() async {
+    if (_cachedDeviceId != null) return _cachedDeviceId!;
+
     final prefs = await SharedPreferences.getInstance();
     String? deviceId = prefs.getString('device_id');
 
@@ -30,6 +33,7 @@ class AuthService {
       await prefs.setString('device_id', deviceId);
     }
 
+    _cachedDeviceId = deviceId;
     return deviceId;
   }
 
@@ -197,6 +201,26 @@ class AuthService {
   /// Get current session ID
   Future<String?> getSessionId() async {
     return await _secureStorage.read(key: 'session_id');
+  }
+
+  /// Fast parallel validation for boot up sequence
+  Future<Map<String, dynamic>> validateLocalSession() async {
+    final results = await Future.wait([
+      getSessionId(),
+      loadLoginData(),
+    ]);
+    
+    final sessionId = results[0] as String?;
+    final loginData = results[1] as Map<String, String?>;
+    
+    final hasValidSession = sessionId != null && sessionId.isNotEmpty;
+    final username = loginData['username'];
+    
+    return {
+      'isValid': hasValidSession && username != null,
+      'username': username,
+      'encryptedSalt': loginData['encryptedSalt'],
+    };
   }
 
   /// Check if session exists locally (Fast, non-blocking startup)

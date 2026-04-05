@@ -99,7 +99,7 @@ export default function SignInPage() {
         <form onSubmit={onSignIn} style={{ display: "grid", gap: 16 }}>
           <div style={{ display: "grid", gap: 8 }}>
             <label htmlFor="username">Username</label>
-            <input id="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="your-username" required style={{ background: "transparent", border: "1px solid var(--border-subtle)", color: "var(--text-primary)", padding: "10px 12px", borderRadius: 10 }} />
+            <input id="username" value={username} onChange={(e) => setUsername(e.target.value.toLowerCase())} placeholder="your-username" required style={{ background: "transparent", border: "1px solid var(--border-subtle)", color: "var(--text-primary)", padding: "10px 12px", borderRadius: 10 }} />
           </div>
 
           <div style={{ display: "grid", gap: 8 }}>

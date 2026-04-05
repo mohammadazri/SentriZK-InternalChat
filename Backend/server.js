@@ -156,8 +156,8 @@ function requireFields(obj, fields = []) {
   return null;
 }
 function isValidUsername(username) {
-  // Alphanumeric and underscores only, 3-20 chars, no spaces
-  const regex = /^[a-zA-Z0-9_]{3,20}$/;
+  // Lowercase alphanumeric and underscores only, 3-20 chars, no spaces
+  const regex = /^[a-z0-9_]{3,20}$/;
   return regex.test(username);
 }
 async function verifyProof(vk, signals, proof) {
@@ -366,16 +366,17 @@ app.get("/check-username/:username", (req, res) => {
 
 // Fetch commitment + nonce (anti-replay)
 app.get("/commitment/:username", (req, res) => {
+  const username = req.params.username.toLowerCase();
   const db = loadDB();
-  const user = getUser(db, req.params.username);
+  const user = getUser(db, username);
   if (!user) return res.status(404).json({ error: "User not found" });
 
   const nonceStr = randomNonceBigIntString(8);
   user.nonce = nonceStr;
   user.nonceTime = Date.now();
-  setUser(db, req.params.username, user);
+  setUser(db, username, user);
 
-  res.json({ username: req.params.username, commitment: user.commitment, nonce: user.nonce });
+  res.json({ username, commitment: user.commitment, nonce: user.nonce });
 });
 
 // ---------------------
@@ -387,11 +388,12 @@ app.post("/register", async (req, res) => {
     if (missing) return res.status(400).json({ error: missing });
     if (!ensurePoseidonReady(res)) return;
 
-    const { username, proof, publicSignals } = req.body;
+    const { proof, publicSignals } = req.body;
+    const username = String(req.body.username).toLowerCase();
 
     // Strict format check
     if (!isValidUsername(username)) {
-      return res.status(400).json({ error: "Invalid username format. No spaces allowed." });
+      return res.status(400).json({ error: "Invalid username format. Use only lowercase letters, numbers, and underscores (3-20 chars)." });
     }
 
     const validReg = await verifyProof(regVk, publicSignals, proof);
@@ -427,10 +429,8 @@ app.post("/register", async (req, res) => {
 // ---------------------
 app.post("/login", async (req, res) => {
   try {
-    const missing = requireFields(req.body, ["username", "proof", "publicSignals"]);
-    if (missing) return res.status(400).json({ error: missing });
-
-    const { username, proof, publicSignals } = req.body;
+    const { proof, publicSignals } = req.body;
+    const username = String(req.body.username).toLowerCase();
     const db = loadDB();
     cleanupExpiredTokens(db);
 
