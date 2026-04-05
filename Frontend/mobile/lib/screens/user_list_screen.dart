@@ -13,6 +13,7 @@ import '../services/auth_service.dart';
 import '../services/chat_service.dart';
 import '../services/call_service.dart';
 import '../services/message_security_service.dart';
+import '../services/sound_service.dart';
 import '../models/local_message.dart';
 import '../widgets/incoming_call_overlay.dart';
 import 'dart:async';
@@ -206,7 +207,7 @@ class _UserListScreenState extends State<UserListScreen>
         .listen((messages) async {
       
       if (messages.isNotEmpty) {
-         FlutterRingtonePlayer().playNotification();
+         SoundService().playNotification();
       }
       
       // ... same processing logic ...
@@ -425,12 +426,14 @@ class _UserListScreenState extends State<UserListScreen>
               return hasHistory;
             }
 
-            final name = (u['displayName'] ?? u['username'] ?? u['id'] ?? '')
+            // 🔒 Search by username only — username is the ZK identity
+            // (the Firebase document ID is the username, e.g. "azri", "alice")
+            // displayName is cosmetic — teammates should be found by their real identity.
+            final username = (u['username'] ?? u['id'] ?? '')
                 .toString()
                 .toLowerCase();
-            final username = (u['username'] ?? '').toString().toLowerCase();
 
-            return name.contains(search) || username.contains(search);
+            return username.contains(search);
           }).toList();
 
           // WhatsApp Style: Sort by last message timestamp (most recent first)
@@ -549,7 +552,7 @@ class _SearchField extends StatelessWidget {
     return Container(
       height: 46,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface, // Slate 800
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05)),
       ),
@@ -558,7 +561,7 @@ class _SearchField extends StatelessWidget {
         onChanged: onChanged,
         style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16),
         decoration: InputDecoration(
-          hintText: 'Search teammates',
+          hintText: 'Search by username',
           hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
           prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), size: 20),
           border: InputBorder.none,

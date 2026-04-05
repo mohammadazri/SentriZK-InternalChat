@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import '../services/call_service.dart';
+import '../services/sound_service.dart';
 
 class CallScreen extends StatefulWidget {
   final String currentUserId;
@@ -78,6 +79,18 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
         _callState = state;
       });
 
+      // ── Outgoing dial tone ──────────────────────────────────────────
+      if (state == CallState.outgoing || state == CallState.ringing) {
+        // Only start if we are the caller (not incoming)
+        if (!widget.isIncoming) {
+          SoundService().startDialTone();
+        }
+      } else {
+        // Call connected or ended — always stop the dial tone
+        SoundService().stopDialTone();
+      }
+      // ───────────────────────────────────────────────────────────────
+
       if (state == CallState.active) {
         _startDurationTimer();
       }
@@ -142,6 +155,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    SoundService().stopDialTone(); // Ensure dial tone stops if user exits early
     _pulseController.dispose();
     _durationTimer?.cancel();
     _localRenderer.dispose();
