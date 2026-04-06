@@ -24,63 +24,56 @@ class AuthService {
   String? _cachedDeviceId;
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Device ID — persisted in FlutterSecureStorage (Android Keystore / iOS
-  // Keychain) so it SURVIVES uninstall and reinstall on the same device.
+  // Device ID — always derived directly from hardware. No storage required
+  // for the primary path so it works identically after any reinstall.
   //
   // Strategy:
-  //   1. Check SecureStorage first  → already set, return it.
-  //   2. Read hardware ID           → Android: androidInfo.id (stable per
-  //                                   signing cert), iOS: identifierForVendor.
-  //   3. Fallback                   → cryptographically random 32-char hex.
-  //   4. Persist in SecureStorage   → survives future reinstalls.
-  //
-  // NOTE: SharedPreferences is intentionally NOT used here because its data
-  // is deleted on uninstall.  SecureStorage on Android uses the system
-  // Keystore and typically persists across uninstalls on Android 6+.
+  //   1. Cache hit     → return immediately (in-memory, per app session).
+  //   2. Android       → androidInfo.id  (hardware-derived, no permission
+  //                      needed, stable across reinstalls with same keystore).
+  //   3. iOS           → identifierForVendor (stable while ≥1 app from same
+  //                      vendor is installed; survives reinstall).
+  //   4. Fallback only → random 32-char hex persisted in SecureStorage
+  //                      (only used if hardware read fails, e.g. emulator).
   // ─────────────────────────────────────────────────────────────────────────
   Future<String> getDeviceId() async {
     if (_cachedDeviceId != null) return _cachedDeviceId!;
 
-    // 1. Try to recover from secure persistent storage
-    const secureKey = 'sentriZK_device_id';
-    String? deviceId = await _secureStorage.read(key: secureKey);
-
-    if (deviceId == null || deviceId.isEmpty) {
-      // 2. Derive from hardware
-      try {
-        final deviceInfo = DeviceInfoPlugin();
-        if (Platform.isAndroid) {
-          final androidInfo = await deviceInfo.androidInfo;
-          // androidInfo.id is unique per device+app signing certificate and
-          // is stable across uninstalls (does NOT require any permissions).
-          deviceId = androidInfo.id;
-        } else if (Platform.isIOS) {
-          final iosInfo = await deviceInfo.iosInfo;
-          // identifierForVendor is stable across uninstalls on iOS 6+
-          // (resets only when ALL apps from the same vendor are removed).
-          deviceId = iosInfo.identifierForVendor;
+    // 1. Try hardware ID directly — no storage needed
+    try {
+      if (Platform.isAndroid) {
+        final info = await DeviceInfoPlugin().androidInfo;
+        // Unique per device + app signing certificate.
+        // Stable across uninstall/reinstall with the same release keystore.
+        if (info.id.isNotEmpty) {
+          _cachedDeviceId = info.id;
+          debugPrint('📱 [AUTH] Device ID (hardware): $_cachedDeviceId');
+          return _cachedDeviceId!;
         }
-      } catch (e) {
-        debugPrint('⚠️ [AUTH] Failed to read hardware device ID: $e');
+      } else if (Platform.isIOS) {
+        final info = await DeviceInfoPlugin().iosInfo;
+        final vendorId = info.identifierForVendor ?? '';
+        if (vendorId.isNotEmpty) {
+          _cachedDeviceId = vendorId;
+          debugPrint('📱 [AUTH] Device ID (hardware): $_cachedDeviceId');
+          return _cachedDeviceId!;
+        }
       }
-
-      // 3. Cryptographic fallback if hardware ID unavailable
-      if (deviceId == null || deviceId.isEmpty) {
-        deviceId = _generateRandomString(32);
-        debugPrint('⚠️ [AUTH] Using random device ID (hardware ID unavailable).');
-      }
-
-      // 4. Persist in secure storage so reinstalls can recover it
-      try {
-        await _secureStorage.write(key: secureKey, value: deviceId);
-      } catch (e) {
-        debugPrint('⚠️ [AUTH] Could not persist device ID in secure storage: $e');
-      }
+    } catch (e) {
+      debugPrint('⚠️ [AUTH] Hardware ID read failed: $e');
     }
 
-    _cachedDeviceId = deviceId;
-    debugPrint('📱 [AUTH] Device ID: $_cachedDeviceId');
-    return deviceId!;
+    // 2. Fallback: use/generate a persisted random ID (emulator / edge case)
+    const fallbackKey = 'sentriZK_device_id_fallback';
+    _cachedDeviceId = await _secureStorage.read(key: fallbackKey);
+    if (_cachedDeviceId == null || _cachedDeviceId!.isEmpty) {
+      _cachedDeviceId = _generateRandomString(32);
+      await _secureStorage.write(key: fallbackKey, value: _cachedDeviceId!);
+      debugPrint('⚠️ [AUTH] Using random fallback Device ID: $_cachedDeviceId');
+    } else {
+      debugPrint('📱 [AUTH] Device ID (fallback): $_cachedDeviceId');
+    }
+    return _cachedDeviceId!;
   }
 
   String _generateRandomString(int length) {
