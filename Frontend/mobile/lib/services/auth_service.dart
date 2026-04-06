@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
@@ -22,37 +22,63 @@ class AuthService {
   Timer? _refreshTimer;
   String? _cachedDeviceId;
 
-  // Get a stable hardware-backed device ID
+  // ─────────────────────────────────────────────────────────────────────────
+  // Device ID — persisted in FlutterSecureStorage (Android Keystore / iOS
+  // Keychain) so it SURVIVES uninstall and reinstall on the same device.
+  //
+  // Strategy:
+  //   1. Check SecureStorage first  → already set, return it.
+  //   2. Read hardware ID           → Android: androidInfo.id (stable per
+  //                                   signing cert), iOS: identifierForVendor.
+  //   3. Fallback                   → cryptographically random 32-char hex.
+  //   4. Persist in SecureStorage   → survives future reinstalls.
+  //
+  // NOTE: SharedPreferences is intentionally NOT used here because its data
+  // is deleted on uninstall.  SecureStorage on Android uses the system
+  // Keystore and typically persists across uninstalls on Android 6+.
+  // ─────────────────────────────────────────────────────────────────────────
   Future<String> getDeviceId() async {
     if (_cachedDeviceId != null) return _cachedDeviceId!;
 
-    final prefs = await SharedPreferences.getInstance();
-    String? deviceId = prefs.getString('device_id');
+    // 1. Try to recover from secure persistent storage
+    const secureKey = 'sentriZK_device_id';
+    String? deviceId = await _secureStorage.read(key: secureKey);
 
-    if (deviceId == null) {
+    if (deviceId == null || deviceId.isEmpty) {
+      // 2. Derive from hardware
       try {
         final deviceInfo = DeviceInfoPlugin();
         if (Platform.isAndroid) {
           final androidInfo = await deviceInfo.androidInfo;
-          deviceId = androidInfo.id; // Unique per device/app signature
+          // androidInfo.id is unique per device+app signing certificate and
+          // is stable across uninstalls (does NOT require any permissions).
+          deviceId = androidInfo.id;
         } else if (Platform.isIOS) {
           final iosInfo = await deviceInfo.iosInfo;
+          // identifierForVendor is stable across uninstalls on iOS 6+
+          // (resets only when ALL apps from the same vendor are removed).
           deviceId = iosInfo.identifierForVendor;
         }
       } catch (e) {
-        print('⚠️ Failed to get hardware device info: $e');
+        debugPrint('⚠️ [AUTH] Failed to read hardware device ID: $e');
       }
 
-      // Fallback if hardware ID fails
+      // 3. Cryptographic fallback if hardware ID unavailable
       if (deviceId == null || deviceId.isEmpty) {
         deviceId = _generateRandomString(32);
+        debugPrint('⚠️ [AUTH] Using random device ID (hardware ID unavailable).');
       }
 
-      await prefs.setString('device_id', deviceId);
+      // 4. Persist in secure storage so reinstalls can recover it
+      try {
+        await _secureStorage.write(key: secureKey, value: deviceId);
+      } catch (e) {
+        debugPrint('⚠️ [AUTH] Could not persist device ID in secure storage: $e');
+      }
     }
 
     _cachedDeviceId = deviceId;
-    print('📱 Initialized Device ID: $_cachedDeviceId');
+    debugPrint('📱 [AUTH] Device ID: $_cachedDeviceId');
     return deviceId!;
   }
 
