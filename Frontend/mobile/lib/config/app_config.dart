@@ -9,10 +9,10 @@ class AppConfig {
   // ═══════════════════════════════════════════════════════════════
 
   /// Backend API URL (NO trailing slash)
-  static const String apiUrl = "https://backend.a4innovation.shop";
+  static const String apiUrl = "https://backend.sentrizk.me";
 
   /// Web frontend URL (NO trailing slash)
-  static const String webUrl = "https://frontend.a4innovation.shop";
+  static const String webUrl = "https://frontend.sentrizk.me";
 
   /// Deep link scheme — must match AndroidManifest.xml / Info.plist
   static const String deepLinkScheme = "sentriapp";
