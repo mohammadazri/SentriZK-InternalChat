@@ -56,8 +56,6 @@ class CallService {
   Function(MediaStream stream)? onRemoteStream;
   Function(CallState state)? onStateChanged;
   Function(CallInfo info)? onIncomingCall;
-  /// Reports whether the receiver is online, so the UI can show
-  /// "Ringing..." (true) or "Calling..." (false).
   Function(bool isReceiverOnline)? onRingingStatusChanged;
 
   // ── Internal state ──
@@ -70,6 +68,7 @@ class CallService {
   String? _currentUserId;
   bool _receiverOnline = false;
   final List<RTCIceCandidate> _remoteIceBuffer = [];
+  bool _isCleaningUp = false; // Guard against concurrent cleanup
 
   StreamSubscription? _callDocSub;
   StreamSubscription? _iceSub;
@@ -77,8 +76,7 @@ class CallService {
   StreamSubscription? _receiverStatusSub;
   Timer? _missedCallTimer;
 
-  // ── ICE config with STUN + free TURN ──
-  // For production, swap with Twilio or Metered TURN credentials.
+  // ── ICE config ──
   static const Map<String, dynamic> _rtcConfig = {
     'iceServers': [
       {'urls': 'stun:stun.l.google.com:19302'},
@@ -97,20 +95,18 @@ class CallService {
   // Initialization
   // ══════════════════════════════════════════════════════════════
 
-  /// Must be called once after login with the user's ID.
   void init(String userId) {
     _currentUserId = userId;
     _listenForIncomingCalls();
   }
 
-  /// Stop listening when user logs out.
   void dispose() {
     _incomingCallSub?.cancel();
     _callDocSub?.cancel();
     _iceSub?.cancel();
     _receiverStatusSub?.cancel();
     _missedCallTimer?.cancel();
-    _cleanup();
+    _cleanup('dispose');
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -118,7 +114,10 @@ class CallService {
   // ══════════════════════════════════════════════════════════════
 
   Future<void> startCall(String receiverId, CallType type) async {
-    if (_state != CallState.idle) return;
+    if (_state != CallState.idle) {
+      debugPrint('⚠️ [CALL] startCall ignored — state=$_state');
+      return;
+    }
     final callerId = _currentUserId!;
 
     final callId = '${callerId}_${receiverId}_${DateTime.now().millisecondsSinceEpoch}';
@@ -130,31 +129,26 @@ class CallService {
       startedAt: DateTime.now(),
     );
 
-    debugPrint('📞 [CALL_SERVICE] Starting $type call to $receiverId');
+    debugPrint('📞 [CALL] Starting $type call to $receiverId (callId=$callId)');
     _setState(CallState.outgoing);
 
     try {
-      // 1. Get local media
       _localStream = await _getUserMedia(type);
       onLocalStream?.call(_localStream!);
 
-      // 2. Create peer connection
       _pc = await createPeerConnection(_rtcConfig);
       _registerPeerCallbacks();
 
-      // 3. Add tracks
       for (final track in _localStream!.getTracks()) {
         await _pc!.addTrack(track, _localStream!);
       }
 
-      // 4. Create offer
       final offer = await _pc!.createOffer({
         'offerToReceiveAudio': true,
         'offerToReceiveVideo': type == CallType.video,
       });
       await _pc!.setLocalDescription(offer);
 
-      // 5. Write call document to Firestore
       await _firestore.collection('calls').doc(callId).set({
         'callerId': callerId,
         'receiverId': receiverId,
@@ -164,21 +158,16 @@ class CallService {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      // 6. Listen for answer & remote ICE
       _listenForCallDoc(callId);
       _listenForRemoteIce(callId, receiverId);
-
-      // 7. Check if receiver is online → update "Ringing" vs "Calling"
       _watchReceiverStatus(receiverId);
-
-      // 8. Auto-timeout after 45 seconds → missed call
       _startMissedCallTimer();
-      
-      debugPrint('✅ [CALL_SERVICE] Offer sent and listeners started.');
+
+      debugPrint('✅ [CALL] Offer sent, listeners started.');
     } catch (e) {
-      debugPrint('💥 [CALL_SERVICE] Error starting call: $e');
+      debugPrint('💥 [CALL] Error starting call: $e');
       _setState(CallState.ended);
-      await _cleanup();
+      await _cleanup('startCall-error');
       rethrow;
     }
   }
@@ -188,18 +177,19 @@ class CallService {
   // ══════════════════════════════════════════════════════════════
 
   Future<void> acceptCall(CallInfo call, Map<String, dynamic> offerData) async {
-    if (_state != CallState.incoming) return;
+    if (_state != CallState.incoming) {
+      debugPrint('⚠️ [CALL] acceptCall ignored — state=$_state');
+      return;
+    }
     _currentCall = call;
     _setState(CallState.connecting);
 
-    debugPrint('📞 [CALL_SERVICE] Accepting call from ${call.callerId}');
+    debugPrint('📞 [CALL] Accepting call from ${call.callerId} (callId=${call.callId})');
 
     try {
-      // 1. Get local media
       _localStream = await _getUserMedia(call.type);
       onLocalStream?.call(_localStream!);
 
-      // 2. Create peer connection
       _pc = await createPeerConnection(_rtcConfig);
       _registerPeerCallbacks();
 
@@ -207,33 +197,36 @@ class CallService {
         await _pc!.addTrack(track, _localStream!);
       }
 
-      // 3. Set remote description (the offer)
-      debugPrint('📡 [CALL_SERVICE] Setting remote offer...');
+      debugPrint('📡 [CALL] Setting remote offer...');
       await _pc!.setRemoteDescription(
         RTCSessionDescription(offerData['sdp'], offerData['type']),
       );
 
-      // 4. Create answer
       final answer = await _pc!.createAnswer();
       await _pc!.setLocalDescription(answer);
 
-      // 5. Write answer to Firestore
+      // Listen for remote ICE BEFORE writing answer to Firestore.
+      // This ensures we're ready to receive candidates as soon as the
+      // caller processes our answer and begins sending candidates.
+      _listenForRemoteIce(call.callId, call.callerId);
+
+      // Process any buffered ICE candidates that arrived while we
+      // were setting up the peer connection.
+      await _processBufferedIceCandidates();
+
+      // NOW write the answer to Firestore — this triggers the caller
+      // to set our answer as remote description.
+      debugPrint('📡 [CALL] Writing answer to Firestore...');
       await _firestore.collection('calls').doc(call.callId).update({
         'status': 'active',
         'answer': {'type': answer.type, 'sdp': answer.sdp},
       });
 
-      // 6. Listen for remote ICE
-      _listenForRemoteIce(call.callId, call.callerId);
-      
-      // 7. Process any buffered ICE candidates that might have arrived early
-      await _processBufferedIceCandidates();
-      
-      debugPrint('✅ [CALL_SERVICE] Answer sent and connection setup.');
+      debugPrint('✅ [CALL] Answer sent, connection setup complete.');
     } catch (e) {
-      debugPrint('💥 [CALL_SERVICE] Error accepting call: $e');
+      debugPrint('💥 [CALL] Error accepting call: $e');
       _setState(CallState.ended);
-      await _cleanup();
+      await _cleanup('acceptCall-error');
       rethrow;
     }
   }
@@ -244,23 +237,25 @@ class CallService {
 
   Future<void> endCall() async {
     if (_currentCall == null) return;
+    debugPrint('📞 [CALL] endCall() called, state=$_state');
     try {
       await _firestore.collection('calls').doc(_currentCall!.callId).update({
         'status': 'ended',
         'endedAt': FieldValue.serverTimestamp(),
       });
     } catch (_) {}
-    await _cleanup();
+    await _cleanup('endCall');
   }
 
   Future<void> rejectCall(String callId) async {
+    debugPrint('📞 [CALL] rejectCall() called');
     _setState(CallState.rejected);
     try {
       await _firestore.collection('calls').doc(callId).update({
         'status': 'rejected',
       });
     } catch (_) {}
-    await _cleanup();
+    await _cleanup('rejectCall');
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -303,23 +298,28 @@ class CallService {
     _pc!.onIceCandidate = (candidate) async {
       if (_currentCall == null) return;
       if (candidate == null) {
-        debugPrint('📡 [CALL_SERVICE] ICE gathering complete (null candidate).');
+        debugPrint('📡 [CALL] ICE gathering complete (null candidate).');
         return;
       }
-      
-      debugPrint('📡 [CALL_SERVICE] Local ICE candidate found: ${candidate.candidate?.substring(0, 20)}...');
-      await _firestore
-          .collection('calls')
-          .doc(_currentCall!.callId)
-          .collection('ice')
-          .add({
-        'senderId': _currentUserId,
-        'candidate': candidate.toMap(),
-        'ts': FieldValue.serverTimestamp(),
-      });
+
+      debugPrint('📡 [CALL] Local ICE: ${candidate.candidate?.substring(0, 30)}...');
+      try {
+        await _firestore
+            .collection('calls')
+            .doc(_currentCall!.callId)
+            .collection('ice')
+            .add({
+          'senderId': _currentUserId,
+          'candidate': candidate.toMap(),
+          'ts': FieldValue.serverTimestamp(),
+        });
+      } catch (e) {
+        debugPrint('💥 [CALL] Error writing ICE candidate: $e');
+      }
     };
 
     _pc!.onTrack = (event) {
+      debugPrint('📡 [CALL] onTrack: streams=${event.streams.length}');
       if (event.streams.isNotEmpty) {
         _remoteStream = event.streams.first;
         onRemoteStream?.call(_remoteStream!);
@@ -327,14 +327,22 @@ class CallService {
     };
 
     _pc!.onIceConnectionState = (iceState) {
-      debugPrint('📡 ICE state: $iceState');
+      debugPrint('📡 [CALL] ICE state: $iceState (callState=$_state)');
       if (iceState == RTCIceConnectionState.RTCIceConnectionStateConnected ||
           iceState == RTCIceConnectionState.RTCIceConnectionStateCompleted) {
         _setState(CallState.active);
-      } else if (iceState == RTCIceConnectionState.RTCIceConnectionStateFailed ||
-          iceState == RTCIceConnectionState.RTCIceConnectionStateDisconnected) {
+      } else if (iceState == RTCIceConnectionState.RTCIceConnectionStateFailed) {
+        debugPrint('💥 [CALL] ICE FAILED — ending call');
         endCall();
       }
+      // NOTE: We intentionally do NOT call endCall on "disconnected" —
+      // disconnected is often temporary (network switch) and may recover.
+      // We also do NOT call endCall on "closed" — that's a result of
+      // cleanup, not a trigger for it.
+    };
+
+    _pc!.onConnectionState = (state) {
+      debugPrint('📡 [CALL] PeerConnection state: $state');
     };
   }
 
@@ -342,7 +350,6 @@ class CallService {
   // Private: Firestore listeners
   // ══════════════════════════════════════════════════════════════
 
-  /// Listen for incoming calls directed at this user.
   void _listenForIncomingCalls() {
     _incomingCallSub?.cancel();
     _incomingCallSub = _firestore
@@ -352,13 +359,19 @@ class CallService {
         .snapshots()
         .handleError((e) {
       if (e.toString().contains('permission-denied') || e.toString().contains('PERMISSION_DENIED')) {
-        debugPrint('🔒 [CALL_SERVICE] Ignoring incoming call permission-denied during logout.');
+        debugPrint('🔒 [CALL] Ignoring permission-denied in incoming calls listener.');
       } else {
-        debugPrint('🔥 [CALL_SERVICE] Unexpected error in _listenForIncomingCalls: $e');
+        debugPrint('🔥 [CALL] Error in _listenForIncomingCalls: $e');
       }
     }).listen((snapshot) {
       for (final change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.added) {
+          // Only handle if we're idle — prevents re-processing
+          if (_state != CallState.idle) {
+            debugPrint('⚠️ [CALL] Incoming call ignored — already in state=$_state');
+            continue;
+          }
+
           final data = change.doc.data()!;
           final callInfo = CallInfo(
             callId: change.doc.id,
@@ -367,80 +380,98 @@ class CallService {
             type: data['type'] == 'video' ? CallType.video : CallType.audio,
             startedAt: DateTime.now(),
           );
+
+          debugPrint('📞 [CALL] Incoming call from ${data['callerId']} (callId=${change.doc.id})');
           _setState(CallState.incoming);
           _currentCall = callInfo;
           onIncomingCall?.call(callInfo);
 
-          // Tell the caller we are online → update status to 'ringing'
+          // Tell the caller we are online
           _firestore.collection('calls').doc(change.doc.id).update({
             'status': 'ringing',
           }).catchError((_) {});
-          
-          // Track the call continuously to catch if the caller hangs up
+
+          // Listen for caller hangup or status changes
           _listenForCallDoc(change.doc.id);
+
         } else if (change.type == DocumentChangeType.removed) {
-          // If the caller hangs up before we answer, it leaves the "outgoing/ringing" query
+          // Document left the query (status changed from outgoing/ringing).
+          // This happens when:
+          //   A) Caller cancelled before we answered (status → ended/missed)
+          //   B) We accepted and changed status to 'active'
+          //
+          // We ONLY clean up for case A — when we're still in 'incoming' state.
           if (_currentCall?.callId == change.doc.id && _state == CallState.incoming) {
-            debugPrint('📡 [CALL_SERVICE] Caller hung up before answer.');
+            debugPrint('📡 [CALL] Call doc removed while incoming — caller cancelled.');
             _setState(CallState.missed);
-            _cleanup();
+            _cleanup('incoming-removed');
+          } else {
+            debugPrint('📡 [CALL] Call doc removed (state=$_state) — ignoring (expected after accept).');
           }
         }
       }
     });
   }
 
-  /// Caller listens for answer from receiver.
+  /// Listen for call document changes (answer from receiver, hangup, etc.)
   void _listenForCallDoc(String callId) {
     _callDocSub?.cancel();
     _callDocSub = _firestore.collection('calls').doc(callId).snapshots().handleError((e) {
       if (e.toString().contains('permission-denied') || e.toString().contains('PERMISSION_DENIED')) {
-        debugPrint('🔒 [CALL_SERVICE] Ignoring call doc permission-denied during logout.');
+        debugPrint('🔒 [CALL] Ignoring permission-denied in call doc listener.');
       } else {
-        debugPrint('🔥 [CALL_SERVICE] Unexpected error in _listenForCallDoc: $e');
+        debugPrint('🔥 [CALL] Error in _listenForCallDoc: $e');
       }
     }).listen((snap) async {
       if (!snap.exists) return;
       final data = snap.data()!;
       final status = data['status'] as String?;
+      debugPrint('📡 [CALL] _listenForCallDoc: status=$status, myState=$_state');
 
-      // Receiver came online and set status to 'ringing'
+      // ── CALLER: Receiver came online →  "Ringing"
       if (status == 'ringing' && _state == CallState.outgoing) {
         _setState(CallState.ringing);
       }
 
-      // Receiver accepted → set remote SDP
+      // ── CALLER: Receiver accepted → set remote description (the answer)
       if (status == 'active' && data['answer'] != null && _pc != null) {
-        final answerData = data['answer'] as Map<String, dynamic>;
-        final remoteDesc = await _pc!.getRemoteDescription();
-        
-        if (remoteDesc == null) {
-          debugPrint('📡 [CALL_SERVICE] Received Answer. Setting remote description...');
-          _missedCallTimer?.cancel(); // They answered, cancel timeout
-          
+        // Only the CALLER needs to set the answer. The receiver already
+        // has the offer set. Check that we're the caller by verifying
+        // we're in outgoing/ringing state (not connecting/active).
+        if (_state == CallState.outgoing || _state == CallState.ringing) {
+          final answerData = data['answer'] as Map<String, dynamic>;
+          debugPrint('📡 [CALL] Received answer — setting remote description...');
+          _missedCallTimer?.cancel();
+
           try {
             await _pc!.setRemoteDescription(
               RTCSessionDescription(answerData['sdp'], answerData['type']),
             );
-            debugPrint('✅ [CALL_SERVICE] Remote description set successfully.');
+            debugPrint('✅ [CALL] Remote description (answer) set successfully.');
             _setState(CallState.connecting);
-            
-            // Process any buffered ICE candidates that arrived before the answer
+
             await _processBufferedIceCandidates();
           } catch (e) {
-            debugPrint('💥 [CALL_SERVICE] Error setting remote description: $e');
+            debugPrint('💥 [CALL] Error setting remote description: $e');
             endCall();
           }
         }
       }
 
-      // Call ended, rejected, or missed
+      // ── Both sides: call ended by other party
       if (status == 'ended' || status == 'rejected') {
-        await _cleanup();
+        if (_state != CallState.idle && _state != CallState.ended) {
+          debugPrint('📡 [CALL] Call $status by remote — cleaning up.');
+          _setState(status == 'rejected' ? CallState.rejected : CallState.ended);
+          await _cleanup('callDoc-$status');
+        }
       }
       if (status == 'missed') {
-        _setState(CallState.missed);
-        await _cleanup();
+        if (_state != CallState.idle) {
+          debugPrint('📡 [CALL] Call missed — cleaning up.');
+          _setState(CallState.missed);
+          await _cleanup('callDoc-missed');
+        }
       }
     });
   }
@@ -455,9 +486,9 @@ class CallService {
         .snapshots()
         .handleError((e) {
       if (e.toString().contains('permission-denied') || e.toString().contains('PERMISSION_DENIED')) {
-        debugPrint('🔒 [CALL_SERVICE] Ignoring ICE permission-denied during logout.');
+        debugPrint('🔒 [CALL] Ignoring ICE permission-denied.');
       } else {
-        debugPrint('🔥 [CALL_SERVICE] Unexpected error in _listenForRemoteIce: $e');
+        debugPrint('🔥 [CALL] Error in _listenForRemoteIce: $e');
       }
     }).listen((snapshot) async {
       for (final change in snapshot.docChanges) {
@@ -472,14 +503,21 @@ class CallService {
             );
 
             if (_pc != null) {
-              final remoteDesc = await _pc!.getRemoteDescription();
-              if (remoteDesc != null) {
-                debugPrint('📡 [CALL_SERVICE] Adding remote ICE candidate: ${candidate.candidate}');
-                await _pc!.addCandidate(candidate);
-              } else {
-                debugPrint('⏳ [CALL_SERVICE] Buffering ICE candidate (remote description not set)');
-                _remoteIceBuffer.add(candidate);
+              try {
+                final remoteDesc = await _pc!.getRemoteDescription();
+                if (remoteDesc != null) {
+                  debugPrint('📡 [CALL] Adding remote ICE: ${candidate.candidate?.substring(0, 30)}...');
+                  await _pc!.addCandidate(candidate);
+                } else {
+                  debugPrint('⏳ [CALL] Buffering ICE candidate (no remote desc yet)');
+                  _remoteIceBuffer.add(candidate);
+                }
+              } catch (e) {
+                debugPrint('💥 [CALL] Error adding ICE candidate: $e');
               }
+            } else {
+              debugPrint('⏳ [CALL] Buffering ICE candidate (_pc is null)');
+              _remoteIceBuffer.add(candidate);
             }
           }
         }
@@ -489,17 +527,18 @@ class CallService {
 
   Future<void> _processBufferedIceCandidates() async {
     if (_pc == null || _remoteIceBuffer.isEmpty) return;
-    
-    debugPrint('📡 [CALL_SERVICE] Applying ${_remoteIceBuffer.length} buffered ICE candidates...');
-    for (final candidate in _remoteIceBuffer) {
+
+    debugPrint('📡 [CALL] Applying ${_remoteIceBuffer.length} buffered ICE candidates...');
+    final candidates = List<RTCIceCandidate>.from(_remoteIceBuffer);
+    _remoteIceBuffer.clear();
+
+    for (final candidate in candidates) {
       try {
         await _pc!.addCandidate(candidate);
-        debugPrint('📡 [CALL_SERVICE] Applied buffered ICE candidate: ${candidate.candidate}');
       } catch (e) {
-        debugPrint('💥 [CALL_SERVICE] Error applying buffered ICE candidate: $e');
+        debugPrint('💥 [CALL] Error applying buffered ICE: $e');
       }
     }
-    _remoteIceBuffer.clear();
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -507,6 +546,7 @@ class CallService {
   // ══════════════════════════════════════════════════════════════
 
   void _setState(CallState newState) {
+    debugPrint('📡 [CALL] State: $_state → $newState');
     _state = newState;
     onStateChanged?.call(newState);
   }
@@ -520,8 +560,6 @@ class CallService {
     });
   }
 
-  /// Watch the receiver's Firestore activityStatus to determine
-  /// "Ringing..." (online) vs "Calling..." (offline).
   void _watchReceiverStatus(String receiverId) {
     _receiverStatusSub?.cancel();
     _receiverStatusSub = _firestore
@@ -530,9 +568,9 @@ class CallService {
         .snapshots()
         .handleError((e) {
       if (e.toString().contains('permission-denied') || e.toString().contains('PERMISSION_DENIED')) {
-        debugPrint('🔒 [CALL_SERVICE] Ignoring receiver status permission-denied during logout.');
+        debugPrint('🔒 [CALL] Ignoring receiver status permission-denied.');
       } else {
-        debugPrint('🔥 [CALL_SERVICE] Unexpected error in _watchReceiverStatus: $e');
+        debugPrint('🔥 [CALL] Error in _watchReceiverStatus: $e');
       }
     }).listen((snap) {
       if (!snap.exists) return;
@@ -543,12 +581,11 @@ class CallService {
     });
   }
 
-  /// Auto-timeout: if no one answers within 45 seconds → missed call.
   void _startMissedCallTimer() {
     _missedCallTimer?.cancel();
     _missedCallTimer = Timer(const Duration(seconds: 45), () {
       if (_state == CallState.outgoing || _state == CallState.ringing) {
-        // Mark as missed
+        debugPrint('⏰ [CALL] Missed call timer fired.');
         if (_currentCall != null) {
           _firestore.collection('calls').doc(_currentCall!.callId).update({
             'status': 'missed',
@@ -556,12 +593,19 @@ class CallService {
           }).catchError((_) {});
         }
         _setState(CallState.missed);
-        _cleanup();
+        _cleanup('missedTimer');
       }
     });
   }
 
-  Future<void> _cleanup() async {
+  Future<void> _cleanup(String caller) async {
+    if (_isCleaningUp) {
+      debugPrint('⚠️ [CALL] _cleanup($caller) skipped — already cleaning up.');
+      return;
+    }
+    _isCleaningUp = true;
+    debugPrint('🧹 [CALL] _cleanup($caller) — state=$_state, pc=${_pc != null}, localStream=${_localStream != null}');
+
     _callDocSub?.cancel();
     _iceSub?.cancel();
     _receiverStatusSub?.cancel();
@@ -572,17 +616,33 @@ class CallService {
     _missedCallTimer = null;
     _receiverOnline = false;
 
-    _localStream?.getTracks().forEach((t) => t.stop());
-    _localStream?.dispose();
-    _remoteStream?.dispose();
+    try {
+      _localStream?.getTracks().forEach((t) => t.stop());
+      _localStream?.dispose();
+    } catch (e) {
+      debugPrint('⚠️ [CALL] Error disposing local stream: $e');
+    }
+    try {
+      _remoteStream?.dispose();
+    } catch (e) {
+      debugPrint('⚠️ [CALL] Error disposing remote stream: $e');
+    }
     _localStream = null;
     _remoteStream = null;
 
-    await _pc?.close();
+    try {
+      await _pc?.close();
+    } catch (e) {
+      debugPrint('⚠️ [CALL] Error closing peer connection: $e');
+    }
     _pc = null;
 
     _remoteIceBuffer.clear();
     _currentCall = null;
-    _setState(CallState.idle);
+    _isCleaningUp = false;
+
+    if (_state != CallState.idle) {
+      _setState(CallState.idle);
+    }
   }
 }

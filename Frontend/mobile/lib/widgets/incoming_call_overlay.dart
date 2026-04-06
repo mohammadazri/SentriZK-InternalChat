@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 import '../services/call_service.dart';
+import '../screens/call_screen.dart';
 import '../screens/call_screen.dart';
 
 /// A full-screen overlay shown when an incoming call is detected.
@@ -27,6 +30,7 @@ class IncomingCallOverlay extends StatefulWidget {
 class _IncomingCallOverlayState extends State<IncomingCallOverlay>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
+  StreamSubscription? _callDocSub;
 
   @override
   void initState() {
@@ -39,18 +43,34 @@ class _IncomingCallOverlayState extends State<IncomingCallOverlay>
     // Start playing system ringtone continuously
     FlutterRingtonePlayer().playRingtone(looping: true);
 
-    // Close the overlay if the caller hangs up before we answer
-    CallService().onStateChanged = (state) {
+    // Watch the call document directly for caller hangup.
+    // We do NOT use CallService().onStateChanged here because
+    // that would overwrite the callback that CallScreen needs.
+    _callDocSub = FirebaseFirestore.instance
+        .collection('calls')
+        .doc(widget.callInfo.callId)
+        .snapshots()
+        .listen((snap) {
       if (!mounted) return;
-      if (state == CallState.missed || state == CallState.ended || state == CallState.idle) {
-        FlutterRingtonePlayer().stop();
-        Navigator.of(context).pop();
+      if (!snap.exists) {
+        _dismissOverlay();
+        return;
       }
-    };
+      final status = snap.data()?['status'] as String?;
+      if (status == 'ended' || status == 'missed' || status == 'rejected') {
+        _dismissOverlay();
+      }
+    });
+  }
+
+  void _dismissOverlay() {
+    FlutterRingtonePlayer().stop();
+    if (mounted) Navigator.of(context).pop();
   }
 
   @override
   void dispose() {
+    _callDocSub?.cancel();
     FlutterRingtonePlayer().stop();
     _pulseController.dispose();
     super.dispose();
