@@ -126,14 +126,16 @@ class ChatService {
                     // The Double Ratchet will auto-heal upon the next active bidirectional message.
                     plaintext = '🔒 Waiting for this message. This may take a while.';
                     _decryptedCache[doc.id] = plaintext;
-                    
-                    if (!e.toString().contains('DuplicateMessageException')) {
+                    if (data['isSystem'] != true && !e.toString().contains('DuplicateMessageException')) {
                       print('🔄 [E2EE Auto-Heal] Dispatching Resend Request for ${doc.id}');
                       sendMessage(
                         content: 'SYS:RESEND_REQ:${doc.id}',
                         senderId: ownId,
                         receiverId: senderId,
+                        isSystem: true,
                       ).catchError((err) => print('⚠️ [SYS:RESEND_REQ] failed: $err'));
+                    } else if (data['isSystem'] == true) {
+                      print('⚠️ [E2EE Auto-Heal] Dropped undecryptable system message to prevent loop.');
                     }
                   }
                 }
@@ -155,6 +157,7 @@ class ChatService {
                   content: 'SYS:RESEND_PAYLOAD:$targetDocId:${oldMsg.content}',
                   senderId: ownId,
                   receiverId: senderId,
+                  isSystem: true,
                 ).catchError((err) => print('⚠️ [SYS:RESEND_PAYLOAD] Failed to send payload: $err'));
               }
             }
@@ -214,6 +217,7 @@ class ChatService {
     DateTime? timestamp,
     File? attachment,
     double? threatScore,
+    bool isSystem = false,
   }) async {
     String? attachmentUrl;
     final createdAt = timestamp ?? DateTime.now();
@@ -274,7 +278,9 @@ class ChatService {
         .collection('messages')
         .doc();
         
-    await docRef.set(message.toMap());
+    final payload = message.toMap();
+    if (isSystem) payload['isSystem'] = true;
+    await docRef.set(payload);
 
     if (docRef.id.isEmpty) {
       throw Exception('Firestore generated an empty Document ID for the message.');
