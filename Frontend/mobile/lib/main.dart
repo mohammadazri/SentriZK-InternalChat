@@ -91,7 +91,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
             decryptedText = existingMsg.content;
           }
         }
-        }
       } catch (e) {
         print('🔐 [E2EE] Background decryption failed: $e');
         // Keep the default encrypted banner notification.
