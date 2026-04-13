@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { prepareLogin } from "@/auth/loginLogic";
 import { decryptSaltHex } from "@/lib/saltEncryption";
 import { loginUser } from "@/auth/api";
@@ -364,7 +365,12 @@ export default function LoginPage() {
             <form onSubmit={handleLogin} className={styles.form}>
               {!decryptedSaltHex && (
                 <div className={styles.inputGroup}>
-                  <label htmlFor="password">Password</label>
+                  <div className={styles.labelRow}>
+                    <label htmlFor="password">Password</label>
+                    <Link href="/recover" className={styles.forgotPassword}>
+                      Forgot password?
+                    </Link>
+                  </div>
                   <div className={styles.inputWrapper}>
                     <input
                       id="password"
