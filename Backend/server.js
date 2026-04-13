@@ -940,6 +940,80 @@ app.post("/logout", async (req, res) => {
   }
 });
 
+// ---------------------
+// Push Notification Trigger
+// ---------------------
+// Single endpoint for both message + call notifications.
+// Mobile fires this fire-and-forget after sending a message or placing a call.
+// FCM payload is metadata-only — NO message content ever goes through here.
+app.post("/notify", async (req, res) => {
+  try {
+    const { toUserId, type, senderName, callType, callId } = req.body;
+    if (!toUserId || !type) {
+      return res.status(400).json({ error: "toUserId and type required" });
+    }
+
+    // Fetch the receiver's FCM token
+    const tokenDoc = await admin.firestore()
+      .collection("fcmTokens")
+      .doc(toUserId)
+      .get();
+
+    if (!tokenDoc.exists || !tokenDoc.data()?.token) {
+      return res.json({ sent: false, reason: "no_token" });
+    }
+
+    const token = tokenDoc.data().token;
+    let message;
+
+    if (type === "message") {
+      message = {
+        token,
+        notification: {
+          title: senderName || "SentriZK",
+          body: "You have a new encrypted message",
+        },
+        android: {
+          priority: "normal",
+          notification: { channelId: "sentrizk_messages", sound: "default" },
+        },
+        data: { type: "message", senderName: senderName || "" },
+      };
+    } else if (type === "call") {
+      message = {
+        token,
+        notification: {
+          title: `📞 Incoming ${callType === "video" ? "Video" : "Audio"} Call`,
+          body: `${senderName || "Someone"} is calling you`,
+        },
+        android: {
+          priority: "high",
+          notification: {
+            channelId: "sentrizk_calls",
+            sound: "default",
+            defaultVibrateTimings: true,
+          },
+        },
+        data: {
+          type: "call",
+          callId: callId || "",
+          callerName: senderName || "",
+          callType: callType || "audio",
+        },
+      };
+    } else {
+      return res.status(400).json({ error: "type must be message or call" });
+    }
+
+    await admin.messaging().send(message);
+    console.log(`📲 [notify] Pushed ${type} notification to ${toUserId}`);
+    res.json({ sent: true });
+  } catch (err) {
+    console.error("⚠️ [notify] Failed:", err.message);
+    res.json({ sent: false, reason: err.message });
+  }
+});
+
 // =======================
 // --- Start Server ---
 // =======================

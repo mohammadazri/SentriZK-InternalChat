@@ -75,6 +75,7 @@ class AppConfig {
   static String get firebaseTokenEndpoint => "$apiUrl/firebase-token";
   static String get threatLogEndpoint => "$apiUrl/threat-log";
   static String get logoutEndpoint => "$apiUrl/logout";
+  static String get notifyEndpoint => "$apiUrl/notify";
 
   // Deep Link Callbacks
   static String get authCallbackUrl => "$deepLinkScheme://auth-callback";

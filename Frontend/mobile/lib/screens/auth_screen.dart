@@ -131,6 +131,9 @@ class _AuthScreenState extends State<AuthScreen>
         nextScreen = ProfileSetupScreen(username: _username!);
       }
 
+      // 🔔 Save / refresh FCM token so this device receives push notifications
+      NotificationService.instance.saveFcmToken(userId: _username!);
+
       Navigator.of(context)
           .pushReplacement(MaterialPageRoute(builder: (context) => nextScreen))
           .whenComplete(() {

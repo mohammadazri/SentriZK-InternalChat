@@ -11,6 +11,7 @@ import '../services/message_security_service.dart';
 import '../services/message_scan_service.dart';
 import '../services/call_service.dart';
 import '../config/app_config.dart';
+import '../services/notification_service.dart';
 import 'call_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -688,6 +689,18 @@ class _ChatScreenState extends State<ChatScreen> {
                           ),
                           status: 'sent',
                         );
+
+                        // 🔔 Notify receiver via FCM (fire-and-forget, metadata-only)
+                        http.post(
+                          Uri.parse(AppConfig.notifyEndpoint),
+                          headers: {'Content-Type': 'application/json'},
+                          body: jsonEncode({
+                            'toUserId': widget.peerId,
+                            'type': 'message',
+                            'senderName': widget.username,
+                          }),
+                        ).catchError((_) {});
+
                         // Clear local draft from SharedPreferences precisely when sending
                         final prefs = await SharedPreferences.getInstance();
                         await prefs.remove(_draftKey);

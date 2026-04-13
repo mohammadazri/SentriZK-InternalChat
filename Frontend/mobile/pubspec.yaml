@@ -46,6 +46,7 @@ dependencies:
   firebase_core: any
   firebase_storage: any
   firebase_messaging: any
+  flutter_local_notifications: ^18.0.0
   
   # Settings & Profile Additions
   image_picker: ^1.1.2
