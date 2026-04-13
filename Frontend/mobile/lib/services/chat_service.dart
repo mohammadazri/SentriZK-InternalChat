@@ -219,9 +219,11 @@ class ChatService {
     return DateTime.now().difference(messageSentAt) <= _deleteForEveryoneWindow;
   }
 
-  /// Marks the Firestore message document as deleted for everyone.
-  /// [receiverId] is the person who received the message (owns the Firestore doc).
-  /// [messageId]  is the Firestore document ID.
+  /// Sends a deletion signal to the receiver via a dedicated 'deletions'
+  /// subcollection. The original message doc may already be deleted from
+  /// Firestore (downloaded & purged), so we cannot .update() it.
+  /// [receiverId] is the person who received the message.
+  /// [messageId]  is the Firestore document ID the receiver saved locally as firebaseId.
   /// [messageSentAt] is used to enforce the 1-hour window.
   Future<void> deleteForEveryone({
     required String receiverId,
@@ -231,25 +233,24 @@ class ChatService {
     if (!canDeleteForEveryone(messageSentAt)) {
       throw Exception('You can only delete messages within 1 hour of sending.');
     }
+    // Write a lightweight deletion marker into the receiver's 'deletions' subcollection.
     await _firestore
         .collection('chats')
         .doc(receiverId)
-        .collection('messages')
+        .collection('deletions')
         .doc(messageId)
-        .update({
-      'deletedForEveryone': true,
-      'content': '', // wipe encrypted ciphertext from Firestore too
+        .set({
+      'deletedAt': FieldValue.serverTimestamp(),
     });
   }
 
-  /// Listens for messages in the current user's mailbox that have been
-  /// marked `deletedForEveryone` by the sender. Returns doc IDs that changed.
+  /// Listens for incoming deletion signals in our own 'deletions' subcollection.
+  /// Returns the firebaseId(s) of messages the sender wants wiped.
   Stream<List<String>> listenForRemoteDeletions(String ownId) {
     return _firestore
         .collection('chats')
         .doc(ownId)
-        .collection('messages')
-        .where('deletedForEveryone', isEqualTo: true)
+        .collection('deletions')
         .snapshots()
         .handleError((e) {
       if (e.toString().contains('permission-denied') ||
@@ -260,12 +261,20 @@ class ChatService {
       }
     }).map((snapshot) {
       return snapshot.docChanges
-          .where((c) =>
-              c.type == DocumentChangeType.added ||
-              c.type == DocumentChangeType.modified)
+          .where((c) => c.type == DocumentChangeType.added)
           .map((c) => c.doc.id)
           .toList();
     });
+  }
+
+  /// Removes the deletion marker from Firestore after applying it locally.
+  Future<void> deleteDeletionMarker(String ownId, String messageId) async {
+    await _firestore
+        .collection('chats')
+        .doc(ownId)
+        .collection('deletions')
+        .doc(messageId)
+        .delete();
   }
 
   /// Deletes a message from Firestore after it has been securely saved to the local database.

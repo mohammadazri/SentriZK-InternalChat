@@ -42,6 +42,7 @@ class _UserListScreenState extends State<UserListScreen>
   Isar? _isar;
   StreamSubscription? _globalMessageSub;
   StreamSubscription? _receiptSub;
+  StreamSubscription? _deletionSub;
   StreamSubscription? _localMessagesSub;
   StreamSubscription? _accountStatusSub;
   Map<String, LocalMessage> _lastMessages = {};
@@ -80,6 +81,7 @@ class _UserListScreenState extends State<UserListScreen>
     // Cancel all subscriptions immediately to prevent further operations
     _globalMessageSub?.cancel();
     _receiptSub?.cancel();
+    _deletionSub?.cancel();
     _localMessagesSub?.cancel();
     _accountStatusSub?.cancel();
 
@@ -279,6 +281,39 @@ class _UserListScreenState extends State<UserListScreen>
             debugPrint('🔥 [SYNC] Global receipt listener error: $e');
           },
         );
+
+    // Start listening for Delete for Everyone signals
+    _deletionSub = _chatService
+        .listenForRemoteDeletions(widget.currentUserId)
+        .listen(
+          (messageIds) async {
+            if (messageIds.isNotEmpty && isar.isOpen) {
+              await isar.writeTxn(() async {
+                for (final msgId in messageIds) {
+                  final localMsg = await isar.localMessages
+                      .filter()
+                      .firebaseIdEqualTo(msgId)
+                      .findFirst();
+                  if (localMsg != null && !localMsg.deletedForEveryone) {
+                    localMsg.deletedForEveryone = true;
+                    localMsg.content = '🚫 This message was deleted';
+                    await isar.localMessages.put(localMsg);
+                  }
+                }
+              });
+              // Clean up deletion markers from Firestore
+              for (final msgId in messageIds) {
+                await _chatService.deleteDeletionMarker(
+                  widget.currentUserId,
+                  msgId,
+                );
+              }
+            }
+          },
+          onError: (e) {
+            debugPrint('🔥 [SYNC] Global deletion listener error: $e');
+          },
+        );
   }
 
   Future<void> _updateLastMessages() async {
@@ -313,6 +348,7 @@ class _UserListScreenState extends State<UserListScreen>
     _searchController.dispose();
     _globalMessageSub?.cancel();
     _receiptSub?.cancel();
+    _deletionSub?.cancel();
     _localMessagesSub?.cancel();
     _accountStatusSub?.cancel();
     CallService().dispose();

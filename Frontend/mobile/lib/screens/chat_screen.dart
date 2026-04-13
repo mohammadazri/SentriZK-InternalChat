@@ -117,9 +117,11 @@ class _ChatScreenState extends State<ChatScreen> {
         .filter()
         .deletedForMeEqualTo(false) // Filter out "Delete for Me"
         .and()
-        .group((q) => q.senderIdEqualTo(widget.username).and().receiverIdEqualTo(widget.peerId))
-        .or()
-        .group((q) => q.senderIdEqualTo(widget.peerId).and().receiverIdEqualTo(widget.username))
+        .group((q) => q
+          .group((q) => q.senderIdEqualTo(widget.username).and().receiverIdEqualTo(widget.peerId))
+          .or()
+          .group((q) => q.senderIdEqualTo(widget.peerId).and().receiverIdEqualTo(widget.username))
+        )
         .watch(fireImmediately: true);
         
     // Listen for remote deletions (Delete for Everyone)
@@ -135,6 +137,10 @@ class _ChatScreenState extends State<ChatScreen> {
             }
           }
         });
+        // Clean up deletion markers from Firestore after applying them locally
+        for (final msgId in messageIds) {
+          await _chatService.deleteDeletionMarker(widget.username, msgId);
+        }
       }
     });
 
