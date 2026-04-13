@@ -167,14 +167,14 @@ class _ChatScreenState extends State<ChatScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.24),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 16),
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: Colors.white70),
-              title: const Text('Delete for Me', style: TextStyle(color: Colors.white)),
+              leading: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+              title: Text('Delete for Me', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
               onTap: () async {
                 Navigator.pop(context);
                 if (_isar != null && _isar!.isOpen) {
