@@ -373,9 +373,10 @@ export default function LoginPage() {
                     className={styles.input}
                     disabled={loading}
                     required
+                    minLength={8}
                     autoFocus
                   />
-                  <span className={styles.hint}>Used to decrypt your salt locally</span>
+                  <span className={styles.hint}>Minimum 8 characters. Used to decrypt your salt locally</span>
                 </div>
               )}
 
