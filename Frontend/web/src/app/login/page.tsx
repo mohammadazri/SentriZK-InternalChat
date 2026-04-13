@@ -6,12 +6,13 @@ import { decryptSaltHex } from "@/lib/saltEncryption";
 import { loginUser } from "@/auth/api";
 import WalletConnector from "@/components/WalletConnector";
 import styles from "./login.module.css";
-import { Lock, Wallet, KeyRound, Check, AlertCircle, LayoutDashboard, Database, Shield, Hexagon } from "lucide-react";
+import { Lock, Wallet, KeyRound, Check, AlertCircle, LayoutDashboard, Database, Shield, Hexagon, Eye, EyeOff } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [walletAddress, setWalletAddress] = useState("");
   const [encryptedSalt, setEncryptedSalt] = useState("");
   const [decryptedSaltHex, setDecryptedSaltHex] = useState<string | null>(null);
@@ -364,18 +365,29 @@ export default function LoginPage() {
               {!decryptedSaltHex && (
                 <div className={styles.inputGroup}>
                   <label htmlFor="password">Password</label>
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    className={styles.input}
-                    disabled={loading}
-                    required
-                    minLength={8}
-                    autoFocus
-                  />
+                  <div className={styles.inputWrapper}>
+                    <input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      className={styles.input}
+                      disabled={loading}
+                      required
+                      minLength={8}
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      className={styles.eyeIcon}
+                      onClick={() => setShowPassword(!showPassword)}
+                      tabIndex={-1}
+                      title={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
                   <span className={styles.hint}>Minimum 8 characters. Used to decrypt your salt locally</span>
                 </div>
               )}

@@ -4,13 +4,15 @@ import React, { useState, useEffect } from "react";
 import { prepareRegistration, submitRegistration } from "@/auth/registerLogic";
 import WalletConnector from "@/components/WalletConnector";
 import styles from "./register.module.css";
-import { Lock, Wallet, KeyRound, Check, AlertCircle, LayoutDashboard, Database, Shield, Hexagon, ArrowLeft } from "lucide-react";
+import { Lock, Wallet, KeyRound, Check, AlertCircle, LayoutDashboard, Database, Shield, Hexagon, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [walletAddress, setWalletAddress] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -92,6 +94,12 @@ export default function RegisterPage() {
 
     if (!password || password.length < 8) {
       setError("Password must be at least 8 characters");
+      return false;
+    }
+
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!strongPasswordRegex.test(password)) {
+      setError("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
       return false;
     }
 
@@ -311,32 +319,54 @@ export default function RegisterPage() {
 
               <div className={styles.inputGroup}>
                 <label htmlFor="password">Password</label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Create a strong password"
-                  className={styles.input}
-                  disabled={busy}
-                  required
-                  minLength={8}
-                />
-                <span className={styles.hint}>Minimum 8 characters</span>
+                <div className={styles.inputWrapper}>
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Create a strong password"
+                    className={styles.input}
+                    disabled={busy}
+                    required
+                    minLength={8}
+                  />
+                  <button
+                    type="button"
+                    className={styles.eyeIcon}
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+                <span className={styles.hint}>Minimum 8 chars: uppercase, lowercase, number, special character.</span>
               </div>
 
               <div className={styles.inputGroup}>
                 <label htmlFor="confirmPassword">Confirm Password</label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter your password"
-                  className={styles.input}
-                  disabled={busy}
-                  required
-                />
+                <div className={styles.inputWrapper}>
+                  <input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter your password"
+                    className={styles.input}
+                    disabled={busy}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className={styles.eyeIcon}
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    tabIndex={-1}
+                    title={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
               </div>
 
               {error && (
