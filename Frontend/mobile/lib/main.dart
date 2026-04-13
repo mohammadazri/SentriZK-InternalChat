@@ -15,6 +15,7 @@ import 'package:isar/isar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'services/signal/signal_manager.dart';
 import 'models/local_message.dart';
+import 'services/permission_service.dart';
 
 // ── Background FCM handler ────────────────────────────────────────────────────
 // Must be a top-level function (not a class method). Runs in a separate Dart
@@ -122,6 +123,9 @@ void main() async {
 
   // Initialize notification channels & foreground listener
   await NotificationService.instance.initialize();
+  
+  // 🛡️ Request all core permissions (Camera, Mic, Notifications) at app start
+  await PermissionService.instance.initializePermissions();
 
   runApp(
     ChangeNotifierProvider(
