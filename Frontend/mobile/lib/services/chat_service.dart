@@ -112,17 +112,81 @@ class ChatService {
                 } catch (e) {
                   print('🔐 [E2EE] Failed to decrypt message globally: $e');
                   
-                  // Heal the session by deleting the stale identity/session. 
-                  // The next message we SEND to them will fetch a fresh bundle.
-                  // The next PreKeyMessage they send us will use TOFU.
-                  await _signalManager.deleteSessionAndIdentity(senderId);
+                  // In case the Background Isolate is slightly slower and throws DuplicateMessageException
+                  // because it got to the Ratchet right as we did, we give it a tiny 500ms window 
+                  // to finish saving the plaintext to Isar.
+                  await Future.delayed(const Duration(milliseconds: 500));
+                  final fallbackMsg = await isar.localMessages.filter().firebaseIdEqualTo(doc.id).findFirst();
                   
-                  plaintext = '🔒 [Decryption Failed - Session Resynced]';
-                  _decryptedCache[doc.id] = plaintext;
+                  if (fallbackMsg != null) {
+                    plaintext = fallbackMsg.content;
+                  } else {
+                    // WhatsApp-style handling: Do not aggressively delete the session object. 
+                    // Out-of-order networks or background process timeouts may cause this.
+                    // The Double Ratchet will auto-heal upon the next active bidirectional message.
+                    plaintext = '🔒 Waiting for this message. This may take a while.';
+                    _decryptedCache[doc.id] = plaintext;
+                    
+                    if (!e.toString().contains('DuplicateMessageException')) {
+                      print('🔄 [E2EE Auto-Heal] Dispatching Resend Request for ${doc.id}');
+                      sendMessage(
+                        content: 'SYS:RESEND_REQ:${doc.id}',
+                        senderId: ownId,
+                        receiverId: senderId,
+                      ).catchError((err) => print('⚠️ [SYS:RESEND_REQ] failed: $err'));
+                    }
+                  }
                 }
               }
             }
           }
+          
+          // --- E2EE AUTO-HEAL PROTOCOL INTERCEPTION ---
+          if (plaintext.startsWith('SYS:RESEND_REQ:')) {
+            final parts = plaintext.split(':');
+            if (parts.length >= 3) {
+              final targetDocId = parts[2];
+              print('🔄 [E2EE Auto-Heal] Intercepted Resend Request for $targetDocId. Reading Isar...');
+              final isar = await MessageSecurityService.getInstance();
+              final oldMsg = await isar.localMessages.filter().firebaseIdEqualTo(targetDocId).findFirst();
+              if (oldMsg != null) {
+                print('🔄 [E2EE Auto-Heal] Found original plaintext. Re-encrypting and sending payload...');
+                sendMessage(
+                  content: 'SYS:RESEND_PAYLOAD:$targetDocId:${oldMsg.content}',
+                  senderId: ownId,
+                  receiverId: senderId,
+                ).catchError((err) => print('⚠️ [SYS:RESEND_PAYLOAD] Failed to send payload: $err'));
+              }
+            }
+            // Delete the silent request from Firestore and skip yielding to UI
+            await doc.reference.delete();
+            continue;
+          }
+          
+          if (plaintext.startsWith('SYS:RESEND_PAYLOAD:')) {
+            final parts = plaintext.split(':');
+            if (parts.length >= 3) {
+              final oldDocId = parts[2];
+              // the true text might contain colons, so we substring after the 3rd colon format
+              final prefixLength = 'SYS:RESEND_PAYLOAD:$oldDocId:'.length;
+              final trueContent = plaintext.substring(prefixLength);
+              
+              print('✅ [E2EE Auto-Heal] Received Payload for $oldDocId! Healing UI inline.');
+              final isar = await MessageSecurityService.getInstance();
+              final brokenMsg = await isar.localMessages.filter().firebaseIdEqualTo(oldDocId).findFirst();
+              
+              if (brokenMsg != null) {
+                await isar.writeTxn(() async {
+                  brokenMsg.content = trueContent;
+                  await isar.localMessages.put(brokenMsg);
+                });
+              }
+            }
+            // Delete the silent payload envelope from Firestore and skip yielding to UI
+            await doc.reference.delete();
+            continue;
+          }
+          // -------------------------------------------
 
           newMessages.add(Message(
             id: doc.id,

@@ -130,7 +130,26 @@ class SignalManager {
     );
 
     final builder = SessionBuilder(_store, _store, _store, _store, address);
-    await builder.processPreKeyBundle(bundle);
+    
+    // libsignal_protocol_dart tends to throw orphaned asynchronous exceptions 
+    // inside anonymous closures during processV3. We firewall it here.
+    final completer = Completer<void>();
+    runZonedGuarded(() async {
+      try {
+        await builder.processPreKeyBundle(bundle);
+        if (!completer.isCompleted) completer.complete();
+      } catch (e) {
+        if (!completer.isCompleted) completer.completeError(e);
+      }
+    }, (error, stack) {
+      if (!completer.isCompleted) {
+        completer.completeError(error);
+      } else {
+        print('🛡️ [E2EE Firewall] Caught orphaned libsignal exception: $error');
+      }
+    });
+
+    await completer.future;
   }
 
   /// Encrypts an outgoing message using the current derived Ratchet key
@@ -156,17 +175,32 @@ class SignalManager {
     final cipher = SessionCipher(_store, _store, _store, _store, address);
     final ciphertextBytes = Uint8List.fromList(base64Decode(base64Ciphertext));
 
-    Uint8List plaintextBytes;
-    if (type == CiphertextMessage.prekeyType) {
-      final preKeyMessage = PreKeySignalMessage(ciphertextBytes);
-      plaintextBytes = await cipher.decrypt(preKeyMessage);
-    } else if (type == CiphertextMessage.whisperType) {
-      final whisperMessage = SignalMessage.fromSerialized(ciphertextBytes);
-      plaintextBytes = await cipher.decryptFromSignal(whisperMessage);
-    } else {
-      throw Exception('Unknown message type $type');
-    }
+    final completer = Completer<Uint8List>();
+    runZonedGuarded(() async {
+      try {
+        Uint8List pBytes;
+        if (type == CiphertextMessage.prekeyType) {
+          final preKeyMessage = PreKeySignalMessage(ciphertextBytes);
+          pBytes = await cipher.decrypt(preKeyMessage);
+        } else if (type == CiphertextMessage.whisperType) {
+          final whisperMessage = SignalMessage.fromSerialized(ciphertextBytes);
+          pBytes = await cipher.decryptFromSignal(whisperMessage);
+        } else {
+          throw Exception('Unknown message type $type');
+        }
+        if (!completer.isCompleted) completer.complete(pBytes);
+      } catch (e) {
+        if (!completer.isCompleted) completer.completeError(e);
+      }
+    }, (error, stack) {
+      if (!completer.isCompleted) {
+        completer.completeError(error);
+      } else {
+        print('🛡️ [E2EE Firewall] Caught orphaned libsignal decrypt exception: $error');
+      }
+    });
 
+    final plaintextBytes = await completer.future;
     return utf8.decode(plaintextBytes);
   }
 
