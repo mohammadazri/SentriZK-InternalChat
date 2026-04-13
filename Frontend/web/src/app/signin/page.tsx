@@ -123,7 +123,7 @@ export default function SignInPage() {
               <label>Recovered Salt</label>
               <code style={{ background: "var(--bg-primary)", border: "1px solid var(--border-subtle)", padding: "8px 10px", borderRadius: 8, wordBreak: "break-all", color: "var(--text-primary)" }}>{saltHex || "(none) - go to Forgot Password to derive"}</code>
               <div style={{ display: "flex", gap: 8 }}>
-                <a href="/forgot-password" style={{ color: "var(--accent)" }}>Forgot Password (derive salt)</a>
+                <a href="/recover" style={{ color: "var(--accent)" }}>Forgot Password (derive salt)</a>
                 {saltHex && <button type="button" onClick={() => navigator.clipboard.writeText(saltHex)} style={{ background: "transparent", border: "1px solid var(--border-subtle)", color: "var(--text-primary)", padding: "6px 10px", borderRadius: 8 }}>Copy</button>}
               </div>
             </div>
@@ -162,7 +162,7 @@ export default function SignInPage() {
             <button disabled={loading} type="submit" style={{ background: "var(--accent)", border: "none", color: "white", padding: "10px 16px", borderRadius: 10, fontWeight: 600 }}>
               {loading ? "Signing in..." : "Sign In Securely"}
             </button>
-            <a href="/forgot-password" style={{ color: "var(--accent)" }}>Forgot Password?</a>
+            <a href="/recover" style={{ color: "var(--accent)" }}>Forgot Password?</a>
           </div>
         </form>
       </div>
