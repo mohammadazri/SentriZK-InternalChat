@@ -11,23 +11,104 @@ import 'package:provider/provider.dart';
 import 'providers/theme_provider.dart';
 import 'theme/app_theme.dart';
 
+import 'package:isar/isar.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'services/signal/signal_manager.dart';
+import 'models/local_message.dart';
+import 'services/permission_service.dart';
+
 // ── Background FCM handler ────────────────────────────────────────────────────
 // Must be a top-level function (not a class method). Runs in a separate Dart
 // isolate when the app is in the background or terminated.
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Firebase must be initialised again in this isolate
+  WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await NotificationService.instance.initialize();
 
   final type = message.data['type'];
   if (type == 'message') {
+    final senderName = message.data['senderName'] ?? 'SentriZK';
+    final messageId = message.data['messageId'];
+    final receiverId = message.data['toUserId'];
+
+    String decryptedText = 'You have a new encrypted message';
+
+    if (messageId != null && messageId.toString().isNotEmpty && receiverId != null && receiverId.toString().isNotEmpty) {
+      try {
+        // Initialize Isar for Security/Signal Store in Isolate
+        await MessageSecurityService.initialize();
+        // Load Signal keys locally
+        await SignalManager.instance.init(0);
+
+        final doc = await FirebaseFirestore.instance
+            .collection('chats')
+            .doc(receiverId)
+            .collection('messages')
+            .doc(messageId)
+            .get();
+
+        if (doc.exists) {
+          final data = doc.data()!;
+          final ciphertext = data['content'] as String;
+          final signalType = data['signalType'] as int?;
+
+          if (signalType != null) {
+            decryptedText = await SignalManager.instance.decryptMessage(
+              senderName, 
+              signalType, 
+              ciphertext
+            );
+          } else {
+            decryptedText = ciphertext; // Plaintext fallback
+          }
+
+          // 💾 RACE CONDITION FIX: Save to Isar immediately and delete from Firestore.
+          // This ensures the main isolate (if running) doesn't try to decrypt it again
+          // and corrupt the Signal Ratchet!
+          final isar = await MessageSecurityService.getInstance();
+          await isar.writeTxn(() async {
+            await isar.localMessages.put(
+              LocalMessage()
+                ..firebaseId = messageId
+                ..content = decryptedText
+                ..senderId = senderName
+                ..receiverId = receiverId
+                ..timestamp = data['timestamp'] != null 
+                    ? (data['timestamp'] as Timestamp).toDate()
+                    : DateTime.now()
+                ..status = 'delivered'
+            );
+          });
+          
+          await doc.reference.delete();
+          
+        } else {
+          // If the doc doesn't exist, the main isolate might have already processed it.
+          // Let's check Isar for the plaintext so we can still show the banner!
+          final isar = await MessageSecurityService.getInstance();
+          final existingMsg = await isar.localMessages.filter().firebaseIdEqualTo(messageId).findFirst();
+          if (existingMsg != null) {
+            decryptedText = existingMsg.content;
+          }
+        }
+      } catch (e) {
+        print('🔐 [E2EE] Background decryption failed: $e');
+        // Keep the default encrypted banner notification.
+      }
+    }
+
     await NotificationService.instance.showMessageNotification(
-      senderName: message.data['senderName'] ?? 'SentriZK',
+      senderName: senderName,
+      body: decryptedText,
     );
   } else if (type == 'call') {
     await NotificationService.instance.showCallNotification(
       callerName: message.data['callerName'] ?? 'Unknown',
       callType: message.data['callType'] ?? 'audio',
+      callId: message.data['callId'] ?? '',
+      callerId: message.data['callerId'] ?? '',
+      toUserId: message.data['toUserId'] ?? '',
     );
   }
 }
@@ -45,6 +126,9 @@ void main() async {
 
   // Initialize notification channels & foreground listener
   await NotificationService.instance.initialize();
+  
+  // 🛡️ Request all core permissions (Camera, Mic, Notifications) at app start
+  await PermissionService.instance.initializePermissions();
 
   runApp(
     ChangeNotifierProvider(
@@ -63,6 +147,8 @@ Future<void> _loadLocalEnv() async {
 }
 
 class SentriZKApp extends StatelessWidget {
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  
   const SentriZKApp({super.key});
 
   @override
@@ -70,6 +156,7 @@ class SentriZKApp extends StatelessWidget {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         return MaterialApp(
+          navigatorKey: SentriZKApp.navigatorKey,
           title: 'SentriZK Core',
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
