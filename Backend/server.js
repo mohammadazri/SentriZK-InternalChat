@@ -106,6 +106,19 @@ app.use((req, res, next) => {
 });
 
 // =======================
+// --- Probabilistic GC ---
+// =======================
+// To save CPU and memory, we do not run a continuous background loop.
+// Instead, there's a 10% chance on any active API request to trigger the cleanup.
+// If the server has no traffic, it sleeps efficiently.
+app.use((req, res, next) => {
+  if (Math.random() < 0.10) {
+    cleanupExpiredTokens(); // Fire and forget background GC
+  }
+  next();
+});
+
+// =======================
 // --- Utility Helpers ---
 // =======================
 function requireFields(obj, fields = []) {
@@ -170,8 +183,9 @@ async function cleanupExpiredTokens() {
     // Set users offline for expired sessions
     if (s.data && s.data.length > 0) {
       await Promise.all(s.data.map(sess => setUserOffline(sess.username)));
+      console.log(`🧹 [cleanup] Expired sessions purged and users set offline.`);
     }
-    console.log("🧹 [cleanup] Expired tokens/sessions purged.");
+    // console.log("🧹 [cleanup] Expired tokens/sessions purged.");
   } catch (e) {
     console.warn("⚠️ [cleanup] Error during token cleanup:", e.message);
   }
@@ -893,10 +907,7 @@ app.delete("/admin/threat-logs/:id", verifyAdminJWT, async (req, res) => {
   }
 });
 
-// =======================
-// --- Periodic Cleanup (async — non-blocking) ---
-// =======================
-setInterval(cleanupExpiredTokens, 60 * 1000);
+
 
 // =======================
 // --- Start Server ---
