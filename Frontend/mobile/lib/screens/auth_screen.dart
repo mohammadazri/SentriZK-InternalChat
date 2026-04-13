@@ -364,8 +364,7 @@ class _AuthScreenState extends State<AuthScreen>
             );
 
             // Register and save FCM token for push notifications
-            final notificationService = NotificationService();
-            await notificationService.saveFcmToken(userId: username);
+            await NotificationService.instance.saveFcmToken(userId: username);
 
             _updateStatus(
               "Welcome back, $username",
