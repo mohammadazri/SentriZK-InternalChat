@@ -1,21 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 import 'screens/auth_screen.dart';
 import 'services/message_security_service.dart';
+import 'services/notification_service.dart';
 
 import 'package:provider/provider.dart';
 import 'providers/theme_provider.dart';
 import 'theme/app_theme.dart';
+
+// ── Background FCM handler ────────────────────────────────────────────────────
+// Must be a top-level function (not a class method). Runs in a separate Dart
+// isolate when the app is in the background or terminated.
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Firebase must be initialised again in this isolate
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  final type = message.data['type'];
+  if (type == 'message') {
+    await NotificationService.instance.showMessageNotification(
+      senderName: message.data['senderName'] ?? 'SentriZK',
+    );
+  } else if (type == 'call') {
+    await NotificationService.instance.showCallNotification(
+      callerName: message.data['callerName'] ?? 'Unknown',
+      callType: message.data['callType'] ?? 'audio',
+    );
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _loadLocalEnv();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  // Register the background handler BEFORE runApp
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
   // Initialize security scan cache
   await MessageSecurityService.initialize();
+
+  // Initialize notification channels & foreground listener
+  await NotificationService.instance.initialize();
 
   runApp(
     ChangeNotifierProvider(

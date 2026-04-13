@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:http/http.dart' as http;
+import '../config/app_config.dart';
 
 // ───────────────────────────────────────────────────────────────
 // Enums
@@ -162,6 +165,19 @@ class CallService {
       _listenForRemoteIce(callId, receiverId);
       _watchReceiverStatus(receiverId);
       _startMissedCallTimer();
+
+      // 🔔 Notify receiver via FCM (fire-and-forget, metadata-only)
+      http.post(
+        Uri.parse(AppConfig.notifyEndpoint),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'toUserId': receiverId,
+          'type': 'call',
+          'senderName': callerId,
+          'callType': type.name,
+          'callId': callId,
+        }),
+      ).catchError((_) {});
 
       debugPrint('✅ [CALL] Offer sent, listeners started.');
     } catch (e) {

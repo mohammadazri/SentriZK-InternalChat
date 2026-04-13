@@ -265,7 +265,7 @@ export default function LoginPage() {
                 Use <Link href="/recover" style={{ color: '#93c5fd' }}>Forgot Password</Link> to derive your salt from the recovery phrase
               </li>
               <li>
-                Then go to <a href="/signin" style={{ color: '#93c5fd' }}>Sign In</a> to authenticate with your wallet
+                Then return to <Link href="/login" style={{ color: '#93c5fd' }}>Login</Link> to authenticate with your recovered salt
               </li>
             </ul>
           </div>
