@@ -113,9 +113,17 @@ class SignalManager {
     final signedPreKeySignature = Uint8List.fromList(base64Decode(signedPreKeyMap['signature']));
 
     final preKeyList = remoteBundle['preKeys'] as List; 
-    // Use the first preKey available
+    
     if (preKeyList.isEmpty) throw Exception('No one-time pre-keys available for $remoteUserId');
-    final preKeyMap = preKeyList[0];
+    
+    // 🛡️ E2EE PRE-KEY BURN COLLISION FIX
+    // Do NOT statically select `[0]`. If a receiver reinstalls and fetches their old chat history,
+    // libsignal will aggressively "burn" (delete) PreKey 0 while attempting to decrypt old garbage 
+    // messages. If senders rigidly use [0], real-time messaging breaks permanently!
+    // We randomly sample from the 100 available keys to eliminate collision loops.
+    final randIndex = Random().nextInt(preKeyList.length);
+    final preKeyMap = preKeyList[randIndex];
+    
     final preKeyId = preKeyMap['id'] as int;
     final preKeyPublic = Curve.decodePoint(Uint8List.fromList(base64Decode(preKeyMap['publicKey'])), 0);
 
