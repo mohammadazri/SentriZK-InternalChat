@@ -960,6 +960,7 @@ app.post("/notify", async (req, res) => {
       .get();
 
     if (!tokenDoc.exists || !tokenDoc.data()?.token) {
+      console.error(`⚠️ [notify] Token not found for user: ${toUserId}`);
       return res.json({ sent: false, reason: "no_token" });
     }
 
