@@ -127,13 +127,21 @@ class ChatService {
                     plaintext = '🔒 Waiting for this message. This may take a while.';
                     _decryptedCache[doc.id] = plaintext;
                     if (data['isSystem'] != true && !e.toString().contains('DuplicateMessageException')) {
-                      print('🔄 [E2EE Auto-Heal] Dispatching Resend Request for ${doc.id}');
-                      sendMessage(
-                        content: 'SYS:RESEND_REQ:${doc.id}',
-                        senderId: ownId,
-                        receiverId: senderId,
-                        isSystem: true,
-                      ).catchError((err) => print('⚠️ [SYS:RESEND_REQ] failed: $err'));
+                      final messageTime = data['timestamp'] != null 
+                          ? (data['timestamp'] as Timestamp).toDate() 
+                          : DateTime.now();
+                          
+                      if (DateTime.now().difference(messageTime).inMinutes < 5) {
+                        print('🔄 [E2EE Auto-Heal] Dispatching Resend Request for ${doc.id}');
+                        sendMessage(
+                          content: 'SYS:RESEND_REQ:${doc.id}',
+                          senderId: ownId,
+                          receiverId: senderId,
+                          isSystem: true,
+                        ).catchError((err) => print('⚠️ [SYS:RESEND_REQ] failed: $err'));
+                      } else {
+                        print('⚠️ [E2EE Auto-Heal] Ignored undecryptable message because it is too old (>${DateTime.now().difference(messageTime).inMinutes}m).');
+                      }
                     } else if (data['isSystem'] == true) {
                       print('⚠️ [E2EE Auto-Heal] Dropped undecryptable system message to prevent loop.');
                     }
