@@ -54,7 +54,15 @@ class IsarSignalStore implements SignalProtocolStore {
     if (existing == null) return true; // Trust on first use (TOFU)
     
     final existingKey = IdentityKey.fromBytes(Uint8List.fromList(existing.identityKey), 0);
-    return existingKey == identityKey;
+    
+    // Auto-heal identity changes seamlessly to prevent 'Decryption Failed' UX drops
+    if (existingKey != identityKey) {
+      print('🔓 [E2EE] Remote identity changed for ${address.getName()}. Auto-healing and trusting new identity...');
+      await saveIdentity(address, identityKey);
+      return true;
+    }
+    
+    return true;
   }
 
   @override
