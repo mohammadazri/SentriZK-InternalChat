@@ -698,6 +698,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             'toUserId': widget.peerId,
                             'type': 'message',
                             'senderName': widget.username,
+                            'messageId': firebaseId,
                           }),
                         ).catchError((_) {});
 

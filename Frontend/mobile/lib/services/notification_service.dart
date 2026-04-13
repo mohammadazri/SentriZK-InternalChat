@@ -97,7 +97,10 @@ class NotificationService {
 
   // ── Show local notifications ────────────────────────────────────────────────
 
-  Future<void> showMessageNotification({required String senderName}) async {
+  Future<void> showMessageNotification({
+    required String senderName,
+    String body = 'You have a new encrypted message',
+  }) async {
     const details = NotificationDetails(
       android: AndroidNotificationDetails(
         'sentrizk_messages',
@@ -111,7 +114,7 @@ class NotificationService {
     await _localNotifications.show(
       1001,
       senderName,
-      'You have a new encrypted message',
+      body,
       details,
     );
   }

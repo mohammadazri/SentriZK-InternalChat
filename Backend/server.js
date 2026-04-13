@@ -948,7 +948,7 @@ app.post("/logout", async (req, res) => {
 // FCM payload is metadata-only — NO message content ever goes through here.
 app.post("/notify", async (req, res) => {
   try {
-    const { toUserId, type, senderName, callType, callId } = req.body;
+    const { toUserId, type, senderName, callType, callId, encryptedContent, signalType } = req.body;
     if (!toUserId || !type) {
       return res.status(400).json({ error: "toUserId and type required" });
     }
@@ -970,15 +970,17 @@ app.post("/notify", async (req, res) => {
     if (type === "message") {
       message = {
         token,
-        notification: {
-          title: senderName || "SentriZK",
-          body: "You have a new encrypted message",
-        },
+        // Using "Data-Only" push to allow the mobile app to silently wake up,
+        // decrypt the message, and build the notification banner locally.
         android: {
-          priority: "normal",
-          notification: { channelId: "sentrizk_messages", sound: "default" },
+          priority: "high",
         },
-        data: { type: "message", senderName: senderName || "" },
+        data: { 
+          type: "message", 
+          senderName: senderName || "",
+          messageId: String(req.body.messageId || ""),
+          toUserId: String(toUserId || ""),
+        },
       };
     } else if (type === "call") {
       message = {
