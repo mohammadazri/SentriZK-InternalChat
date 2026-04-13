@@ -15,4 +15,10 @@ class LocalMessage {
 
   @Index(unique: false)
   String? firebaseId;
+
+  /// True when the local user chose "Delete for Me" — hidden only on this device.
+  bool deletedForMe = false;
+
+  /// True when the sender chose "Delete for Everyone" — shows a tombstone on both sides.
+  bool deletedForEveryone = false;
 }

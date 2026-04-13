@@ -46,6 +46,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   Isar? _isar;
   Stream<List<LocalMessage>>? _localMessagesStream;
+  StreamSubscription? _deletionSubscription;
   Timer? _typingTimer;
   bool _isTyping = false;
   String? _peerAvatarUrl;
@@ -111,14 +112,107 @@ class _ChatScreenState extends State<ChatScreen> {
     _isar = isar;
     
     // 🔥 HIGH PERFORMANCE: Filter at the database level instead of in Dart memory!
+    // We now also filter out messages where deletedForMe is true.
     _localMessagesStream = isar.localMessages
         .filter()
+        .deletedForMeEqualTo(false) // Filter out "Delete for Me"
+        .and()
         .group((q) => q.senderIdEqualTo(widget.username).and().receiverIdEqualTo(widget.peerId))
         .or()
         .group((q) => q.senderIdEqualTo(widget.peerId).and().receiverIdEqualTo(widget.username))
         .watch(fireImmediately: true);
         
+    // Listen for remote deletions (Delete for Everyone)
+    _deletionSubscription = _chatService.listenForRemoteDeletions(widget.username).listen((messageIds) async {
+      if (messageIds.isNotEmpty && _isar != null && _isar!.isOpen) {
+        await _isar!.writeTxn(() async {
+          for (final msgId in messageIds) {
+            final localMsg = await _isar!.localMessages.filter().firebaseIdEqualTo(msgId).findFirst();
+            if (localMsg != null && !localMsg.deletedForEveryone) {
+              localMsg.deletedForEveryone = true;
+              localMsg.content = '🚫 This message was deleted';
+              await _isar!.localMessages.put(localMsg);
+            }
+          }
+        });
+      }
+    });
+
     setState(() {});
+  }
+
+  void _showDeleteOptions(LocalMessage msg) {
+    final isMe = msg.senderId == widget.username;
+    final canDeleteEveryone = isMe && msg.firebaseId != null && _chatService.canDeleteForEveryone(msg.timestamp);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.delete_outline, color: Colors.white70),
+              title: const Text('Delete for Me', style: TextStyle(color: Colors.white)),
+              onTap: () async {
+                Navigator.pop(context);
+                if (_isar != null && _isar!.isOpen) {
+                  await _isar!.writeTxn(() async {
+                    msg.deletedForMe = true;
+                    await _isar!.localMessages.put(msg);
+                  });
+                }
+              },
+            ),
+            if (canDeleteEveryone && !msg.deletedForEveryone)
+              ListTile(
+                leading: const Icon(Icons.auto_delete_outlined, color: Colors.redAccent),
+                title: const Text('Delete for Everyone', style: TextStyle(color: Colors.redAccent)),
+                onTap: () async {
+                  Navigator.pop(context);
+                  try {
+                    await _chatService.deleteForEveryone(
+                      receiverId: msg.receiverId,
+                      messageId: msg.firebaseId!,
+                      messageSentAt: msg.timestamp,
+                    );
+                    
+                    if (_isar != null && _isar!.isOpen) {
+                      await _isar!.writeTxn(() async {
+                        msg.deletedForEveryone = true;
+                        msg.content = '🚫 This message was deleted';
+                        await _isar!.localMessages.put(msg);
+                      });
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+                      );
+                    }
+                  }
+                },
+              ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _startCall(CallType type) async {
@@ -379,95 +473,114 @@ class _ChatScreenState extends State<ChatScreen> {
                       alignment: isMe
                           ? Alignment.centerRight
                           : Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                        padding: const EdgeInsets.only(left: 14, right: 14, top: 10, bottom: 8),
-                        decoration: BoxDecoration(
-                          gradient: isMe ? const LinearGradient(
-                            colors: [Color(0xFF2563EB), Color(0xFF3B82F6)], // Cobalt Blue
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ) : null,
-                          color: isMe ? null : Theme.of(context).colorScheme.surface, // Slate 800
-                          borderRadius: BorderRadius.only(
-                            topLeft: const Radius.circular(16),
-                            topRight: const Radius.circular(16),
-                            bottomLeft: Radius.circular(isMe ? 16 : 4),
-                            bottomRight: Radius.circular(isMe ? 4 : 16),
+                      child: GestureDetector(
+                        onLongPress: () => _showDeleteOptions(msg),
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                          padding: const EdgeInsets.only(left: 14, right: 14, top: 10, bottom: 8),
+                          decoration: BoxDecoration(
+                            gradient: isMe && !msg.deletedForEveryone ? const LinearGradient(
+                              colors: [Color(0xFF2563EB), Color(0xFF3B82F6)], // Cobalt Blue
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ) : null,
+                            color: isMe 
+                                ? (msg.deletedForEveryone ? Theme.of(context).colorScheme.surface : null)
+                                : Theme.of(context).colorScheme.surface, // Slate 800
+                            borderRadius: BorderRadius.only(
+                              topLeft: const Radius.circular(16),
+                              topRight: const Radius.circular(16),
+                              bottomLeft: Radius.circular(isMe ? 16 : 4),
+                              bottomRight: Radius.circular(isMe ? 4 : 16),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.15),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                            border: msg.deletedForEveryone 
+                                ? Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05))
+                                : null,
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Show threat warning for RECEIVED messages only
-                            if (!isMe && msg.threatScore != null && msg.threatScore! > AppConfig.mlThreatThreshold)
-                              Container(
-                                margin: const EdgeInsets.only(bottom: 6),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.redAccent.withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: const [
-                                    Icon(Icons.warning_amber_rounded, size: 14, color: Colors.redAccent),
-                                    SizedBox(width: 6),
-                                    Text(
-                                      'Suspicious message detected',
-                                      style: TextStyle(fontSize: 11, color: Colors.redAccent, fontWeight: FontWeight.w600),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            // Use SecureLinkText instead of Text for security
-                            SecureLinkText(
-                              text: msg.content,
-                              textStyle: TextStyle(fontSize: 15, color: isMe ? Colors.white : Theme.of(context).colorScheme.onSurface, height: 1.3),
-                              enableSecurity: !isMe,
-                              linkStyle: const TextStyle(
-                                color: Color(0xFF60A5FA), // Blue 400
-                                fontSize: 15,
-                                decoration: TextDecoration.underline,
-                                decorationColor: Color(0xFF60A5FA),
-                              ),
-                            ),
-                            if (msg.attachmentUrl != null)
-                              const Padding(
-                                padding: EdgeInsets.only(top: 6),
-                                child: Text(
-                                  '[Attachment]',
-                                  style: TextStyle(color: Color(0xFF60A5FA), fontSize: 13),
-                                ),
-                              ),
-                            const SizedBox(height: 4),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Text(
-                                  TimeUtils.formatChatTime(msg.timestamp),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: isMe ? Colors.white.withOpacity(0.7) : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Show threat warning for RECEIVED messages only
+                              if (!isMe && !msg.deletedForEveryone && msg.threatScore != null && msg.threatScore! > AppConfig.mlThreatThreshold)
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 6),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.redAccent.withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: const [
+                                      Icon(Icons.warning_amber_rounded, size: 14, color: Colors.redAccent),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'Suspicious message detected',
+                                        style: TextStyle(fontSize: 11, color: Colors.redAccent, fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                if (isMe) ...[
-                                  const SizedBox(width: 4),
-                                  _MessageStatusIndicator(status: msg.status, isMe: isMe),
+                              // Use SecureLinkText instead of Text for security
+                              // If deleted for everyone, show the tombstone text
+                              if (msg.deletedForEveryone)
+                                Text(
+                                  msg.content,
+                                  style: TextStyle(
+                                    fontSize: 14, 
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                )
+                              else
+                                SecureLinkText(
+                                  text: msg.content,
+                                  textStyle: TextStyle(fontSize: 15, color: isMe ? Colors.white : Theme.of(context).colorScheme.onSurface, height: 1.3),
+                                  enableSecurity: !isMe,
+                                  linkStyle: const TextStyle(
+                                    color: Color(0xFF60A5FA), // Blue 400
+                                    fontSize: 15,
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: Color(0xFF60A5FA),
+                                  ),
+                                ),
+                              if (!msg.deletedForEveryone && msg.attachmentUrl != null)
+                                const Padding(
+                                  padding: EdgeInsets.only(top: 6),
+                                  child: Text(
+                                    '[Attachment]',
+                                    style: TextStyle(color: Color(0xFF60A5FA), fontSize: 13),
+                                  ),
+                                ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    TimeUtils.formatChatTime(msg.timestamp),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: (isMe && !msg.deletedForEveryone) ? Colors.white.withOpacity(0.7) : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                    ),
+                                  ),
+                                  if (isMe && !msg.deletedForEveryone) ...[
+                                    const SizedBox(width: 4),
+                                    _MessageStatusIndicator(status: msg.status, isMe: isMe),
+                                  ],
                                 ],
-                              ],
-                            ),
-                          ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -594,6 +707,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _typingTimer?.cancel();
+    _deletionSubscription?.cancel();
     if (_isTyping) {
       _userService.setTypingStatus(widget.username, null);
     }

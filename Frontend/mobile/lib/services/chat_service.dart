@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -206,19 +207,72 @@ class ChatService {
     return docRef.id;
   }
 
+  // ── Delete for Everyone ────────────────────────────────────────────────────
+  // WhatsApp-style: sender can delete within 1 hour of sending.
+  // Marks the Firestore document so the receiver's device shows a tombstone.
+  // ──────────────────────────────────────────────────────────────────────────
+
+  static const Duration _deleteForEveryoneWindow = Duration(hours: 1);
+
+  /// Returns true if the message is still within the deletion window.
+  bool canDeleteForEveryone(DateTime messageSentAt) {
+    return DateTime.now().difference(messageSentAt) <= _deleteForEveryoneWindow;
+  }
+
+  /// Marks the Firestore message document as deleted for everyone.
+  /// [receiverId] is the person who received the message (owns the Firestore doc).
+  /// [messageId]  is the Firestore document ID.
+  /// [messageSentAt] is used to enforce the 1-hour window.
+  Future<void> deleteForEveryone({
+    required String receiverId,
+    required String messageId,
+    required DateTime messageSentAt,
+  }) async {
+    if (!canDeleteForEveryone(messageSentAt)) {
+      throw Exception('You can only delete messages within 1 hour of sending.');
+    }
+    await _firestore
+        .collection('chats')
+        .doc(receiverId)
+        .collection('messages')
+        .doc(messageId)
+        .update({
+      'deletedForEveryone': true,
+      'content': '', // wipe encrypted ciphertext from Firestore too
+    });
+  }
+
+  /// Listens for messages in the current user's mailbox that have been
+  /// marked `deletedForEveryone` by the sender. Returns doc IDs that changed.
+  Stream<List<String>> listenForRemoteDeletions(String ownId) {
+    return _firestore
+        .collection('chats')
+        .doc(ownId)
+        .collection('messages')
+        .where('deletedForEveryone', isEqualTo: true)
+        .snapshots()
+        .handleError((e) {
+      if (e.toString().contains('permission-denied') ||
+          e.toString().contains('PERMISSION_DENIED')) {
+        debugPrint('🔒 [CHAT] Ignoring deletion-listener permission-denied.');
+      } else {
+        debugPrint('🔥 [CHAT] listenForRemoteDeletions error: $e');
+      }
+    }).map((snapshot) {
+      return snapshot.docChanges
+          .where((c) =>
+              c.type == DocumentChangeType.added ||
+              c.type == DocumentChangeType.modified)
+          .map((c) => c.doc.id)
+          .toList();
+    });
+  }
+
+  /// Deletes a message from Firestore after it has been securely saved to the local database.
   Future<void> deleteMessageAfterLocalSave(
     String ownId,
     String messageId,
   ) async {
-    await _firestore
-        .collection('chats')
-        .doc(ownId)
-        .collection('messages')
-        .doc(messageId)
-        .delete();
-  }
-
-  Future<void> deleteMessage(String ownId, String messageId) async {
     await _firestore
         .collection('chats')
         .doc(ownId)

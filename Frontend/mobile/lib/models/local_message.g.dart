@@ -27,33 +27,43 @@ const LocalMessageSchema = CollectionSchema(
       name: r'content',
       type: IsarType.string,
     ),
-    r'firebaseId': PropertySchema(
+    r'deletedForEveryone': PropertySchema(
       id: 2,
+      name: r'deletedForEveryone',
+      type: IsarType.bool,
+    ),
+    r'deletedForMe': PropertySchema(
+      id: 3,
+      name: r'deletedForMe',
+      type: IsarType.bool,
+    ),
+    r'firebaseId': PropertySchema(
+      id: 4,
       name: r'firebaseId',
       type: IsarType.string,
     ),
     r'receiverId': PropertySchema(
-      id: 3,
+      id: 5,
       name: r'receiverId',
       type: IsarType.string,
     ),
     r'senderId': PropertySchema(
-      id: 4,
+      id: 6,
       name: r'senderId',
       type: IsarType.string,
     ),
     r'status': PropertySchema(
-      id: 5,
+      id: 7,
       name: r'status',
       type: IsarType.string,
     ),
     r'threatScore': PropertySchema(
-      id: 6,
+      id: 8,
       name: r'threatScore',
       type: IsarType.double,
     ),
     r'timestamp': PropertySchema(
-      id: 7,
+      id: 9,
       name: r'timestamp',
       type: IsarType.dateTime,
     )
@@ -119,12 +129,14 @@ void _localMessageSerialize(
 ) {
   writer.writeString(offsets[0], object.attachmentUrl);
   writer.writeString(offsets[1], object.content);
-  writer.writeString(offsets[2], object.firebaseId);
-  writer.writeString(offsets[3], object.receiverId);
-  writer.writeString(offsets[4], object.senderId);
-  writer.writeString(offsets[5], object.status);
-  writer.writeDouble(offsets[6], object.threatScore);
-  writer.writeDateTime(offsets[7], object.timestamp);
+  writer.writeBool(offsets[2], object.deletedForEveryone);
+  writer.writeBool(offsets[3], object.deletedForMe);
+  writer.writeString(offsets[4], object.firebaseId);
+  writer.writeString(offsets[5], object.receiverId);
+  writer.writeString(offsets[6], object.senderId);
+  writer.writeString(offsets[7], object.status);
+  writer.writeDouble(offsets[8], object.threatScore);
+  writer.writeDateTime(offsets[9], object.timestamp);
 }
 
 LocalMessage _localMessageDeserialize(
@@ -136,13 +148,15 @@ LocalMessage _localMessageDeserialize(
   final object = LocalMessage();
   object.attachmentUrl = reader.readStringOrNull(offsets[0]);
   object.content = reader.readString(offsets[1]);
-  object.firebaseId = reader.readStringOrNull(offsets[2]);
+  object.deletedForEveryone = reader.readBool(offsets[2]);
+  object.deletedForMe = reader.readBool(offsets[3]);
+  object.firebaseId = reader.readStringOrNull(offsets[4]);
   object.id = id;
-  object.receiverId = reader.readString(offsets[3]);
-  object.senderId = reader.readString(offsets[4]);
-  object.status = reader.readString(offsets[5]);
-  object.threatScore = reader.readDoubleOrNull(offsets[6]);
-  object.timestamp = reader.readDateTime(offsets[7]);
+  object.receiverId = reader.readString(offsets[5]);
+  object.senderId = reader.readString(offsets[6]);
+  object.status = reader.readString(offsets[7]);
+  object.threatScore = reader.readDoubleOrNull(offsets[8]);
+  object.timestamp = reader.readDateTime(offsets[9]);
   return object;
 }
 
@@ -158,16 +172,20 @@ P _localMessageDeserializeProp<P>(
     case 1:
       return (reader.readString(offset)) as P;
     case 2:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 3:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 4:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 5:
       return (reader.readString(offset)) as P;
     case 6:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 7:
+      return (reader.readString(offset)) as P;
+    case 8:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 9:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -621,6 +639,26 @@ extension LocalMessageQueryFilter
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'content',
         value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      deletedForEveryoneEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'deletedForEveryone',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterFilterCondition>
+      deletedForMeEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'deletedForMe',
+        value: value,
       ));
     });
   }
@@ -1413,6 +1451,33 @@ extension LocalMessageQuerySortBy
     });
   }
 
+  QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy>
+      sortByDeletedForEveryone() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedForEveryone', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy>
+      sortByDeletedForEveryoneDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedForEveryone', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy> sortByDeletedForMe() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedForMe', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy>
+      sortByDeletedForMeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedForMe', Sort.desc);
+    });
+  }
+
   QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy> sortByFirebaseId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'firebaseId', Sort.asc);
@@ -1513,6 +1578,33 @@ extension LocalMessageQuerySortThenBy
   QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy> thenByContentDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'content', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy>
+      thenByDeletedForEveryone() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedForEveryone', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy>
+      thenByDeletedForEveryoneDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedForEveryone', Sort.desc);
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy> thenByDeletedForMe() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedForMe', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QAfterSortBy>
+      thenByDeletedForMeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deletedForMe', Sort.desc);
     });
   }
 
@@ -1621,6 +1713,19 @@ extension LocalMessageQueryWhereDistinct
     });
   }
 
+  QueryBuilder<LocalMessage, LocalMessage, QDistinct>
+      distinctByDeletedForEveryone() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'deletedForEveryone');
+    });
+  }
+
+  QueryBuilder<LocalMessage, LocalMessage, QDistinct> distinctByDeletedForMe() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'deletedForMe');
+    });
+  }
+
   QueryBuilder<LocalMessage, LocalMessage, QDistinct> distinctByFirebaseId(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1680,6 +1785,19 @@ extension LocalMessageQueryProperty
   QueryBuilder<LocalMessage, String, QQueryOperations> contentProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'content');
+    });
+  }
+
+  QueryBuilder<LocalMessage, bool, QQueryOperations>
+      deletedForEveryoneProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'deletedForEveryone');
+    });
+  }
+
+  QueryBuilder<LocalMessage, bool, QQueryOperations> deletedForMeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'deletedForMe');
     });
   }
 
