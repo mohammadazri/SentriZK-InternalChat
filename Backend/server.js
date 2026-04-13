@@ -909,6 +909,37 @@ app.delete("/admin/threat-logs/:id", verifyAdminJWT, async (req, res) => {
 
 
 
+// ---------------------
+// Logout (Invalidate session)
+// ---------------------
+app.post("/logout", async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    if (!sessionId) return res.status(400).json({ error: "sessionId required" });
+
+    // Fetch session first to get the username
+    const { data: session } = await supabase
+      .from("sessions")
+      .select("username")
+      .eq("id", sessionId)
+      .maybeSingle();
+
+    if (session && session.username) {
+      // Set the user offline specifically because they voluntarily logged out
+      await setUserOffline(session.username);
+    }
+
+    // Physically remove the session from persistence
+    await supabase.from("sessions").delete().eq("id", sessionId);
+
+    console.log(`🔒 [logout] Session ${sessionId} securely invalidated.`);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("💥 [logout]", err);
+    res.status(500).json({ error: "Server error", details: String(err) });
+  }
+});
+
 // =======================
 // --- Start Server ---
 // =======================
