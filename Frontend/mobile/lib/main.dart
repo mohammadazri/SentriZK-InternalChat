@@ -106,6 +106,9 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     await NotificationService.instance.showCallNotification(
       callerName: message.data['callerName'] ?? 'Unknown',
       callType: message.data['callType'] ?? 'audio',
+      callId: message.data['callId'] ?? '',
+      callerId: message.data['callerId'] ?? '',
+      toUserId: message.data['toUserId'] ?? '',
     );
   }
 }
@@ -144,6 +147,8 @@ Future<void> _loadLocalEnv() async {
 }
 
 class SentriZKApp extends StatelessWidget {
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  
   const SentriZKApp({super.key});
 
   @override
@@ -151,6 +156,7 @@ class SentriZKApp extends StatelessWidget {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         return MaterialApp(
+          navigatorKey: SentriZKApp.navigatorKey,
           title: 'SentriZK Core',
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
