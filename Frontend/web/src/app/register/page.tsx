@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { prepareRegistration, submitRegistration } from "@/auth/registerLogic";
 import WalletConnector from "@/components/WalletConnector";
+import PasswordStrengthChecklist from "@/components/PasswordStrengthChecklist";
 import styles from "./register.module.css";
 import { Lock, Wallet, KeyRound, Check, AlertCircle, LayoutDashboard, Database, Shield, Hexagon, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -341,7 +342,7 @@ export default function RegisterPage() {
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
-                <span className={styles.hint}>Minimum 8 chars: uppercase, lowercase, number, special character.</span>
+                <PasswordStrengthChecklist password={password} />
               </div>
 
               <div className={styles.inputGroup}>
