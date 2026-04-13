@@ -84,9 +84,10 @@ class NotificationService {
   void _onForegroundMessage(RemoteMessage message) {
     final type = message.data['type'];
     if (type == 'message') {
-      showMessageNotification(
-        senderName: message.data['senderName'] ?? 'SentriZK',
-      );
+      // Intentionally do nothing for foreground messages.
+      // The `user_list_screen`'s `_globalMessageSub` handles
+      // saving the message and playing the in-app sound dynamically.
+      // Showing an OS banner while inside the app is redundant.
     } else if (type == 'call') {
       showCallNotification(
         callerName: message.data['callerName'] ?? 'Unknown',

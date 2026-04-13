@@ -11,8 +11,10 @@ import 'package:provider/provider.dart';
 import 'providers/theme_provider.dart';
 import 'theme/app_theme.dart';
 
+import 'package:isar/isar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'services/signal/signal_manager.dart';
+import 'models/local_message.dart';
 
 // ── Background FCM handler ────────────────────────────────────────────────────
 // Must be a top-level function (not a class method). Runs in a separate Dart
@@ -59,6 +61,36 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
           } else {
             decryptedText = ciphertext; // Plaintext fallback
           }
+
+          // 💾 RACE CONDITION FIX: Save to Isar immediately and delete from Firestore.
+          // This ensures the main isolate (if running) doesn't try to decrypt it again
+          // and corrupt the Signal Ratchet!
+          final isar = await MessageSecurityService.getInstance();
+          await isar.writeTxn(() async {
+            await isar.localMessages.put(
+              LocalMessage()
+                ..firebaseId = messageId
+                ..content = decryptedText
+                ..senderId = senderName
+                ..receiverId = receiverId
+                ..timestamp = data['timestamp'] != null 
+                    ? (data['timestamp'] as Timestamp).toDate()
+                    : DateTime.now()
+                ..status = 'delivered'
+            );
+          });
+          
+          await doc.reference.delete();
+          
+        } else {
+          // If the doc doesn't exist, the main isolate might have already processed it.
+          // Let's check Isar for the plaintext so we can still show the banner!
+          final isar = await MessageSecurityService.getInstance();
+          final existingMsg = await isar.localMessages.filter().firebaseIdEqualTo(messageId).findFirst();
+          if (existingMsg != null) {
+            decryptedText = existingMsg.content;
+          }
+        }
         }
       } catch (e) {
         print('🔐 [E2EE] Background decryption failed: $e');

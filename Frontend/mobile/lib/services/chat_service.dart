@@ -4,7 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../models/message.dart';
+import '../models/local_message.dart';
 import 'signal/signal_manager.dart';
+import 'package:isar/isar.dart';
+import 'message_security_service.dart';
 
 class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -91,23 +94,32 @@ class ChatService {
           final senderId = data['senderId'] as String? ?? '';
 
           if (type != null && senderId.isNotEmpty) {
-            if (_decryptedCache.containsKey(doc.id)) {
-              plaintext = _decryptedCache[doc.id]!;
+            // RACE CONDITION FIX: Look up in Isar first because the Background Isolate 
+            // might have already decrypted it and advanced the Signal Ratchet!
+            final isar = await MessageSecurityService.getInstance();
+            final existingMsg = await isar.localMessages.filter().firebaseIdEqualTo(doc.id).findFirst();
+            
+            if (existingMsg != null) {
+              plaintext = existingMsg.content;
             } else {
-              try {
-                // The senderId of the incoming message is our peerId for decryption
-                plaintext = await _signalManager.decryptMessage(senderId, type, plaintext);
-                _decryptedCache[doc.id] = plaintext;
-              } catch (e) {
-                print('🔐 [E2EE] Failed to decrypt message globally: $e');
-                
-                // Heal the session by deleting the stale identity/session. 
-                // The next message we SEND to them will fetch a fresh bundle.
-                // The next PreKeyMessage they send us will use TOFU.
-                await _signalManager.deleteSessionAndIdentity(senderId);
-                
-                plaintext = '🔒 [Decryption Failed - Session Resynced]';
-                _decryptedCache[doc.id] = plaintext;
+              if (_decryptedCache.containsKey(doc.id)) {
+                plaintext = _decryptedCache[doc.id]!;
+              } else {
+                try {
+                  // The senderId of the incoming message is our peerId for decryption
+                  plaintext = await _signalManager.decryptMessage(senderId, type, plaintext);
+                  _decryptedCache[doc.id] = plaintext;
+                } catch (e) {
+                  print('🔐 [E2EE] Failed to decrypt message globally: $e');
+                  
+                  // Heal the session by deleting the stale identity/session. 
+                  // The next message we SEND to them will fetch a fresh bundle.
+                  // The next PreKeyMessage they send us will use TOFU.
+                  await _signalManager.deleteSessionAndIdentity(senderId);
+                  
+                  plaintext = '🔒 [Decryption Failed - Session Resynced]';
+                  _decryptedCache[doc.id] = plaintext;
+                }
               }
             }
           }
