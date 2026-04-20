@@ -30,6 +30,7 @@ function sanitizeMsg(type: string, msg: string) {
     case 'INFO':       prefix = '[@]'; break;
     case 'VERIFY':     prefix = '[*]'; break;
     case 'LOG':        prefix = '[-]'; break;
+    case 'TRACE':      prefix = '[#]'; break;
     case 'ERROR':
     case 'FAIL':       prefix = '[!]'; break;
     case 'VERDICT':

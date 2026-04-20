@@ -469,8 +469,17 @@ body {
 .log-START_TEST .term-type { color: #a78bfa; }
 .log-START_TEST .term-msg  { color: #c4b5fd; font-weight: 600; }
 
-.log-SUMMARY  .term-type { color: #34d399; }
 .log-SUMMARY  .term-msg  { color: #34d399; font-weight: 700; font-size: 14px; }
+
+/* Raw Technical Trace Logging */
+.log-TRACE    .term-type { color: #64748b; }
+.log-TRACE    .term-msg  { 
+  color: #94a3b8; 
+  font-size: 11px; 
+  font-family: var(--font-mono); 
+  line-height: 1.4; 
+  opacity: 0.9; 
+}
 
 .terminal-empty {
   display:        flex;
