@@ -253,3 +253,7 @@ Frontend/web/node_modules/
 
 #attack output
 Testing/attack_output
+
+#ignore vite cache
+.vite   
+
