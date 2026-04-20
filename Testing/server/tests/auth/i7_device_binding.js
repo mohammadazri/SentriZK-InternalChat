@@ -1,6 +1,7 @@
-// I7 — Device Binding: Cross-Device Session Hijack
-// Creates session on device A, tries to refresh/use it on device B.
-// PASS = device B is rejected (device mismatch).
+// I7 — Device Binding: Session Hijack Prevention
+// This test verifies that a session token is cryptographically bound to a specific 
+// Device ID. Even if the token is stolen, it cannot be used from another device.
+// Uses the stable TEST_USER identity.
 
 const axios  = require('axios');
 const config = require('../../config');
@@ -9,62 +10,82 @@ module.exports = {
   id:          'i7',
   name:        'Device Binding: Session Hijack',
   category:    'INTEGRITY',
-  description: 'Stolen session token used from a different device. Must be rejected.',
+  description: 'Steal a session token and try to use it on a different device. Must be rejected.',
 
   async run(emit) {
     const BASE      = config.BACKEND_URL;
-    const DEVICE_A  = config.TEST_DEVICE;
-    const DEVICE_B  = 'evil_attacker_device_' + Date.now();
+    const LEGIT     = config.TEST_DEVICE;
+    const ATTACKER  = 'evil_attacker_hardware_id_' + Date.now();
+    const snarkjs   = require('snarkjs');
 
-    emit({ type: 'ATTACK', msg: `Attack scenario: session bound to ${DEVICE_A}, attacker tries on ${DEVICE_B}` });
+    emit({ type: 'ATTACK', msg: `Step 1: Creating a legitimate session bound to device "${LEGIT}"...` });
 
-    // ── Step 1: Try to refresh with wrong deviceId ─────────────────
-    // We use a known real session from a successful login, or a fake one
-    const fakeSession = 'captured-session-id-from-network-sniffing';
-    emit({ type: 'ATTACK', msg: `Step 1: Using stolen sessionId with attacker's deviceId on /refresh-session...` });
+    let sessionID;
+    try {
+      // 1. Fetch Nonce
+      const { data: nData } = await axios.get(`${BASE}/commitment/${config.TEST_USER}`);
+      const { commitment, nonce } = nData;
 
+      // 2. Generate Login Proof
+      const { proof, publicSignals } = await snarkjs.groth16.fullProve(
+        { 
+          secret: config.TEST_SECRET, 
+          salt: config.TEST_SALT, 
+          unameHash: config.TEST_UNAME_HASH,
+          storedCommitment: String(commitment),
+          nonce: String(nonce)
+        },
+        config.LOGIN_WASM,
+        config.LOGIN_ZKEY
+      );
+
+      // 3. Login to get session
+      const loginResp = await axios.post(`${BASE}/login`, { username: config.TEST_USER, proof, publicSignals });
+      sessionID = loginResp.data.sessionId;
+
+      // 4. Bind the device ID (by first use or refresh)
+      // Actually, in SentriZK, the sessionId is created without deviceId first, 
+      // then bound when /validate-token exchange happens or /refresh-session.
+      // We will perform a refresh to bind it to LEGIT.
+      await axios.post(`${BASE}/refresh-session`, { sessionId: sessionID, deviceId: LEGIT });
+      
+      emit({ type: 'RESULT', msg: `Session created and bound to: ${LEGIT}` });
+    } catch (err) {
+      emit({ type: 'ERROR', msg: `Setup failed: ${err.message}` });
+      emit({ type: 'VERDICT', passed: false, msg: '❌ FAIL — Could not prepare a real bound session.' });
+      return { passed: false };
+    }
+
+    // ── Step 2: Attempt hijack from Different Device ──────────────
+    emit({ type: 'ATTACK', msg: `Step 2: Attacker uses the stolen sessionId with device ID "${ATTACKER}"...` });
+    
     const r1 = await axios.post(
       `${BASE}/refresh-session`,
-      { sessionId: fakeSession, deviceId: DEVICE_B },
+      { sessionId: sessionID, deviceId: ATTACKER },
       { validateStatus: () => true }
     );
-    emit({ type: 'RESULT', msg: `HTTP ${r1.status} — ${JSON.stringify(r1.data)}` });
-    const crossDeviceBlocked = r1.status !== 200;
-    emit({ type: 'CHECK',  msg: `Cross-device refresh rejected: ${crossDeviceBlocked ? '✅ YES' : '❌ NO — SESSION HIJACK POSSIBLE'}` });
+    
+    emit({ type: 'RESULT', msg: `Refresh attempt (attacker): HTTP ${r1.status} — ${JSON.stringify(r1.data)}` });
+    const hijackBlocked = r1.status === 403 && r1.data.error === "Device mismatch";
+    emit({ type: 'CHECK',  msg: `Hijack blocked by device binding: ${hijackBlocked ? '✅ YES' : '❌ NO — CRITICAL VULNERABILITY'}` });
 
-    // ── Step 2: Validate session from wrong device ──────────────────
-    emit({ type: 'ATTACK', msg: `Step 2: Validating stolen session on /validate-session (no deviceId check here, but session itself is invalid)...` });
-    const r2 = await axios.post(
-      `${BASE}/validate-session`,
-      { sessionId: fakeSession },
-      { validateStatus: () => true }
-    );
-    emit({ type: 'RESULT', msg: `HTTP ${r2.status} — ${JSON.stringify(r2.data)}` });
-    const sessionInvalid = r2.data?.valid === false || r2.status !== 200;
-    emit({ type: 'CHECK',  msg: `Stolen/fake session rejected on validate: ${sessionInvalid ? '✅ YES' : '❌ NO'}` });
+    // ── Step 3: Verify it still works for the LEGIT device ─────────
+    emit({ type: 'ATTACK', msg: 'Step 3: Verifying session remains valid for the LEGITIMATE device...' });
+    const r2 = await axios.post(`${BASE}/validate-session`, { sessionId: sessionID }, { validateStatus: () => true });
+    emit({ type: 'RESULT', msg: `Validation (legit): HTTP ${r2.status} — ${JSON.stringify(r2.data)}` });
+    const legitValid = r2.data?.valid === true;
+    emit({ type: 'CHECK',  msg: `Legit device still has access: ${legitValid ? '✅ YES' : '❌ NO'}` });
 
-    // ── Step 3: Firebase token with stolen session ─────────────────
-    emit({ type: 'ATTACK', msg: 'Step 3: Trying to get Firebase token with stolen session...' });
-    const r3 = await axios.post(
-      `${BASE}/firebase-token`,
-      { sessionId: fakeSession },
-      { validateStatus: () => true }
-    );
-    emit({ type: 'RESULT', msg: `HTTP ${r3.status} — ${JSON.stringify(r3.data).substring(0, 100)}` });
-    const firebaseBlocked = r3.status !== 200;
-    emit({ type: 'CHECK',  msg: `Firebase token denied for stolen session: ${firebaseBlocked ? '✅ YES' : '❌ NO — FIREBASE ACCESS COMPROMISED'}` });
+    emit({ type: 'EXPLAIN', msg: 'SentriZK links every session to the hardware Device ID after initial binding.' });
+    emit({ type: 'EXPLAIN', msg: 'Even if the 32-character sessionId is stolen, it is worthless without the specific device identity.' });
 
-    emit({ type: 'EXPLAIN', msg: 'Sessions are stored with deviceId in Supabase. Refresh endpoint validates deviceId matches.' });
-    emit({ type: 'EXPLAIN', msg: 'Non-matching deviceId or non-existent session immediately fails all refresh/validate calls.' });
-    emit({ type: 'EXPLAIN', msg: 'Even if attacker steals session token over network: useless without original device hardware ID.' });
-
-    const passed = crossDeviceBlocked && sessionInvalid && firebaseBlocked;
+    const passed = hijackBlocked && legitValid;
     emit({
       type:   'VERDICT',
       passed,
       msg:    passed
-        ? '✅ PASS — Stolen session token is device-bound and useless on any other device.'
-        : '❌ FAIL — Session hijack succeeded on different device!',
+        ? '✅ PASS — Session token is hardware-bound. Cross-device hijack attempts are rejected.'
+        : '❌ FAIL — Device binding check failed!',
     });
 
     return { passed };

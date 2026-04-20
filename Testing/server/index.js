@@ -6,11 +6,49 @@
 const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
+const axios   = require('axios');
 const config  = require('./config');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+/** 
+ * Ensure the default test identity exists on the backend.
+ * If not, perform a real ZKP registration automatically.
+ */
+async function ensureTestUserReady() {
+  const snarkjs = require('snarkjs');
+  
+  console.log(`🔍 [setup] Checking if test user "${config.TEST_USER}" exists...`);
+  
+  try {
+    const { data: check } = await axios.get(`${config.BACKEND_URL}/check-username/${config.TEST_USER}`, { timeout: 5000 });
+    
+    if (check.available === true) {
+      console.log(`➕ [setup] Test user not found. Registering automatically...`);
+      
+      const { proof, publicSignals } = await snarkjs.groth16.fullProve(
+        { secret: config.TEST_SECRET, salt: config.TEST_SALT, unameHash: config.TEST_UNAME_HASH },
+        config.REG_WASM,
+        config.REG_ZKEY
+      );
+      
+      await axios.post(`${config.BACKEND_URL}/register`, {
+        username: config.TEST_USER,
+        proof,
+        publicSignals
+      });
+      
+      console.log(`✅ [setup] Test user "${config.TEST_USER}" registered successfully.`);
+    } else {
+      console.log(`✅ [setup] Test user "${config.TEST_USER}" is ready.`);
+    }
+  } catch (err) {
+    console.warn(`⚠️ [setup] Warning: Could not verify/register test user: ${err.message}`);
+    console.warn(`   Identity-dependent tests might fail if backend is unreachable.`);
+  }
+}
 
 // ── Load all test modules ─────────────────────────────────────────────────────
 const allTests = require('./tests');
@@ -125,15 +163,22 @@ app.get('/api/run-all', async (req, res) => {
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
-app.listen(config.PORT, () => {
-  console.log('');
-  console.log('  🛡️  SentriZK Adversarial Test Runner');
-  console.log(`  📡  http://localhost:${config.PORT}`);
-  console.log(`  🎯  Backend: ${config.BACKEND_URL}`);
-  console.log(`  📋  ${testList.length} tests loaded`);
-  console.log('');
-  testList.forEach((t) =>
-    console.log(`      [${t.category.padEnd(16)}] ${t.id.padEnd(6)} ${t.name}`)
-  );
-  console.log('');
-});
+const start = async () => {
+  // Ensure identity is ready before accepting requests
+  await ensureTestUserReady();
+
+  app.listen(config.PORT, () => {
+    console.log('');
+    console.log('  🛡️  SentriZK Adversarial Test Runner');
+    console.log(`  📡  http://localhost:${config.PORT}`);
+    console.log(`  🎯  Backend: ${config.BACKEND_URL}`);
+    console.log(`  📋  ${testList.length} tests loaded`);
+    console.log('');
+    testList.forEach((t) =>
+      console.log(`      [${t.category.padEnd(16)}] ${t.id.padEnd(6)} ${t.name}`)
+    );
+    console.log('');
+  });
+};
+
+start();

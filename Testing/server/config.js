@@ -30,11 +30,19 @@ module.exports = {
   // ── ZKP Circuit Files ──────────────────────────────────────────────
   LOGIN_WASM: path.resolve(
     __dirname,
-    process.env.LOGIN_WASM || '../../Backend/circuits/login/login.wasm'
+    process.env.LOGIN_WASM || '../../Backend/circuits/login/login_js/login.wasm'
   ),
   LOGIN_ZKEY: path.resolve(
     __dirname,
     process.env.LOGIN_ZKEY || '../../Backend/circuits/key_generation/login_final.zkey'
+  ),
+  REG_WASM: path.resolve(
+    __dirname,
+    '../../Backend/circuits/registration/registration_js/registration.wasm'
+  ),
+  REG_ZKEY: path.resolve(
+    __dirname,
+    '../../Backend/circuits/key_generation/registration_final.zkey'
   ),
 
   // ── APK (for reverse engineering tests) ───────────────────────────

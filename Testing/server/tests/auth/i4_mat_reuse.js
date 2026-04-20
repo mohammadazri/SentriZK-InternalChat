@@ -1,9 +1,7 @@
-// I4 — MAT Single-Use Enforcement (Refactored to Redirect Token Flow)
-// This test simulates the security of the deep-link redirect mechanism.
-// 1. Registers a new temporary test user to get a real Redirect Token.
-// 2. Uses the token once (Success - legitimate app usage).
-// 3. Replays the token (Blocked - simulating an attacker interception).
-// PASS = second use returns HTTP 400 "Invalid token" because it was consumed/deleted.
+// I4 — Redirect Token Single-Use Enforcement
+// This test verifies that the one-time token issued after a successful ZKP login 
+// is invalidated immediately after its first use, preventing deep-link interception attacks.
+// Uses the stable TEST_USER from the environment.
 
 const axios   = require('axios');
 const path    = require('path');
@@ -11,46 +9,53 @@ const config  = require('../../config');
 
 module.exports = {
   id:          'i4',
-  name:        'MAT Single-Use Enforcement',
+  name:        'Redirect Token Single-Use',
   category:    'INTEGRITY',
-  description: 'Steal and replay a Redirect Token (deep-link token). Must be burned on first use.',
+  description: 'Steal and replay a Login Redirect Token. Must be burned on first use.',
 
   async run(emit) {
     const BASE = config.BACKEND_URL;
     const snarkjs = require('snarkjs');
 
-    const REG_WASM = path.resolve(__dirname, '../../../../Backend/circuits/registration/registration_js/registration.wasm');
-    const REG_ZKEY = path.resolve(__dirname, '../../../../Backend/circuits/key_generation/registration_final.zkey');
-
-    const tempUser   = `mat_test_${Math.floor(Math.random() * 1000000)}`;
-    const testSecret = "1234567890123456789012345678901234567890";
-    const testSalt   = "111111222222333333444444";
-    const unameHash  = "999999888888777777";
-
-    emit({ type: 'ATTACK', msg: `Step 1: Registering temporary user "${tempUser}" to get a real Redirect Token...` });
+    emit({ type: 'ATTACK', msg: `Step 1: Logging in as "${config.TEST_USER}" to get a real Redirect Token...` });
 
     let redirectToken;
     try {
-      // 1. Generate Registration Proof (Real ZKP)
+      // 1. Fetch Nonce
+      const { data: nonceData } = await axios.get(`${BASE}/commitment/${config.TEST_USER}`);
+      const { commitment, nonce } = nonceData;
+
+      // 2. Generate Login Proof (Real ZKP)
       const { proof, publicSignals } = await snarkjs.groth16.fullProve(
-        { secret: testSecret, salt: testSalt, unameHash: unameHash },
-        REG_WASM,
-        REG_ZKEY
+        { 
+          secret: config.TEST_SECRET, 
+          salt: config.TEST_SALT, 
+          unameHash: config.TEST_UNAME_HASH,
+          storedCommitment: String(commitment),
+          nonce: String(nonce)
+        },
+        config.LOGIN_WASM,
+        config.LOGIN_ZKEY
       );
 
-      // 2. Submit Registration
-      const regRes = await axios.post(`${BASE}/register`, {
-        username: tempUser,
+      // 3. Submit Login
+      const loginRes = await axios.post(`${BASE}/login`, {
+        username: config.TEST_USER,
         proof,
         publicSignals
       });
 
-      redirectToken = regRes.data.token;
-      if (!redirectToken) throw new Error("No token returned in registration response");
-      emit({ type: 'RESULT', msg: `Success: Registration complete. Redirect Token: ${redirectToken.substring(0, 10)}...` });
+      redirectToken = loginRes.data.token;
+      if (!redirectToken) throw new Error("No token returned in login response");
+      emit({ type: 'RESULT', msg: `Success: Login complete. Redirect Token: ${redirectToken.substring(0, 10)}...` });
     } catch (err) {
-      emit({ type: 'ERROR', msg: `Registration failed: ${err.message}` });
-      emit({ type: 'VERDICT', passed: false, msg: '❌ FAIL — Could not prepare test account (Backend error or ZKP failure).' });
+      const is404 = err.response && err.response.status === 404;
+      emit({ type: 'ERROR', msg: `Login flow failed: ${err.message}` });
+      if (is404) {
+         emit({ type: 'VERDICT', passed: false, msg: `❌ FAIL — Test user "${config.TEST_USER}" not found. Restart runner to auto-register.` });
+      } else {
+         emit({ type: 'VERDICT', passed: false, msg: '❌ FAIL — Could not perform ZKP login.' });
+      }
       return { passed: false };
     }
 
@@ -71,14 +76,14 @@ module.exports = {
     emit({ type: 'CHECK', msg: `Replay blocked (token burned): ${replayBlocked ? '✅ YES' : '❌ NO — SECURITY FAILURE'}` });
 
     emit({ type: 'EXPLAIN', msg: 'The backend consumes (deletes) the redirect token from the database immediately after success.' });
-    emit({ type: 'EXPLAIN', msg: 'Intercepting a deep-link URL is useless because it becomes "Invalid" the moment the legitimate app clicks it.' });
+    emit({ type: 'EXPLAIN', msg: 'This protects against "Deep Link Interception" where a malicious app tries to use a stolen URL.' });
 
     const passed = firstOk && replayBlocked;
     emit({
       type:   'VERDICT',
       passed,
       msg:    passed
-        ? '✅ PASS — Deep-link tokens are single-use. Replay attack defeated.'
+        ? '✅ PASS — Login redirect tokens are single-use. Replay attack defeated.'
         : '❌ FAIL — Token reuse vulnerability! The token was not invalidated after first use.',
     });
 
