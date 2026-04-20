@@ -26,8 +26,13 @@ module.exports = {
       nonce      = data.nonce;
       emit({ type: 'RESULT', msg: `Attacker commitment prefix: ${String(commitment).substring(0, 20)}...` });
     } catch (err) {
+      const is404 = err.response && err.response.status === 404;
       emit({ type: 'ERROR', msg: `Failed to fetch attacker nonce: ${err.message}` });
-      emit({ type: 'VERDICT', passed: false, msg: '❌ FAIL — Backend unreachable.' });
+      if (is404) {
+        emit({ type: 'VERDICT', passed: false, msg: `❌ FAIL — Attacker user "${ATTACKER}" not registered on backend.` });
+      } else {
+        emit({ type: 'VERDICT', passed: false, msg: '❌ FAIL — Backend unreachable or server error.' });
+      }
       return { passed: false };
     }
 

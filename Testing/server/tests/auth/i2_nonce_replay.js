@@ -26,9 +26,23 @@ module.exports = {
 
     // ── Generate a REAL valid proof ───────────────────────────────
     emit({ type: 'ATTACK', msg: `Step 1: Fetching fresh nonce for ${config.TEST_USER}...` });
-    const { data: nonceData } = await axios.get(`${BASE}/commitment/${config.TEST_USER}`);
-    const { commitment, nonce } = nonceData;
-    emit({ type: 'RESULT', msg: `Nonce: ${nonce} (60s TTL) | Commitment prefix: ${String(commitment).substring(0,15)}...` });
+    
+    let commitment, nonce;
+    try {
+      const { data: nonceData } = await axios.get(`${BASE}/commitment/${config.TEST_USER}`);
+      commitment = nonceData.commitment;
+      nonce = nonceData.nonce;
+      emit({ type: 'RESULT', msg: `Nonce: ${nonce} (60s TTL) | Commitment prefix: ${String(commitment).substring(0,15)}...` });
+    } catch (err) {
+      const is404 = err.response && err.response.status === 404;
+      emit({ type: 'ERROR', msg: `Could not fetch nonce: ${err.message}` });
+      if (is404) {
+        emit({ type: 'VERDICT', passed: false, msg: `❌ FAIL — Test user "${config.TEST_USER}" not registered on backend.` });
+      } else {
+        emit({ type: 'VERDICT', passed: false, msg: '❌ FAIL — Backend unreachable or server error.' });
+      }
+      return { passed: false };
+    }
 
     emit({ type: 'ATTACK', msg: 'Step 2: Generating REAL Groth16 proof with snarkjs (real ZKP computation)...' });
     const t0 = Date.now();
@@ -103,8 +117,14 @@ async function runForgedVersion(emit, BASE) {
   try {
     const { data } = await axios.get(`${BASE}/commitment/${require('../../config').TEST_USER}`);
     commitment = data.commitment; nonce = data.nonce;
-  } catch (e) {
-    emit({ type: 'VERDICT', passed: false, msg: '❌ FAIL — Backend unreachable.' });
+  } catch (err) {
+    const is404 = err.response && err.response.status === 404;
+    emit({ type: 'ERROR', msg: `Could not fetch nonce: ${err.message}` });
+    if (is404) {
+      emit({ type: 'VERDICT', passed: false, msg: `❌ FAIL — Test user "${require('../../config').TEST_USER}" not registered on backend.` });
+    } else {
+      emit({ type: 'VERDICT', passed: false, msg: '❌ FAIL — Backend unreachable or server error.' });
+    }
     return { passed: false };
   }
 
