@@ -1,9 +1,9 @@
 // A1 — Login Rate Limit: HTTP 429 at Max 10 req/min
-// Sends 15 rapid POST /login requests with a fake proof.
-// PASS = server returns 429 at or before request 11.
+// Refactored to show raw HTTP telemetry for the rapid-fire flood.
+// TRACE: High-fidelity DoS attack logging.
 
-const axios  = require('axios');
 const config = require('../../config');
+const { createTracer } = require('../../utils/tracer');
 
 const FAKE_PROOF = {
   pi_a: ['1', '2', '1'],
@@ -23,42 +23,49 @@ module.exports = {
     const BASE     = config.BACKEND_URL;
     const TOTAL    = 16;
     const results  = [];
+    const trace    = createTracer(emit);
 
-    emit({ type: 'ATTACK', msg: `Sending ${TOTAL} rapid POST /login requests (100ms apart) with invalid proof...` });
-    emit({ type: 'LOG',    msg: 'Rate limit window: 60s | Max allowed: 10 per IP' });
+    emit({ type: 'ATTACK', msg: `Initiating rapid-fire DoS flood: sending ${TOTAL} requests to /login...` });
+    emit({ type: 'LOG',    msg: 'Target: POST /login | Config: 100ms interval | Expect: HTTP 429' });
 
     for (let i = 1; i <= TOTAL; i++) {
-      const r = await axios.post(
-        `${BASE}/login`,
-        { username: config.TEST_USER, proof: FAKE_PROOF, publicSignals: ['0', '0', '0', '0'] },
-        { validateStatus: () => true }
-      );
-      results.push(r.status);
-      const icon = r.status === 429 ? '🚫 429' : r.status === 400 ? '✅ 400' : `⚠️  ${r.status}`;
-      emit({ type: r.status === 429 ? 'RESULT' : 'LOG', msg: `  Request ${String(i).padStart(2)}  →  ${icon}` });
-      await new Promise((res) => setTimeout(res, 100));
+       // We use trace for each individual attack request to show the flood in action
+       emit({ type: 'LOG', msg: `--- Flood Request #${i} ---` });
+       const r = await trace({
+         method: 'post',
+         url: `${BASE}/login`,
+         data: { username: config.TEST_USER, proof: FAKE_PROOF, publicSignals: ['0', '0', '0', '0'] }
+       });
+       
+       results.push(r.status);
+       
+       if (r.status === 429) {
+         emit({ type: 'RESULT', msg: `>> Request ${i} BLOCKED: HTTP 429 Too Many Requests` });
+       }
+       
+       await new Promise((res) => setTimeout(res, 100));
     }
 
     const first429 = results.indexOf(429) + 1; // 1-indexed
     const total429 = results.filter((s) => s === 429).length;
 
-    emit({ type: 'RESULT', msg: `\nFirst 429 at request: ${first429 > 0 ? first429 : 'never'}` });
-    emit({ type: 'RESULT', msg: `Total 429 responses: ${total429}` });
+    emit({ type: 'RESULT', msg: `\nRate limit audit result:` });
+    emit({ type: 'RESULT', msg: `- First block detected at attempt: ${first429 > 0 ? first429 : 'NEVER'}` });
+    emit({ type: 'RESULT', msg: `- Total requests rejected by firewall: ${total429}` });
 
     const rateLimitHit = first429 > 0 && first429 <= 11;
-    emit({ type: 'CHECK',  msg: `Rate limit triggered at or before request 11: ${rateLimitHit ? '✅ YES' : '❌ NO — No rate limiting!'}` });
+    emit({ type: 'CHECK',  msg: `Firewall triggered correctly (<= 11 requests): ${rateLimitHit ? '✅ YES' : '❌ NO — RATE LIMITING FAILURE'}` });
 
-    emit({ type: 'EXPLAIN', msg: 'Rate limiter window: 60s, max 10 login attempts per IP.' });
-    emit({ type: 'EXPLAIN', msg: 'Bonus: ZKP proof generation costs ~2.5s on device — real attacker top speed: ~24 attempts/min (still blocked).' });
-    emit({ type: 'EXPLAIN', msg: 'Combined: rate limit + ZKP cost makes brute force computationally and temporally infeasible.' });
+    emit({ type: 'EXPLAIN', msg: 'The backend uses an Express rate-limiter with a sliding window.' });
+    emit({ type: 'EXPLAIN', msg: 'This prevents brute-force attempts from overloading the expensive ZKP validation logic.' });
 
     const passed = rateLimitHit;
     emit({
       type:   'VERDICT',
       passed,
       msg:    passed
-        ? `✅ PASS — Rate limit triggered at request ${first429}. Login brute force attack blocked.`
-        : '❌ FAIL — 429 not received! Rate limiting is not working.',
+        ? `✅ PASS — Rate limit triggered at request ${first429}. Denial of Service (DoS) mitigated.`
+        : '❌ FAIL — Backend accepted the entire flood! Server is vulnerable to DoS.',
     });
 
     return { passed };

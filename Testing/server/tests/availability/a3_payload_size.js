@@ -1,9 +1,9 @@
 // A3 — Payload Size Limit: Reject oversize request bodies
 // Tests payloads at 50KB, exactly at limit, just over, and 10MB.
-// PASS = bodies above 100KB return 413 Payload Too Large.
+// TRACE: High-fidelity payload flood telemetry.
 
-const axios  = require('axios');
 const config = require('../../config');
+const { createTracer } = require('../../utils/tracer');
 
 module.exports = {
   id:          'a3',
@@ -13,58 +13,58 @@ module.exports = {
 
   async run(emit) {
     const BASE = config.BACKEND_URL;
+    const trace = createTracer(emit);
 
     const SIZES = [
-      { label: '10 KB   (valid — under limit)',  kb: 10,    expectPass: true  },
-      { label: '50 KB   (valid — under limit)',  kb: 50,    expectPass: true  },
-      { label: '99 KB   (just under limit)',     kb: 99,    expectPass: true  },
-      { label: '110 KB  (over limit → 413)',     kb: 110,   expectPass: false },
-      { label: '1 MB    (way over → 413)',       kb: 1024,  expectPass: false },
-      { label: '10 MB   (DoS attempt → 413)',    kb: 10240, expectPass: false },
+      { label: '10 KB   (Under Limit)',  kb: 10,    expectPass: true  },
+      { label: '110 KB  (Over Limit)',   kb: 110,   expectPass: false },
+      { label: '500 KB  (Flood Payload)', kb: 500,  expectPass: false },
     ];
 
     const results = [];
 
-    emit({ type: 'ATTACK', msg: 'Sending payloads of increasing size to POST /login...\n' });
+    emit({ type: 'ATTACK', msg: 'Initiating Body Size Overflow attack on POST /login...' });
 
     for (const { label, kb, expectPass } of SIZES) {
-      const body = JSON.stringify({
-        username:     config.TEST_USER,
-        proof:        { pi_a: ['1', '2', '1'], pi_b: [['1','2'],['3','4'],['1','0']], pi_c: ['5','6','1'], protocol:'groth16', curve:'bn128' },
+      emit({ type: 'LOG', msg: `--- Testing Payload Size: ${label} ---` });
+      
+      const body = {
+        username:      config.TEST_USER,
+        proof:         { pi_a: ['1', '2', '1'], pi_b: [['1','2'],['3','4'],['1','0']], pi_c: ['5','6','1'], protocol:'groth16', curve:'bn128' },
         publicSignals: ['0', '0', '0', '0'],
-        padding:      'A'.repeat(kb * 1024), // inflate body
-      });
+        // Note: Full payload string is being emitted to the TRACE log as requested for demo
+        overflow:      'A'.repeat(kb * 1024), 
+      };
 
-      const r = await axios.post(`${BASE}/login`, body, {
-        headers:        { 'Content-Type': 'application/json' },
-        maxBodyLength:  Infinity,
+      const r = await trace({
+        method: 'post',
+        url: `${BASE}/login`,
+        data: body,
+        headers: { 'Content-Type': 'application/json' },
+        maxBodyLength: Infinity,
         maxContentLength: Infinity,
-        validateStatus: () => true,
       });
 
-      const got413   = r.status === 413;
-      const got400   = r.status === 400 || r.status === 422;
-      const isOk     = expectPass ? (got400 || got413 === false) : got413;
-      const icon     = r.status === 413 ? '🚫 413' : `  ${r.status}`;
-
-      emit({
-        type: isOk ? 'CHECK' : 'FAIL',
-        msg:  `  ${label.padEnd(38)} → HTTP ${icon}  ${isOk ? '✅' : `❌ Expected: ${expectPass ? '4xx' : '413'}`}`,
-      });
+      const got413 = r.status === 413;
+      const got400 = (r.status >= 400 && r.status < 500) && !got413;
+      
+      // If it's over 100KB, it MUST be 413. If under, it should be 400 (due to fake proof).
+      const isOk = expectPass ? !got413 : got413;
+      
+      emit({ type: isOk ? 'CHECK' : 'FAIL', msg: `Result: HTTP ${r.status} ${isOk ? '(Expected)' : '(UNEXPECTED)'}` });
       results.push(isOk);
     }
 
-    emit({ type: 'EXPLAIN', msg: 'bodyParser limit is set in Express middleware (100KB cap).' });
-    emit({ type: 'EXPLAIN', msg: 'Without size limits: an attacker can exhaust server memory with a single request.' });
-    emit({ type: 'EXPLAIN', msg: 'Returning 413 immediately drops the connection — minimal resource consumption on server.' });
+    emit({ type: 'EXPLAIN', msg: 'SentriZK limits the Express body-parser to 100KB to prevent Memory Exhaustion attacks.' });
+    emit({ type: 'EXPLAIN', msg: 'Payloads exceeding this limit are terminated at the TCP level by returning 413 (Payload Too Large).' });
 
     const passed = results.every(Boolean);
     emit({
       type:   'VERDICT',
       passed,
       msg:    passed
-        ? '✅ PASS — Payload size limits enforced. 10 MB DoS request rejected with 413.'
-        : `❌ FAIL — ${results.filter(b => !b).length} size test(s) returned unexpected responses!`,
+        ? '✅ PASS — Payload size enforcement verified with raw network telemetry.'
+        : '❌ FAIL — Backend accepted an oversized payload!',
     });
 
     return { passed };

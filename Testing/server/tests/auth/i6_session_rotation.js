@@ -1,7 +1,7 @@
 // I6 — Session Rotation Anti-Replay
 // This test verifies that the server rotates the sessionId upon refresh 
 // and immediately invalidates the old sessionId to prevent replay attacks.
-// TRACE: High-fidelity HTTP logging enabled.
+// TRACE: High-fidelity HTTP trace + simulated commands.
 
 const config = require('../../config');
 const { createTracer } = require('../../utils/tracer');
@@ -22,6 +22,7 @@ module.exports = {
     let sessionA;
     try {
       // 1. Fetch Nonce
+      emit({ type: 'TRACE', msg: `>> COMMAND: curl -X GET ${BASE}/commitment/${config.TEST_USER}` });
       const nRes = await trace({ method: 'get', url: `${BASE}/commitment/${config.TEST_USER}` });
       if (nRes.status !== 200) throw new Error("Could not fetch nonce");
       const { commitment, nonce } = nRes.data;
@@ -41,6 +42,7 @@ module.exports = {
       );
 
       // 3. Login
+      emit({ type: 'TRACE', msg: `>> COMMAND: curl -X POST ${BASE}/login -d '{"username":"${config.TEST_USER}","proof":{...}}'` });
       const lRes = await trace({
         method: 'post',
         url: `${BASE}/login`,
@@ -58,6 +60,7 @@ module.exports = {
 
     // ── Step 2: Refresh session (server rotates sessionId) ──────────
     emit({ type: 'ATTACK', msg: 'Step 2: Refreshing session (Triggering ID Rotation)...' });
+    emit({ type: 'TRACE', msg: `>> COMMAND: curl -X POST ${BASE}/refresh-session -d '{"sessionId":"${sessionA}","deviceId":"${config.TEST_DEVICE}"}'` });
     const rRes = await trace({
       method: 'post',
       url: `${BASE}/refresh-session`,
@@ -69,6 +72,7 @@ module.exports = {
 
     // ── Step 3: Validate OLD session (should be invalid) ───────────
     emit({ type: 'ATTACK', msg: 'Step 3: Attacker REPLAYS Session A after rotation...' });
+    emit({ type: 'TRACE', msg: `>> COMMAND: curl -X POST ${BASE}/validate-session -d '{"sessionId":"${sessionA}"}' # REPLAY ATTACK` });
     const vOld = await trace({
       method: 'post',
       url: `${BASE}/validate-session`,
@@ -82,6 +86,7 @@ module.exports = {
     let newValid = false;
     if (sessionB) {
       emit({ type: 'ATTACK', msg: 'Step 4: Confirming Session B remains valid for use...' });
+      emit({ type: 'TRACE', msg: `>> COMMAND: curl -X POST ${BASE}/validate-session -d '{"sessionId":"${sessionB}"}'` });
       const vNew = await trace({
         method: 'post',
         url: `${BASE}/validate-session`,

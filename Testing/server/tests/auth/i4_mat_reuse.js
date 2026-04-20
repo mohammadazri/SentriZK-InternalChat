@@ -23,6 +23,7 @@ module.exports = {
     let redirectToken;
     try {
       // 1. Fetch Nonce
+      emit({ type: 'TRACE', msg: `>> COMMAND: curl -X GET ${BASE}/commitment/${config.TEST_USER}` });
       const nRes = await trace({ method: 'get', url: `${BASE}/commitment/${config.TEST_USER}` });
       if (nRes.status !== 200) throw new Error(`Could not fetch nonce: HTTP ${nRes.status}`);
       const { commitment, nonce } = nRes.data;
@@ -42,6 +43,7 @@ module.exports = {
       );
 
       // 3. Submit Login
+      emit({ type: 'TRACE', msg: `>> COMMAND: curl -X POST ${BASE}/login -d '{"username":"${config.TEST_USER}","proof":{...}}'` });
       const loginRes = await trace({
         method: 'post',
         url: `${BASE}/login`,
@@ -60,6 +62,7 @@ module.exports = {
 
     // ── Simulate deep-link usage (First Use) ─────────────────────
     emit({ type: 'ATTACK', msg: `Step 2: Simulating legitimate mobile app landing (First Use)...` });
+    emit({ type: 'TRACE', msg: `>> COMMAND: curl ${BASE}/validate-token?token=${redirectToken}&device=${config.TEST_DEVICE}` });
     const r1 = await trace({ 
       method: 'get', 
       url: `${BASE}/validate-token?token=${redirectToken}&device=${config.TEST_DEVICE}` 
@@ -70,6 +73,7 @@ module.exports = {
 
     // ── Replay Attempt (Second Use) ──────────────────────────────
     emit({ type: 'ATTACK', msg: `Step 3: Attacker REPLAYS the stolen token...` });
+    emit({ type: 'TRACE', msg: `>> COMMAND: curl ${BASE}/validate-token?token=${redirectToken}&device=hijacker_device_007 # REPLAY ATTACK` });
     const r2 = await trace({ 
       method: 'get', 
       url: `${BASE}/validate-token?token=${redirectToken}&device=hijacker_device_007` 

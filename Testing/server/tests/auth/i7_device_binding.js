@@ -1,7 +1,7 @@
 // I7 — Device Binding: Session Hijack Prevention
 // This test verifies that a session token is hardware-bound.
 // Even if the token is stolen, it cannot be used from another device ID.
-// TRACE: High-fidelity HTTP logging enabled.
+// TRACE: High-fidelity HTTP trace + simulated commands.
 
 const config = require('../../config');
 const { createTracer } = require('../../utils/tracer');
@@ -24,6 +24,7 @@ module.exports = {
     let sessIdB;
     try {
       // 1. Fetch Nonce
+      emit({ type: 'TRACE', msg: `>> COMMAND: curl -X GET ${BASE}/commitment/${config.TEST_USER}` });
       const nRes = await trace({ method: 'get', url: `${BASE}/commitment/${config.TEST_USER}` });
       if (nRes.status !== 200) throw new Error("Nonce fetch failed");
       const { commitment, nonce } = nRes.data;
@@ -42,6 +43,7 @@ module.exports = {
       );
 
       // 3. Login
+      emit({ type: 'TRACE', msg: `>> COMMAND: curl -X POST ${BASE}/login -d '{"username":"${config.TEST_USER}","proof":{...}}'` });
       const lRes = await trace({
         method: 'post',
         url: `${BASE}/login`,
@@ -51,6 +53,7 @@ module.exports = {
 
       // 4. Initial Bind 
       emit({ type: 'LOG', msg: `Binding session to Device ID: ${LEGIT}` });
+      emit({ type: 'TRACE', msg: `>> COMMAND: curl -X POST ${BASE}/refresh-session -d '{"sessionId":"${sessIdA}","deviceId":"${LEGIT}"}'` });
       const bRes = await trace({
         method: 'post',
         url: `${BASE}/refresh-session`,
@@ -67,6 +70,7 @@ module.exports = {
 
     // ── Step 2: Attempt hijack from Different Device ──────────────
     emit({ type: 'ATTACK', msg: `Step 2: Attacker attempts to REFRESH stolen session on Device "${ATTACKER}"...` });
+    emit({ type: 'TRACE', msg: `>> COMMAND: curl -X POST ${BASE}/refresh-session -d '{"sessionId":"${sessIdB}","deviceId":"${ATTACKER}"}' # HIJACK ATTEMPT` });
     const r1 = await trace({
       method: 'post',
       url: `${BASE}/refresh-session`,
@@ -78,6 +82,7 @@ module.exports = {
 
     // ── Step 3: Verify it still works for the LEGIT device ─────────
     emit({ type: 'ATTACK', msg: 'Step 3: Confirming access remains for the original legitimate device...' });
+    emit({ type: 'TRACE', msg: `>> COMMAND: curl -X POST ${BASE}/validate-session -d '{"sessionId":"${sessIdB}"}'` });
     const r2 = await trace({
       method: 'post',
       url: `${BASE}/validate-session`,

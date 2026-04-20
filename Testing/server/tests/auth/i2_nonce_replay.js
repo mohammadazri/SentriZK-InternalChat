@@ -1,10 +1,9 @@
 // I2 — Nonce Replay Attack
 // Generates a REAL Groth16 proof, submits it once (success), then replays it.
-// PASS = first login succeeds AND replay returns 400 "Nonce expired or not issued".
+// TRACE: High-fidelity HTTP trace + simulated commands.
 
-const axios   = require('axios');
-const fs      = require('fs');
-const config  = require('../../config');
+const config = require('../../config');
+const { createTracer } = require('../../utils/tracer');
 
 module.exports = {
   id:          'i2',
@@ -13,135 +12,55 @@ module.exports = {
   description: 'Capture a real ZKP login proof, replay it — nonce must be burned on first use.',
 
   async run(emit) {
-    const BASE = config.BACKEND_URL;
+    const BASE    = config.BACKEND_URL;
+    const snarkjs = require('snarkjs');
+    const trace   = createTracer(emit);
 
-    // ── Prerequisite check ────────────────────────────────────────
-    const missingCreds = !config.TEST_SECRET || !config.TEST_SALT || !config.TEST_UNAME_HASH;
-    const missingFiles = !fs.existsSync(config.LOGIN_WASM) || !fs.existsSync(config.LOGIN_ZKEY);
+    emit({ type: 'ATTACK', msg: `Step 1: Fetching fresh nonce for target: ${config.TEST_USER}` });
+    const nRes = await trace({ method: 'get', url: `${BASE}/commitment/${config.TEST_USER}` });
+    if (nRes.status !== 200) throw new Error("Could not fetch nonce");
+    const { commitment, nonce } = nRes.data;
 
-    if (missingCreds || missingFiles) {
-      emit({ type: 'SKIP', msg: '⚠️  Missing test credentials or circuit files in .env — running attack with forged proof instead.' });
-      return runForgedVersion(emit, BASE);
-    }
-
-    // ── Generate a REAL valid proof ───────────────────────────────
-    emit({ type: 'ATTACK', msg: `Step 1: Fetching fresh nonce for ${config.TEST_USER}...` });
-    
-    let commitment, nonce;
-    try {
-      const { data: nonceData } = await axios.get(`${BASE}/commitment/${config.TEST_USER}`);
-      commitment = nonceData.commitment;
-      nonce = nonceData.nonce;
-      emit({ type: 'RESULT', msg: `Nonce: ${nonce} (60s TTL) | Commitment prefix: ${String(commitment).substring(0,15)}...` });
-    } catch (err) {
-      const is404 = err.response && err.response.status === 404;
-      emit({ type: 'ERROR', msg: `Could not fetch nonce: ${err.message}` });
-      if (is404) {
-        emit({ type: 'VERDICT', passed: false, msg: `❌ FAIL — Test user "${config.TEST_USER}" not registered on backend.` });
-      } else {
-        emit({ type: 'VERDICT', passed: false, msg: '❌ FAIL — Backend unreachable or server error.' });
-      }
-      return { passed: false };
-    }
-
-    emit({ type: 'ATTACK', msg: 'Step 2: Generating REAL Groth16 proof with snarkjs (real ZKP computation)...' });
-    const t0 = Date.now();
-    let proof, publicSignals;
-
-    try {
-      const snarkjs = require('snarkjs');
-      const result  = await snarkjs.groth16.fullProve(
-        {
-          secret:           config.TEST_SECRET,
-          salt:             config.TEST_SALT,
-          unameHash:        config.TEST_UNAME_HASH,
-          storedCommitment: String(commitment),
-          nonce:            String(nonce),
-        },
-        config.LOGIN_WASM,
-        config.LOGIN_ZKEY
-      );
-      proof        = result.proof;
-      publicSignals = result.publicSignals;
-      emit({ type: 'RESULT', msg: `Proof generated in ${((Date.now() - t0) / 1000).toFixed(2)}s  ← real ZKP generation cost (inherent brute-force resistance)` });
-    } catch (err) {
-      emit({ type: 'ERROR', msg: `snarkjs error: ${err.message}` });
-      emit({ type: 'SKIP',  msg: 'Falling back to forged-proof version of this test...' });
-      return runForgedVersion(emit, BASE);
-    }
+    emit({ type: 'ATTACK', msg: 'Step 2: Generating REAL Groth16 proof with snarkjs...' });
+    const { proof, publicSignals } = await snarkjs.groth16.fullProve(
+      { secret: config.TEST_SECRET, salt: config.TEST_SALT, unameHash: config.TEST_UNAME_HASH, storedCommitment: String(commitment), nonce: String(nonce) },
+      config.LOGIN_WASM, config.LOGIN_ZKEY
+    );
 
     // ── First use (legitimate login) ──────────────────────────────
     emit({ type: 'ATTACK', msg: 'Step 3: Submitting proof — FIRST use (legitimate login)...' });
-    const r1 = await axios.post(
-      `${BASE}/login`,
-      { username: config.TEST_USER, proof, publicSignals },
-      { validateStatus: () => true }
-    );
-    emit({ type: 'RESULT', msg: `HTTP ${r1.status} — ${JSON.stringify(r1.data).substring(0, 120)}` });
+    emit({ type: 'TRACE', msg: `>> COMMAND: curl -X POST ${BASE}/login -d '{"username":"${config.TEST_USER}","proof":{...}}'` });
+    const r1 = await trace({
+      method: 'post',
+      url: `${BASE}/login`,
+      data: { username: config.TEST_USER, proof, publicSignals }
+    });
     const firstOk = r1.status === 200;
-    emit({ type: 'CHECK',  msg: `First login succeeded (HTTP 200): ${firstOk ? '✅ YES' : '❌ NO'}` });
+    emit({ type: 'CHECK',  msg: `First login succeeded (200 OK): ${firstOk ? '✅ YES' : '❌ NO'}` });
 
     // ── Replay the EXACT same proof ───────────────────────────────
-    emit({ type: 'ATTACK', msg: 'Step 4: REPLAYING the identical proof immediately (attacker captured the request)...' });
-    const r2 = await axios.post(
-      `${BASE}/login`,
-      { username: config.TEST_USER, proof, publicSignals },
-      { validateStatus: () => true }
-    );
-    emit({ type: 'RESULT', msg: `HTTP ${r2.status} — ${JSON.stringify(r2.data)}` });
+    emit({ type: 'ATTACK', msg: 'Step 4: REPLAYING the identical proof (Attacker captured the request)...' });
+    emit({ type: 'TRACE', msg: `>> COMMAND: curl -X POST ${BASE}/login -d '{"username":"${config.TEST_USER}","proof":{...}}' # REPLAY ATTACK` });
+    const r2 = await trace({
+      method: 'post',
+      url: `${BASE}/login`,
+      data: { username: config.TEST_USER, proof, publicSignals }
+    });
     const replayBlocked = r2.status !== 200;
-    emit({ type: 'CHECK',  msg: `Replay rejected (non-200): ${replayBlocked ? '✅ YES' : '❌ NO — SECURITY FAILURE'}` });
+    emit({ type: 'CHECK',  msg: `Replay rejected by nonce-burn logic: ${replayBlocked ? '✅ YES' : '❌ NO — VULNERABLE'}` });
 
-    emit({ type: 'EXPLAIN', msg: 'Server sets nonce=null in the database immediately after first successful login.' });
-    emit({ type: 'EXPLAIN', msg: 'The same proof submitted a second later finds nonce=null → "Nonce expired or not issued".' });
-    emit({ type: 'EXPLAIN', msg: 'Even with TLS broken: captured proof is a one-time cryptographic token.' });
+    emit({ type: 'EXPLAIN', msg: 'The backend burns the nonce immediately after one implementation check.' });
+    emit({ type: 'EXPLAIN', msg: 'Intercepting a valid proof is useless because it cannot be re-used even a second later.' });
 
     const passed = firstOk && replayBlocked;
     emit({
       type:   'VERDICT',
       passed,
       msg:    passed
-        ? '✅ PASS — Replay attack defeated. Each valid proof is single-use.'
-        : '❌ FAIL — Replay was accepted! Nonce burning is broken.',
+        ? '✅ PASS — Nonce replay protection verified with raw telemetry.'
+        : '❌ FAIL — Nonce replay attack succeeded!',
     });
 
     return { passed };
   },
 };
-
-/** Fallback: use a forged proof to demonstrate replay detection without real snarkjs */
-async function runForgedVersion(emit, BASE) {
-  emit({ type: 'ATTACK', msg: 'Replay test with forged proof — demonstrating nonce invalidation after failed use...' });
-
-  let commitment, nonce;
-  try {
-    const { data } = await axios.get(`${BASE}/commitment/${require('../../config').TEST_USER}`);
-    commitment = data.commitment; nonce = data.nonce;
-  } catch (err) {
-    const is404 = err.response && err.response.status === 404;
-    emit({ type: 'ERROR', msg: `Could not fetch nonce: ${err.message}` });
-    if (is404) {
-      emit({ type: 'VERDICT', passed: false, msg: `❌ FAIL — Test user "${require('../../config').TEST_USER}" not registered on backend.` });
-    } else {
-      emit({ type: 'VERDICT', passed: false, msg: '❌ FAIL — Backend unreachable or server error.' });
-    }
-    return { passed: false };
-  }
-
-  const proof = { pi_a: ['111', '222', '1'], pi_b: [['1','2'],['3','4'],['1','0']], pi_c: ['333','444','1'], protocol:'groth16', curve:'bn128' };
-  const ps    = [String(commitment), String(nonce), '0', String(nonce)];
-
-  const r1 = await axios.post(`${BASE}/login`, { username: require('../../config').TEST_USER, proof, publicSignals: ps }, { validateStatus: ()=>true });
-  emit({ type: 'RESULT', msg: `First attempt:  HTTP ${r1.status}` });
-
-  const r2 = await axios.post(`${BASE}/login`, { username: require('../../config').TEST_USER, proof, publicSignals: ps }, { validateStatus: ()=>true });
-  emit({ type: 'RESULT', msg: `Second attempt: HTTP ${r2.status} — ${JSON.stringify(r2.data)}` });
-
-  // After one use (even a failed one), nonce is burned — subsequent checks differ
-  const passed = r2.status === 400;
-  emit({ type: 'VERDICT', passed, msg: passed
-    ? '✅ PASS — Nonce burned after first attempt; replay returns 400.'
-    : '❌ FAIL — Nonce not burned.' });
-
-  return { passed };
-}

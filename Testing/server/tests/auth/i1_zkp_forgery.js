@@ -1,43 +1,34 @@
 // I1 — ZKP Proof Forgery
 // Crafts two types of fake Groth16 proofs and submits them to /login.
-// PASS = both get HTTP 400 "Invalid login proof".
+// TRACE: High-fidelity HTTP trace + simulated commands.
 
-const axios  = require('axios');
 const config = require('../../config');
+const { createTracer } = require('../../utils/tracer');
 
 module.exports = {
   id:          'i1',
   name:        'ZKP Proof Forgery',
   category:    'INTEGRITY',
-  description: 'Attempt to authenticate with a crafted Groth16 proof that was never computed from a valid witness.',
+  description: 'Attempt to authenticate with a crafted Groth16 proof that was never computed.',
 
   async run(emit) {
-    const BASE = config.BACKEND_URL;
+    const BASE  = config.BACKEND_URL;
+    const trace = createTracer(emit);
 
-    // ── Step 1: Get a real nonce for our test user ─────────────────
-    emit({ type: 'ATTACK', msg: `Fetching fresh nonce for test user: ${config.TEST_USER}` });
-
-    let commitment, nonce;
-    try {
-      const { data } = await axios.get(`${BASE}/commitment/${config.TEST_USER}`);
-      commitment = data.commitment;
-      nonce      = data.nonce;
-      emit({ type: 'RESULT', msg: `Nonce received: ${nonce} | Commitment: ${String(commitment).substring(0,20)}...` });
-    } catch (err) {
-      const is404 = err.response && err.response.status === 404;
-      emit({ type: 'ERROR', msg: `Could not fetch nonce: ${err.message}` });
-      if (is404) {
-        emit({ type: 'VERDICT', passed: false, msg: `❌ FAIL — Test user "${config.TEST_USER}" not registered on backend.` });
-      } else {
-        emit({ type: 'VERDICT', passed: false, msg: '❌ FAIL — Backend unreachable or server error.' });
-      }
+    // ── Step 1: Get a real nonce ──────────────────────────────────
+    emit({ type: 'ATTACK', msg: `Step 1: Fetching fresh nonce for target identity: ${config.TEST_USER}` });
+    const nRes = await trace({ method: 'get', url: `${BASE}/commitment/${config.TEST_USER}` });
+    
+    if (nRes.status !== 200) {
+      emit({ type: 'ERROR', msg: 'Failed to fetch prerequisite cryptographic nonce.' });
       return { passed: false };
     }
+    const { commitment, nonce } = nRes.data;
 
     const results = [];
 
     // ── Attack 1: Random field elements (not on BN128 curve) ──────
-    emit({ type: 'ATTACK', msg: 'Attack #1 — Random BN128 field elements (nowhere near the curve)' });
+    emit({ type: 'ATTACK', msg: 'Attack #1 — Submitting random non-curve field elements...' });
     const fakeProof1 = {
       pi_a: ['12345678901234567890987654321098', '98765432109876543210123456789012', '1'],
       pi_b: [['111222333444555666', '777888999000111222'], ['333444555666777888', '999000111222333444'], ['1', '0']],
@@ -45,29 +36,22 @@ module.exports = {
       protocol: 'groth16',
       curve:    'bn128',
     };
-    const fakePublicSignals1 = [String(commitment), String(nonce), '0', String(nonce)];
+    const ps1 = [String(commitment), String(nonce), '0', String(nonce)];
 
-    try {
-      const r = await axios.post(
-        `${BASE}/login`,
-        { username: config.TEST_USER, proof: fakeProof1, publicSignals: fakePublicSignals1 },
-        { validateStatus: () => true }
-      );
-      const ok = r.status === 400;
-      emit({ type: 'RESULT', msg: `HTTP ${r.status} — ${JSON.stringify(r.data)}` });
-      emit({ type: 'CHECK',  msg: `Forged proof rejected with HTTP 400: ${ok ? '✅ YES' : '❌ NO — SECURITY FAILURE'}` });
-      results.push(ok);
-    } catch (err) {
-      emit({ type: 'ERROR', msg: `Request failed: ${err.message}` });
-      results.push(false);
-    }
+    emit({ type: 'TRACE', msg: `>> COMMAND: curl -X POST ${BASE}/login -d '{"username":"${config.TEST_USER}","proof":{...}}'` });
+    const r1 = await trace({
+      method: 'post',
+      url: `${BASE}/login`,
+      data: { username: config.TEST_USER, proof: fakeProof1, publicSignals: ps1 }
+    });
+    
+    const ok1 = r1.status === 400;
+    emit({ type: 'CHECK',  msg: `Random forgery rejected: ${ok1 ? '✅ YES' : '❌ NO — SECURITY FAILURE'}` });
+    results.push(ok1);
 
     // ── Attack 2: Real Proof structure but with 1 bit flipped ─────
-    // Simulate intercepting a valid proof and tamper with 1 digit of pi_a[0]
-    emit({ type: 'ATTACK', msg: 'Attack #2 — Tampered proof: real structure with pi_a[0] last char flipped' });
-    const lastChar = String(commitment).slice(-1);
-    const flippedChar = lastChar === '0' ? '1' : '0';
-    const tamperedPiA0 = String(commitment).slice(0, -1) + flippedChar;
+    emit({ type: 'ATTACK', msg: 'Attack #2 — Submitting valid proof structure with 1-bit tamper...' });
+    const tamperedPiA0 = String(commitment).slice(0, -1) + (String(commitment).slice(-1) === '0' ? '1' : '0');
 
     const fakeProof2 = {
       pi_a: [tamperedPiA0, String(commitment), '1'],
@@ -77,32 +61,26 @@ module.exports = {
       curve:    'bn128',
     };
 
-    try {
-      const r = await axios.post(
-        `${BASE}/login`,
-        { username: config.TEST_USER, proof: fakeProof2, publicSignals: fakePublicSignals1 },
-        { validateStatus: () => true }
-      );
-      const ok = r.status === 400;
-      emit({ type: 'RESULT', msg: `HTTP ${r.status} — ${JSON.stringify(r.data)}` });
-      emit({ type: 'CHECK',  msg: `1-bit tampered proof rejected with HTTP 400: ${ok ? '✅ YES' : '❌ NO — SECURITY FAILURE'}` });
-      results.push(ok);
-    } catch (err) {
-      emit({ type: 'ERROR', msg: `Request failed: ${err.message}` });
-      results.push(false);
-    }
+    emit({ type: 'TRACE', msg: `>> COMMAND: curl -X POST ${BASE}/login -d '{"username":"${config.TEST_USER}","proof":{...}}'` });
+    const r2 = await trace({
+      method: 'post',
+      url: `${BASE}/login`,
+      data: { username: config.TEST_USER, proof: fakeProof2, publicSignals: ps1 }
+    });
+    
+    const ok2 = r2.status === 400;
+    emit({ type: 'CHECK',  msg: `Tampered proof rejected: ${ok2 ? '✅ YES' : '❌ NO — SECURITY FAILURE'}` });
+    results.push(ok2);
 
-    emit({ type: 'EXPLAIN', msg: 'Groth16 verification: e(A,B)·e(C,vk_delta) = e(vk_alpha,vk_beta)·e(D,vk_gamma)' });
-    emit({ type: 'EXPLAIN', msg: 'Non-curve points break the pairing equation instantly — no partial forgery exists.' });
-    emit({ type: 'EXPLAIN', msg: 'Cost to forge a valid proof from scratch: 2^128 operations (infeasible).' });
+    emit({ type: 'EXPLAIN', msg: 'Groth16 ZKPs are mathematically rigid. A single bit flip changes the pairing result, making verification fail.' });
 
     const passed = results.every(Boolean);
     emit({
       type:   'VERDICT',
       passed,
       msg:    passed
-        ? '✅ PASS — All ZKP forgery attempts rejected. Groth16 pairing math is unbreakable.'
-        : `❌ FAIL — Some forgery attempts were accepted! (${results.filter(Boolean).length}/${results.length} rejected)`,
+        ? '✅ PASS — All forgery attempts blocked. Proof verification is cryptographically sound.'
+        : '❌ FAIL — Backend accepted a forged ZKP proof!',
     });
 
     return { passed };
