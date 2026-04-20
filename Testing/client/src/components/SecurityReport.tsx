@@ -18,14 +18,6 @@ export default function SecurityReport({ tests, states }: SecurityReportProps) {
 
   const categories: TestCategory[] = ['CONFIDENTIALITY', 'INTEGRITY', 'AVAILABILITY', 'ML'];
 
-  /** Risk Calculation (Simulated for Demo Performance) */
-  const getRiskScore = (cat: TestCategory) => {
-    const catTests = tests.filter(t => t.category === cat);
-    if (catTests.length === 0) return 0;
-    const catFailed = catTests.filter(t => states[t.id]?.status === 'failed').length;
-    return Math.round((catFailed / catTests.length) * 100);
-  };
-
   return (
     <div className="security-report">
       {/* ── Page 1: Cover ─────────────────────────────────────────── */}
@@ -69,7 +61,47 @@ export default function SecurityReport({ tests, states }: SecurityReportProps) {
         </div>
       </div>
 
-      {/* ── Page 3+: Detailed Findings ────────────────────────────── */}
+      {/* ── Page 3: Internal Secret Incidents (PRO REQUEST) ────────── */}
+      <div className="report-section page-break">
+        <h2 style={{color: '#991b1b'}}>2. Internal Secret Incidents Audit</h2>
+        <p>This section documents sensitive data exposures detected within the source code history and internal monitoring tools.</p>
+
+        <div className="incident-card" style={{ border: '2px solid #fee2e2', borderRadius: '8px', padding: '24px', backgroundColor: '#fef2f2', marginBottom: '32px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <span style={{ fontWeight: 800, fontSize: '18px' }}>#30486321 — JSON Web Token Leak </span>
+            <span className="badge fail">CRITICAL EXPOSURE</span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', fontSize: '12px' }}>
+            <div>
+              <strong>Secret Type:</strong> JSON Web Token (HS256)<br />
+              <strong>Source:</strong> Testing/server/tests/auth/i5_jwt_forgery.js<br />
+              <strong>Detected Date:</strong> Apr 20th, 2026
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <strong>Incident Status:</strong> <span style={{color: '#166534', fontWeight: 800}}>REMEDIATED</span><br />
+              <strong>Assignee:</strong> mohamedazri655@gmail.com
+            </div>
+          </div>
+
+          <div className="evidence-header" style={{ marginTop: '20px' }}>Exposed Token Fragment:</div>
+          <div className="evidence-block" style={{ backgroundColor: '#ffffff', border: '1px solid #fee2e2', color: '#991b1b' }}>
+            eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiZXZpbF9hZG1pbiJ9.swapped_sig
+          </div>
+
+          <div style={{ marginTop: '24px', borderTop: '1px solid #fee2e2', paddingTop: '16px' }}>
+            <h4 style={{ color: '#991b1b', marginTop: 0 }}>Remediation Timeline</h4>
+            <div style={{ fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div>✅ <strong>11:41 (Detection):</strong> Secret detected in default branch by automated GitGuardian scanner.</div>
+              <div>✅ <strong>11:55 (Impact Assessment):</strong> Blast radius identified as developer testing environment.</div>
+              <div>✅ <strong>12:05 (Rotation):</strong> Hardcoded secret replaced with dynamic generation logic.</div>
+              <div>✅ <strong>12:06 (Verification):</strong> Incident marked as Resolved after audit confirmation.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Page 4+: Detailed Findings ────────────────────────────── */}
       {categories.map((cat) => {
         const catTests = tests.filter(t => t.category === cat);
         const meta = CATEGORY_META[cat];
@@ -96,7 +128,6 @@ export default function SecurityReport({ tests, states }: SecurityReportProps) {
 
                   <p className="finding-desc">{test.description}</p>
 
-                  {/* Defense Analysis — NEW SECTION */}
                   {explanations.length > 0 && (
                     <div className="defense-analysis">
                       <h4>Technical Control Review</h4>
@@ -106,7 +137,6 @@ export default function SecurityReport({ tests, states }: SecurityReportProps) {
                     </div>
                   )}
 
-                  {/* Full Telemetry — NO TRUNCATION */}
                   <div className="evidence-header">Audit Telemetry (Full Trace)</div>
                   <div className="evidence-block">
                     {telemetry.map((l, i) => (

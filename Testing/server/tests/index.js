@@ -2,6 +2,7 @@
 module.exports = {
   // ── CONFIDENTIALITY ───────────────────────────────────────────────
   c1:  require('./auth/c1_db_no_passwords'),
+  c2:  require('./auth/c2_secret_scanning'),
   c3a: require('./apk/c3a_jadx'),
 
   c3c: require('./apk/c3c_strings'),
