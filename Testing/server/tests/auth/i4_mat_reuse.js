@@ -1,77 +1,85 @@
-// I4 — MAT Single-Use Enforcement
-// Generates a Mobile Access Token, uses it once, then tries to replay it.
-// PASS = second use returns HTTP 403 "already used".
+// I4 — MAT Single-Use Enforcement (Refactored to Redirect Token Flow)
+// This test simulates the security of the deep-link redirect mechanism.
+// 1. Registers a new temporary test user to get a real Redirect Token.
+// 2. Uses the token once (Success - legitimate app usage).
+// 3. Replays the token (Blocked - simulating an attacker interception).
+// PASS = second use returns HTTP 400 "Invalid token" because it was consumed/deleted.
 
-const axios  = require('axios');
-const config = require('../../config');
+const axios   = require('axios');
+const path    = require('path');
+const config  = require('../../config');
 
 module.exports = {
   id:          'i4',
   name:        'MAT Single-Use Enforcement',
   category:    'INTEGRITY',
-  description: 'Steal and replay a Mobile Access Token (deep-link token). Must be single-use.',
+  description: 'Steal and replay a Redirect Token (deep-link token). Must be burned on first use.',
 
   async run(emit) {
     const BASE = config.BACKEND_URL;
+    const snarkjs = require('snarkjs');
 
-    emit({ type: 'ATTACK', msg: 'Step 1: Generating Mobile Access Token (MAT) — normal flow...' });
+    const REG_WASM = path.resolve(__dirname, '../../../../Backend/circuits/registration/registration_js/registration.wasm');
+    const REG_ZKEY = path.resolve(__dirname, '../../../../Backend/circuits/key_generation/registration_final.zkey');
 
-    let mat;
+    const tempUser   = `mat_test_${Math.floor(Math.random() * 1000000)}`;
+    const testSecret = "1234567890123456789012345678901234567890";
+    const testSalt   = "111111222222333333444444";
+    const unameHash  = "999999888888777777";
+
+    emit({ type: 'ATTACK', msg: `Step 1: Registering temporary user "${tempUser}" to get a real Redirect Token...` });
+
+    let redirectToken;
     try {
-      const { data } = await axios.post(
-        `${BASE}/generate-mobile-access-token`,
-        { deviceId: config.TEST_DEVICE, action: 'login' },
-        { validateStatus: () => true }
+      // 1. Generate Registration Proof (Real ZKP)
+      const { proof, publicSignals } = await snarkjs.groth16.fullProve(
+        { secret: testSecret, salt: testSalt, unameHash: unameHash },
+        REG_WASM,
+        REG_ZKEY
       );
-      mat = data.mobileAccessToken;
-      if (!mat) throw new Error('No mobileAccessToken in response: ' + JSON.stringify(data));
-      emit({ type: 'RESULT', msg: `MAT generated: ${mat.substring(0, 20)}... (5-min expiry, single-use by design)` });
+
+      // 2. Submit Registration
+      const regRes = await axios.post(`${BASE}/register`, {
+        username: tempUser,
+        proof,
+        publicSignals
+      });
+
+      redirectToken = regRes.data.token;
+      if (!redirectToken) throw new Error("No token returned in registration response");
+      emit({ type: 'RESULT', msg: `Success: Registration complete. Redirect Token: ${redirectToken.substring(0, 10)}...` });
     } catch (err) {
-      emit({ type: 'ERROR', msg: `MAT generation failed: ${err.message}` });
-      emit({ type: 'VERDICT', passed: false, msg: '❌ FAIL — Could not generate MAT.' });
+      emit({ type: 'ERROR', msg: `Registration failed: ${err.message}` });
+      emit({ type: 'VERDICT', passed: false, msg: '❌ FAIL — Could not prepare test account (Backend error or ZKP failure).' });
       return { passed: false };
     }
 
-    // ── Simulate what happens when the deep-link URL is used ──────
-    // The deep-link callback validates the MAT and exchanges it for a session.
-    // We simulate this by hitting the validate-token endpoint that reads the MAT.
-    emit({ type: 'ATTACK', msg: `Step 2: Using the MAT for the first time (legitimate deep-link)...` });
-    const r1 = await axios.get(
-      `${BASE}/validate-token?token=${mat}&device=${config.TEST_DEVICE}`,
-      { validateStatus: () => true }
-    );
-    emit({ type: 'RESULT', msg: `First use  → HTTP ${r1.status}  ${JSON.stringify(r1.data).substring(0, 100)}` });
-    const firstOk = [200, 400, 401].includes(r1.status); // 400/401 = MAT used but wrong token type — still "used"
+    // ── Simulate deep-link usage (First Use) ─────────────────────
+    emit({ type: 'ATTACK', msg: `Step 2: Using the token for the first time (simulating mobile app landing)...` });
+    const r1 = await axios.get(`${BASE}/validate-token?token=${redirectToken}&device=legit_device`, { validateStatus: () => true });
+    
+    emit({ type: 'RESULT', msg: `First use  → HTTP ${r1.status}  ${JSON.stringify(r1.data).substring(0, 80)}` });
+    const firstOk = r1.status === 200 && r1.data.valid === true;
+    emit({ type: 'CHECK', msg: `First validation succeeded: ${firstOk ? '✅ YES' : '❌ NO'}` });
 
-    // ── Replay the exact same MAT ─────────────────────────────────
-    emit({ type: 'ATTACK', msg: `Step 3: REPLAYING the same MAT (attacker intercepted the deep-link URL)...` });
-    const r2 = await axios.get(
-      `${BASE}/validate-token?token=${mat}&device=attacker_device_evil`,
-      { validateStatus: () => true }
-    );
+    // ── Replay Attempt (Second Use) ──────────────────────────────
+    emit({ type: 'ATTACK', msg: `Step 3: REPLAYING the same token (attacker tries to intercept the session)...` });
+    const r2 = await axios.get(`${BASE}/validate-token?token=${redirectToken}&device=attacker_device`, { validateStatus: () => true });
+    
     emit({ type: 'RESULT', msg: `Second use → HTTP ${r2.status}  ${JSON.stringify(r2.data)}` });
+    const replayBlocked = r2.status === 400 && r2.data.error === "Invalid token";
+    emit({ type: 'CHECK', msg: `Replay blocked (token burned): ${replayBlocked ? '✅ YES' : '❌ NO — SECURITY FAILURE'}` });
 
-    // Also try the register page endpoint
-    emit({ type: 'ATTACK', msg: 'Step 4: Trying same MAT on register endpoint...' });
-    const r3 = await axios.get(
-      `${BASE}/register?mat=${mat}&device=${config.TEST_DEVICE}`,
-      { validateStatus: () => true }
-    );
-    emit({ type: 'RESULT', msg: `Register endpoint → HTTP ${r3.status}  ${JSON.stringify(r3.data).substring(0,100)}` });
+    emit({ type: 'EXPLAIN', msg: 'The backend consumes (deletes) the redirect token from the database immediately after success.' });
+    emit({ type: 'EXPLAIN', msg: 'Intercepting a deep-link URL is useless because it becomes "Invalid" the moment the legitimate app clicks it.' });
 
-    const replayBlocked = r2.status === 403 || r2.status === 400 || r2.status === 401;
-    emit({ type: 'CHECK',  msg: `Replay blocked (4xx): ${replayBlocked ? '✅ YES' : '❌ NO — SECURITY FAILURE'}` });
-    emit({ type: 'EXPLAIN', msg: 'Server marks MAT as "used=true" in Supabase after first validation.' });
-    emit({ type: 'EXPLAIN', msg: 'Subsequent calls hit the "Mobile access token already used" guard.' });
-    emit({ type: 'EXPLAIN', msg: '5-minute TTL provides a secondary defence: old MATs auto-expire regardless.' });
-
-    const passed = replayBlocked;
+    const passed = firstOk && replayBlocked;
     emit({
       type:   'VERDICT',
       passed,
       msg:    passed
-        ? '✅ PASS — MAT is single-use. Intercepted deep-link URL is worthless after first click.'
-        : '❌ FAIL — MAT was accepted a second time! Token reuse vulnerability confirmed.',
+        ? '✅ PASS — Deep-link tokens are single-use. Replay attack defeated.'
+        : '❌ FAIL — Token reuse vulnerability! The token was not invalidated after first use.',
     });
 
     return { passed };
