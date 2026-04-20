@@ -439,6 +439,21 @@ body {
 .log-EXPLAIN  .term-type { color: #64748b; }
 .log-EXPLAIN  .term-msg  { color: #94a3b8; font-style: italic; }
 
+.log-LOG      .term-type { color: #c084fc; }
+.log-LOG      .term-msg  { color: #e9d5ff; }
+
+.log-INFO     .term-type { color: #2dd4bf; }
+.log-INFO     .term-msg  { color: #ccfbf1; }
+
+.log-VERIFY   .term-type { color: #f472b6; }
+.log-VERIFY   .term-msg  { color: #fbcfe8; font-weight: 600; }
+
+.log-FAIL     .term-type { color: #f87171; }
+.log-FAIL     .term-msg  { color: #fca5a5; }
+
+.log-SKIP     .term-type { color: #9ca3af; }
+.log-SKIP     .term-msg  { color: #d1d5db; }
+
 .log-VERDICT.verdict-pass .term-type { color: #34d399; }
 .log-VERDICT.verdict-pass .term-msg  { color: #34d399; font-weight: 600; }
 

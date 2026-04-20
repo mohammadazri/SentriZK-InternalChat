@@ -10,6 +10,39 @@ function fmtTime(ts: number) {
   return new Date(ts).toLocaleTimeString('en-GB', { hour12: false });
 }
 
+function sanitizeMsg(type: string, msg: string) {
+  // Strip emojis commonly used in backend modules
+  let cleanMsg = msg
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{25B6}\u{2705}\u{274C}\u{26A0}\u{FE0F}]/gu, '')
+    .trim();
+  
+  // Clean up dangling hyphens left from emoji removal
+  if (cleanMsg.startsWith('—')) cleanMsg = cleanMsg.substring(1).trim();
+  if (cleanMsg.startsWith('-')) cleanMsg = cleanMsg.substring(1).trim();
+
+  let prefix = '';
+  switch (type) {
+    case 'ATTACK':     prefix = '[+]'; break;
+    case 'RESULT':     prefix = '[>]'; break;
+    case 'CHECK':      prefix = '[?]'; break;
+    case 'EXPLAIN':    prefix = '[i]'; break;
+    case 'START_TEST': prefix = '[~]'; break;
+    case 'INFO':       prefix = '[@]'; break;
+    case 'VERIFY':     prefix = '[*]'; break;
+    case 'LOG':        prefix = '[-]'; break;
+    case 'ERROR':
+    case 'FAIL':       prefix = '[!]'; break;
+    case 'VERDICT':
+      if (cleanMsg.toUpperCase().includes('PASS')) prefix = '[ok]';
+      else if (cleanMsg.toUpperCase().includes('FAIL')) prefix = '[x]';
+      else prefix = '[-]';
+      break;
+    case 'SUMMARY':    prefix = '[=]'; break;
+  }
+  
+  return prefix ? `${prefix} ${cleanMsg}` : cleanMsg;
+}
+
 function logClass(entry: LogEntry): string {
   if (entry.type === 'VERDICT') {
     return entry.passed === true ? 'log-VERDICT verdict-pass' :
@@ -63,7 +96,7 @@ export default function LiveTerminal({ logs, onClear }: LiveTerminalProps) {
               <div key={i} className={`term-line ${logClass(entry)}`}>
                 <span className="term-ts">{fmtTime(entry.timestamp)}</span>
                 <span className="term-type">{entry.type}</span>
-                <span className="term-msg">{entry.msg}</span>
+                <span className="term-msg">{sanitizeMsg(entry.type, entry.msg)}</span>
               </div>
             ))
           )}
