@@ -1,0 +1,135 @@
+/* report.css — Advanced Professional Audit Styling
+   Optimized for High-Fidelity A4 PDF Reports.
+*/
+
+.security-report {
+  display: none;
+}
+
+@media print {
+  .dashboard {
+    display: none !important;
+  }
+
+  .security-report {
+    display: block !important;
+    background: #ffffff;
+    color: #1e293b;
+    font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+    padding: 0;
+    margin: 0;
+  }
+
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+
+  h1, h2, h3 {
+    margin-top: 1.2em;
+    margin-bottom: 0.4em;
+    color: #0f172a;
+    page-break-after: avoid;
+  }
+
+  /* ── Risk Matrix Styling ─────────────────────────────────────── */
+  .risk-matrix {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 15px;
+    margin-top: 30px;
+    page-break-inside: avoid;
+  }
+
+  .matrix-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 4px;
+    border: 2px solid #e2e8f0;
+    aspect-ratio: 1;
+    max-width: 300px;
+  }
+
+  .matrix-cell {
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  }
+
+  .risk-low { background: #22c55e; }
+  .risk-med { background: #eab308; }
+  .risk-high { background: #f97316; }
+  .risk-crit { background: #ef4444; }
+
+  /* ── Findings & Evidence (NO TRUNCATION) ─────────────────────── */
+  .finding-item {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 24px;
+    margin-bottom: 30px;
+    page-break-inside: auto; /* ALLOW SPLIT ACROSS PAGES */
+  }
+
+  .evidence-header {
+    display: block;
+    margin-top: 20px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #cbd5e1;
+    font-size: 11px;
+    font-weight: 800;
+    color: #475569;
+    text-transform: uppercase;
+  }
+
+  .evidence-block {
+    background: #f1f5f9;
+    border-left: 4px solid #94a3b8;
+    padding: 16px;
+    font-family: "JetBrains Mono", "Courier New", monospace;
+    font-size: 9px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: #1e293b;
+    margin-top: 8px;
+    overflow: visible; /* CRITICAL: NO TRUNCATION */
+    max-height: none;  /* CRITICAL: NO TRUNCATION */
+  }
+
+  .defense-analysis {
+    background: #fdf2f2;
+    border: 1px solid #fee2e2;
+    padding: 15px;
+    margin-top: 15px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #7f1d1d;
+  }
+
+  .defense-analysis h4 {
+    margin-top: 0;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #b91c1c;
+  }
+
+  /* ── Badges & Status ─────────────────────────────────────────── */
+  .badge {
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .badge.pass { background: #166534; color: #ffffff; }
+  .badge.fail { background: #991b1b; color: #ffffff; }
+  .badge.skip { background: #475569; color: #ffffff; }
+
+  /* ── Utilities ────────────────────────────────────────────────── */
+  .page-break { page-break-before: always; }
+}

@@ -150,32 +150,12 @@ export function useTestRunner(tests: TestDefinition[]) {
     };
   }, [isRunningAll, tests, updateTest]);
 
-  /** Export results as JSON */
+  /** Export results as a professional PDF report */
   const exportResults = useCallback(() => {
-    const report = {
-      generatedAt: new Date().toISOString(),
-      backend:     window.location.hostname,
-      results:     Object.entries(states).map(([id, s]) => ({
-        testId:  id,
-        status:  s.status,
-        logCount: s.logs.length,
-        verdict: s.logs.find((l) => l.type === 'VERDICT')?.msg ?? '',
-      })),
-      summary: {
-        passed:  Object.values(states).filter(s => s.status === 'passed').length,
-        failed:  Object.values(states).filter(s => s.status === 'failed').length,
-        skipped: Object.values(states).filter(s => s.status === 'skipped').length,
-        total:   Object.keys(states).length,
-      },
-    };
-    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `sentrizk_security_report_${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [states]);
+    // We use the browser's native print engine to generate the professional PDF
+    // based on our specialized print-media CSS and SecurityReport component.
+    window.print();
+  }, []);
 
   const resetAll = useCallback(() => {
     if (activeEsRef.current) { activeEsRef.current.close(); }

@@ -5,6 +5,7 @@ import { useTestRunner } from './hooks/useTestRunner';
 import TestSection from './components/TestSection';
 import LiveTerminal from './components/LiveTerminal';
 import SummaryBar from './components/SummaryBar';
+import SecurityReport from './components/SecurityReport';
 
 const CATEGORY_ORDER: TestCategory[] = ['CONFIDENTIALITY', 'INTEGRITY', 'AVAILABILITY', 'ML'];
 
@@ -66,60 +67,65 @@ export default function App() {
   }
 
   return (
-    <div className="dashboard">
-      {/* ── Header ──────────────────────────────────────────────────── */}
-      <header className="header">
-        <div className="header-brand">
-          <div className="header-title">
-            <h1>SentriZK Workspace</h1>
-            <p>Enterprise Assurance Suite</p>
+    <>
+      <div className="dashboard">
+        {/* ── Header ──────────────────────────────────────────────────── */}
+        <header className="header">
+          <div className="header-brand">
+            <div className="header-title">
+              <h1>SentriZK Workspace</h1>
+              <p>Enterprise Assurance Suite</p>
+            </div>
           </div>
+
+          <div className="header-right">
+            <span className="backend-badge">
+              <span className="dot" />
+              {BACKEND_HOST}
+            </span>
+          </div>
+        </header>
+
+        {/* ── Desktop Workspace ──────────────────────────────────────── */}
+        <div className="workspace">
+          {/* ── Left Sidebar (Master) ────────────────────────────────── */}
+          <aside className="sidebar">
+            {CATEGORY_ORDER.map((cat) => {
+              const catTests = grouped[cat] ?? [];
+              if (catTests.length === 0) return null;
+              return (
+                <TestSection
+                  key={cat}
+                  category={cat}
+                  tests={catTests}
+                  states={states}
+                  onRun={(id) => runTest(id)}
+                  disabled={anyRunning}
+                />
+              );
+            })}
+          </aside>
+
+          {/* ── Right Pane (Detail) ──────────────────────────────────── */}
+          <main className="main-pane">
+            <SummaryBar
+              states={states}
+              isRunningAll={isRunningAll}
+              onRunAll={runAll}
+              onReset={resetAll}
+              onExport={exportResults}
+            />
+
+            <LiveTerminal
+              logs={globalLogs}
+              onClear={clearTerminal}
+            />
+          </main>
         </div>
-
-        <div className="header-right">
-          <span className="backend-badge">
-            <span className="dot" />
-            {BACKEND_HOST}
-          </span>
-        </div>
-      </header>
-
-      {/* ── Desktop Workspace ──────────────────────────────────────── */}
-      <div className="workspace">
-        {/* ── Left Sidebar (Master) ────────────────────────────────── */}
-        <aside className="sidebar">
-          {CATEGORY_ORDER.map((cat) => {
-            const catTests = grouped[cat] ?? [];
-            if (catTests.length === 0) return null;
-            return (
-              <TestSection
-                key={cat}
-                category={cat}
-                tests={catTests}
-                states={states}
-                onRun={(id) => runTest(id)}
-                disabled={anyRunning}
-              />
-            );
-          })}
-        </aside>
-
-        {/* ── Right Pane (Detail) ──────────────────────────────────── */}
-        <main className="main-pane">
-          <SummaryBar
-            states={states}
-            isRunningAll={isRunningAll}
-            onRunAll={runAll}
-            onReset={resetAll}
-            onExport={exportResults}
-          />
-
-          <LiveTerminal
-            logs={globalLogs}
-            onClear={clearTerminal}
-          />
-        </main>
       </div>
-    </div>
+
+      {/* ── Print-Only Audit Report ──────────────────────────────── */}
+      <SecurityReport tests={tests} states={states} />
+    </>
   );
 }
