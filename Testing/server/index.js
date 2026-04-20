@@ -70,7 +70,8 @@ app.get('/api/stream/:testId', (req, res) => {
   test
     .run(emit)
     .then((result) => {
-      emit({ type: 'DONE', passed: result?.passed ?? false, testId: test.id });
+      const passedVal = result && result.passed !== undefined ? result.passed : false;
+      emit({ type: 'DONE', passed: passedVal, testId: test.id });
       res.end();
     })
     .catch((err) => {
@@ -98,9 +99,9 @@ app.get('/api/run-all', async (req, res) => {
       const result = await test.run((data) =>
         emit({ ...data, testId: test.id })
       );
-      const ok = result?.passed ?? false;
-      ok ? passed++ : failed++;
-      emit({ type: 'DONE', passed: ok, testId: test.id });
+      const passedVal = result && result.passed !== undefined ? result.passed : false;
+      passedVal === true ? passed++ : (passedVal === false ? failed++ : null);
+      emit({ type: 'DONE', passed: passedVal, testId: test.id });
     } catch (err) {
       console.error(`[${test.id}] Crash:`, err);
       emit({ type: 'ERROR', msg: `Crashed: ${err.message}`, testId: test.id });

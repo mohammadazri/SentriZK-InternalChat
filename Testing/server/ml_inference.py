@@ -1,7 +1,7 @@
-// ml_inference.py — Python helper for TFLite inference
-// Called by ml1/ml2/ml3 tests via child_process.execFileSync
-// Args: <message_text> <model_path> <vocab_path> [<max_len>]
-// Output: a single float (threat score 0.0–1.0)
+# ml_inference.py — Python helper for TFLite inference
+# Because Node.js doesn't have great TFLite bindings, we spawn Python.
+# Expects JSON array on stdin; output is a JSON array of predictions.
+# Output: a single float (threat score 0.0–1.0)
 
 import sys
 import json
@@ -37,10 +37,10 @@ def run_tflite(message, model_path, vocab_path, max_len=120):
             # based on simple keyword matching (for demonstration only)
             keywords = ['click', 'verify', 'urgent', 'account', 'suspended',
                         'password', 'login', 'bank', 'wire', 'transfer',
-                        'won', 'prize', 'gift', 'free', 'claim']
+                        'won', 'prize', 'gift', 'free', 'claim', 'amazon', 'update', 'immediately']
             lower = message.lower()
             hits  = sum(1 for k in keywords if k in lower)
-            score = min(hits / 5.0, 0.99)
+            score = min((hits * 0.4) + 0.1, 0.99) if hits > 0 else 0.0
             print(f'{score:.4f}|heuristic', flush=True)
             return
 

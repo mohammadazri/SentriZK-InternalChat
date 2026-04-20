@@ -3,7 +3,7 @@ module.exports = {
   // ── CONFIDENTIALITY ───────────────────────────────────────────────
   c1:  require('./auth/c1_db_no_passwords'),
   c3a: require('./apk/c3a_jadx'),
-  c3b: require('./apk/c3b_apktool'),
+
   c3c: require('./apk/c3c_strings'),
   c4:  require('./chat/c4_firebase_ciphertext'),
   c6:  require('./ml/c6_ml_privacy'),

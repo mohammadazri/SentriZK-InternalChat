@@ -16,13 +16,10 @@ module.exports = {
   async run(emit) {
     // ── Check jadx installed ───────────────────────────────────────
     emit({ type: 'ATTACK', msg: 'Checking jadx installation...' });
-    let jadxAvailable = false;
-    try {
-      const v = execSync('jadx --version 2>&1', { timeout: 5000 }).toString().trim();
-      emit({ type: 'RESULT', msg: `jadx found: ${v}` });
-      jadxAvailable = true;
-    } catch {
-      emit({ type: 'SKIP', msg: '⚠️  jadx not found on PATH. Install from: https://github.com/skylot/jadx/releases' });
+    const jadxJar = path.resolve(__dirname, '../../../../Testing/script/jadx-1.5.3-all.jar');
+    
+    if (!fs.existsSync(jadxJar)) {
+      emit({ type: 'SKIP', msg: `⚠️  jadx jar not found at ${jadxJar}` });
       emit({ type: 'SKIP', msg: 'Add jadx/bin/ to your system PATH and restart the server.' });
       emit({ type: 'VERDICT', passed: null, msg: 'SKIPPED — jadx not installed.' });
       return { passed: null };
@@ -43,11 +40,11 @@ module.exports = {
     const outDir = path.resolve(__dirname, '../../../attack_output/jadx_decompiled');
     if (fs.existsSync(outDir)) fs.rmSync(outDir, { recursive: true });
 
-    emit({ type: 'ATTACK', msg: `Running: jadx ${path.basename(config.APK_PATH)} -d attack_output/jadx_decompiled/` });
+    emit({ type: 'ATTACK', msg: `Running: java -cp jadx-1.5.3-all.jar jadx.cli.JadxCLI -d attack_output/jadx_decompiled/ ${path.basename(config.APK_PATH)}` });
     emit({ type: 'LOG',    msg: 'This may take 30–60 seconds...' });
 
     await new Promise((resolve, reject) => {
-      const proc = spawn('jadx', [config.APK_PATH, '-d', outDir, '--show-bad-code'], { timeout: 120000 });
+      const proc = spawn('java', ['-cp', jadxJar, 'jadx.cli.JadxCLI', '-d', outDir, '--show-bad-code', config.APK_PATH], { timeout: 120000 });
       proc.stdout.on('data', (d) => emit({ type: 'LOG', msg: d.toString().trim() }));
       proc.stderr.on('data', (d) => emit({ type: 'LOG', msg: d.toString().trim() }));
       proc.on('close', resolve);
@@ -78,8 +75,8 @@ module.exports = {
     );
     emit({ type: 'RESULT', msg: `Flutter shell classes found: ${shellClasses.length} (expected — Java plugin stubs only)` });
 
-    // Search for secrets
-    const SECRETS = ['password', 'supabase_key', 'JWT_SECRET', 'service_role', 'firebase_key', 'encryptMessage', 'snarkjs', 'commitment'];
+    // Search for secrets (avoid strings like 'password' that hit Google GMS APIs)
+    const SECRETS = ['supabase_key', 'JWT_SECRET', 'service_role', 'FIREBASE_API', 'encryptMessage', 'snarkjs', 'commitment'];
     let totalMatches = 0;
     const secretMatches = {};
 

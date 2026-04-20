@@ -37,9 +37,9 @@ module.exports = {
 
     try {
       const db = admin.firestore();
-      emit({ type: 'ATTACK', msg: 'Querying: db.collectionGroup("messages").orderBy("timestamp","desc").limit(5)' });
+      emit({ type: 'ATTACK', msg: 'Querying: db.collectionGroup("messages").limit(5)' });
 
-      const snap = await db.collectionGroup('messages').orderBy('timestamp', 'desc').limit(5).get();
+      const snap = await db.collectionGroup('messages').limit(5).get();
 
       if (snap.empty) {
         emit({ type: 'SKIP', msg: '⚠️  No messages found in Firestore. Send some messages first.' });

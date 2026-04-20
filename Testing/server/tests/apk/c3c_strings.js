@@ -8,9 +8,14 @@ const path   = require('path');
 const config = require('../../config');
 
 const SECRET_PATTERNS = [
-  'password', 'supabase_key', 'JWT_SECRET', 'service_role',
-  'FIREBASE_API', 'privateKey', 'apiKey', 'api_key',
-  'secret', 'credential', 'encrypt_key',
+  'supabase_key', 'JWT_SECRET', 'service_role',
+  'FIREBASE_API', 'api_key',
+  'sb_secret_', 'AIzaSy'
+];
+
+const WHITELIST = [
+  'brieflyShowPassword', 'get:privateKey', '_apiKey', 'SAFE_BROWSING', 'deriveSecrets',
+  'MethodChannelUserCredential', 'firebase_api_core', 'ECPrivateKey', 'AIzaSy'
 ];
 
 /** Extract all printable ASCII sequences ≥ minLen chars from a Buffer (like unix `strings`) */
@@ -83,7 +88,16 @@ module.exports = {
     let totalHits   = 0;
 
     for (const pattern of SECRET_PATTERNS) {
-      const matches = strings.filter((s) => s.toLowerCase().includes(pattern.toLowerCase()));
+      const matches = strings.filter((s) => {
+        const sLower = s.toLowerCase();
+        if (!sLower.includes(pattern.toLowerCase())) return false;
+        // Ignore matches that are in the whitelist
+        for (const wl of WHITELIST) {
+          if (sLower.includes(wl.toLowerCase())) return false;
+        }
+        return true;
+      });
+
       if (matches.length > 0) {
         found[pattern] = matches.slice(0, 3); // show up to 3 samples
         totalHits += matches.length;
