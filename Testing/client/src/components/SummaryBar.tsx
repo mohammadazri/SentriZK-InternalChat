@@ -50,14 +50,14 @@ export default function SummaryBar({ states, isRunningAll, onRunAll, onReset, on
         disabled={isRunningAll || running}
       >
         {isRunningAll || running ? (
-          <><span className="spinner" /> Running…</>
+          <><span className="spinner" /> Scanning...</>
         ) : (
-          '▶ Run All Tests'
+          'Run All Scans'
         )}
       </button>
 
       <button id="btn-reset" className="btn btn-ghost" onClick={onReset} disabled={isRunningAll || running}>
-        ↺ Reset
+        Clear Telemetry
       </button>
 
       <button
@@ -66,7 +66,7 @@ export default function SummaryBar({ states, isRunningAll, onRunAll, onReset, on
         onClick={onExport}
         disabled={done === 0}
       >
-        📄 Export Report
+        Export PDF Report
       </button>
     </div>
   );

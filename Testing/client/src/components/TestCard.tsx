@@ -12,23 +12,20 @@ export default function TestCard({ test, state, onRun, disabled }: TestCardProps
   const isRunning = state.status === 'running';
 
   return (
-    <div className={`test-card tc-${state.status}`} id={`card-${test.id}`}>
-      <div className="card-top">
-        <span className="card-name">{test.name}</span>
-        <span className="card-id">{test.id}</span>
-      </div>
-
-      <p className="card-desc">{test.description}</p>
-
-      <div className="card-bottom">
+    <div className={`test-row tc-${state.status}`} id={`card-${test.id}`} onClick={() => !disabled && !isRunning && onRun(test.id)}>
+      <div className="row-top">
+        <span className="row-name">{test.name}</span>
         <VerdictBadge status={state.status} />
+      </div>
+      
+      <div className="row-actions">
         <button
           id={`run-${test.id}`}
-          className="btn-run-test"
-          onClick={() => onRun(test.id)}
+          className="btn-run-small"
+          onClick={(e) => { e.stopPropagation(); onRun(test.id); }}
           disabled={disabled || isRunning}
         >
-          {isRunning ? 'Running…' : state.status === 'idle' ? '▶ Run' : '↺ Re-run'}
+          {isRunning ? '...' : '▶ Exec'}
         </button>
       </div>
     </div>

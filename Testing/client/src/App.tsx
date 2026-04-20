@@ -46,7 +46,7 @@ export default function App() {
   if (loading) {
     return (
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', flexDirection:'column', gap:16 }}>
-        <span style={{ fontSize:40 }}>🛡️</span>
+        <span style={{ fontSize:32, fontFamily:'var(--font-mono)' }}>[ SYS ]</span>
         <p style={{ color:'var(--txt-secondary)', fontFamily:'var(--font-mono)' }}>Connecting to test runner…</p>
         <span className="spinner" style={{ width:24, height:24, borderWidth:3, color:'var(--clr-conf)' }} />
       </div>
@@ -56,11 +56,11 @@ export default function App() {
   if (error) {
     return (
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', flexDirection:'column', gap:12 }}>
-        <span style={{ fontSize:40 }}>⚠️</span>
+        <span style={{ fontSize:32, color:'var(--clr-fail)' }}>!</span>
         <p style={{ color:'var(--clr-fail)', fontWeight:600 }}>Cannot reach test server</p>
         <p style={{ color:'var(--txt-secondary)', fontSize:13 }}>Make sure the server is running: <code style={{ fontFamily:'var(--font-mono)', color:'var(--clr-conf)' }}>cd Testing/server && npm start</code></p>
         <p style={{ color:'var(--txt-muted)', fontSize:12 }}>{error}</p>
-        <button className="btn btn-primary" onClick={() => window.location.reload()}>↺ Retry</button>
+        <button className="btn btn-primary" onClick={() => window.location.reload()}>[ RETRY ]</button>
       </div>
     );
   }
@@ -70,10 +70,10 @@ export default function App() {
       {/* ── Header ──────────────────────────────────────────────────── */}
       <header className="header">
         <div className="header-brand">
-          <span className="header-shield">🛡️</span>
+          <span className="header-shield" style={{fontFamily:'var(--font-mono)'}}>[S_ZK]</span>
           <div className="header-title">
-            <h1>SentriZK Security Dashboard</h1>
-            <p>CIA Triad Adversarial Test Suite · FYP Cybersecurity</p>
+            <h1>SentriZK Workspace</h1>
+            <p>Enterprise Assurance Suite</p>
           </div>
         </div>
 
@@ -82,47 +82,45 @@ export default function App() {
             <span className="dot" />
             {BACKEND_HOST}
           </span>
-          <span style={{ fontSize:12, color:'var(--txt-muted)', fontFamily:'var(--font-mono)' }}>
-            {tests.length} tests loaded
-          </span>
         </div>
       </header>
 
-      {/* ── Summary / control bar ────────────────────────────────────── */}
-      <SummaryBar
-        states={states}
-        isRunningAll={isRunningAll}
-        onRunAll={runAll}
-        onReset={resetAll}
-        onExport={exportResults}
-      />
+      {/* ── Desktop Workspace ──────────────────────────────────────── */}
+      <div className="workspace">
+        {/* ── Left Sidebar (Master) ────────────────────────────────── */}
+        <aside className="sidebar">
+          {CATEGORY_ORDER.map((cat) => {
+            const catTests = grouped[cat] ?? [];
+            if (catTests.length === 0) return null;
+            return (
+              <TestSection
+                key={cat}
+                category={cat}
+                tests={catTests}
+                states={states}
+                onRun={(id) => runTest(id)}
+                disabled={anyRunning}
+              />
+            );
+          })}
+        </aside>
 
-      {/* ── CIA Triad columns ────────────────────────────────────────── */}
-      <main className="main-content">
-        {CATEGORY_ORDER.map((cat) => {
-          const catTests = grouped[cat] ?? [];
-          if (catTests.length === 0) return null;
-          return (
-            <TestSection
-              key={cat}
-              category={cat}
-              tests={catTests}
-              states={states}
-              onRun={(id) => {
-                // Click a card → show its logs in global terminal, run it
-                runTest(id);
-              }}
-              disabled={anyRunning}
-            />
-          );
-        })}
-      </main>
+        {/* ── Right Pane (Detail) ──────────────────────────────────── */}
+        <main className="main-pane">
+          <SummaryBar
+            states={states}
+            isRunningAll={isRunningAll}
+            onRunAll={runAll}
+            onReset={resetAll}
+            onExport={exportResults}
+          />
 
-      {/* ── Live terminal ────────────────────────────────────────────── */}
-      <LiveTerminal
-        logs={globalLogs}
-        onClear={clearTerminal}
-      />
+          <LiveTerminal
+            logs={globalLogs}
+            onClear={clearTerminal}
+          />
+        </main>
+      </div>
     </div>
   );
 }

@@ -35,23 +35,18 @@ export default function LiveTerminal({ logs, onClear }: LiveTerminalProps) {
 
   return (
     <div className="terminal-wrapper">
-      <div className="terminal-panel">
         {/* macOS-style top bar */}
         <div className="terminal-topbar">
-          <div className="terminal-dots">
-            <span className="terminal-dot dot-red" />
-            <span className="terminal-dot dot-yellow" />
-            <span className="terminal-dot dot-green" />
-          </div>
+
           <span className="terminal-title">
-            sentrizk · live attack log ({logs.length} entries)
+            telemetry_console ~ /logs ({logs.length})
           </span>
           <div className="terminal-actions">
             <button className="term-btn" onClick={copyToClipboard} id="btn-copy-terminal">
-              Copy
+              Copy Output
             </button>
             <button className="term-btn" onClick={onClear} id="btn-clear-terminal">
-              Clear
+              Clear Console
             </button>
           </div>
         </div>
@@ -60,8 +55,8 @@ export default function LiveTerminal({ logs, onClear }: LiveTerminalProps) {
         <div className="terminal-body" ref={bodyRef}>
           {logs.length === 0 ? (
             <div className="terminal-empty">
-              <span className="empty-icon">🛡️</span>
-              <p>Run a test to see live attack output here.</p>
+              <span className="empty-icon" style={{fontFamily:'var(--font-mono)'}}>[ AWAITING_TELEMETRY ]</span>
+              <p>Run a module to inject payload and capture stdout.</p>
             </div>
           ) : (
             logs.map((entry, i) => (
@@ -73,7 +68,6 @@ export default function LiveTerminal({ logs, onClear }: LiveTerminalProps) {
             ))
           )}
         </div>
-      </div>
     </div>
   );
 }

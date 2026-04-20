@@ -31,8 +31,8 @@ export interface TestState {
 export type TestStateMap = Record<string, TestState>;
 
 export const CATEGORY_META: Record<TestCategory, { label: string; icon: string; theme: string }> = {
-  CONFIDENTIALITY: { label: 'Confidentiality', icon: '🔒', theme: 'conf-theme'  },
-  INTEGRITY:       { label: 'Integrity',        icon: '⚖️',  theme: 'integ-theme' },
-  AVAILABILITY:    { label: 'Availability',     icon: '🌐', theme: 'avail-theme' },
-  ML:              { label: 'ML Detection',     icon: '🤖', theme: 'ml-theme'    },
+  CONFIDENTIALITY: { label: 'CONFIDENTIALITY', icon: '[C]', theme: 'conf-theme'  },
+  INTEGRITY:       { label: 'INTEGRITY',       icon: '[I]', theme: 'integ-theme' },
+  AVAILABILITY:    { label: 'AVAILABILITY',    icon: '[A]', theme: 'avail-theme' },
+  ML:              { label: 'ML DETECTION',    icon: '[M]', theme: 'ml-theme'    },
 };
