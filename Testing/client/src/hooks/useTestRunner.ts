@@ -56,6 +56,9 @@ export function useTestRunner(tests: TestDefinition[]) {
         data.passed === false ? 'failed'  :
         data.passed === null  ? 'skipped' : 'failed';
       updateTest(testId, { status });
+      if (activeEsRef.current) {
+        activeEsRef.current.close();
+      }
     }
   }, [appendLog, updateTest]);
 
@@ -71,7 +74,12 @@ export function useTestRunner(tests: TestDefinition[]) {
     es.onmessage = (e) => handleEvent(testId, e.data);
     es.onerror   = () => {
       es.close();
-      updateTest(testId, { status: 'failed' });
+      setStates((prev) => {
+        if (prev[testId]?.status === 'running') {
+          return { ...prev, [testId]: { ...prev[testId], status: 'failed' } };
+        }
+        return prev;
+      });
     };
   }, [updateTest, handleEvent]);
 
