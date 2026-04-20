@@ -265,6 +265,30 @@ body {
   justify-content: space-between;
   padding:         6px 8px;
   margin-bottom:   8px;
+  user-select:     none;
+}
+
+.section-header.clickable {
+  cursor:          pointer;
+  border-radius:   var(--radius-sm);
+  transition:      background 0.2s;
+}
+
+.section-header.clickable:hover {
+  background:      rgba(0, 0, 0, 0.05);
+}
+
+.chevron {
+  display:         inline-block;
+  font-family:     var(--font-mono);
+  font-size:       10px;
+  margin-right:    4px;
+  color:           var(--txt-muted);
+  transition:      transform 0.2s;
+}
+
+.chevron.expanded {
+  transform:       rotate(90deg);
 }
 
 .section-label {
@@ -273,6 +297,26 @@ body {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color:       var(--txt-secondary);
+}
+
+.section-content {
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+  overflow:       hidden;
+  transition:     max-height 0.3s ease-out, opacity 0.2s;
+}
+
+.section-content.hidden {
+  max-height:     0;
+  opacity:        0;
+  pointer-events: none;
+}
+
+.section-content.active {
+  max-height:     1000px; /* Sane upper limit for animation */
+  opacity:        1;
+  margin-bottom:  16px;
 }
 
 /* ── Test Row (Sidebar Items) ────────────────────────────────────── */

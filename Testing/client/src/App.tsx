@@ -70,7 +70,6 @@ export default function App() {
       {/* ── Header ──────────────────────────────────────────────────── */}
       <header className="header">
         <div className="header-brand">
-          <span className="header-shield" style={{fontFamily:'var(--font-mono)'}}>[S_ZK]</span>
           <div className="header-title">
             <h1>SentriZK Workspace</h1>
             <p>Enterprise Assurance Suite</p>
