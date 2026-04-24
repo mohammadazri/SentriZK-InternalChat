@@ -1,6 +1,6 @@
 // useTestRunner — manages SSE connections and test state
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { TestDefinition, TestState, TestStateMap, LogEntry } from '../types';
 
 const API = '/api';
@@ -14,6 +14,22 @@ export function useTestRunner(tests: TestDefinition[]) {
   const [globalLogs, setGlobalLogs]   = useState<LogEntry[]>([]);
   const [isRunningAll, setIsRunningAll] = useState(false);
   const activeEsRef = useRef<EventSource | null>(null);
+
+  // ── Sync states when tests are loaded from server ────────────────
+  useEffect(() => {
+    if (tests.length > 0) {
+      setStates((prev) => {
+        // Only initialize if we haven't already (prev size is 0)
+        // or if the test IDs have changed.
+        const prevIds = Object.keys(prev);
+        const newIds  = tests.map(t => t.id);
+        if (prevIds.length === 0 || prevIds.length !== newIds.length) {
+          return makeInitialState(tests);
+        }
+        return prev;
+      });
+    }
+  }, [tests]);
 
   /** Update a single test's state immutably */
   const updateTest = useCallback((testId: string, patch: Partial<TestState>) => {

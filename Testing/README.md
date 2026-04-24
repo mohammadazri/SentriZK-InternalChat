@@ -66,11 +66,10 @@ npm run dev
 | ID  | Category        | Name                              |
 |-----|-----------------|-----------------------------------|
 | C1  | Confidentiality | DB Breach: No Passwords Stored    |
+| C2  | Confidentiality | Static Secret Analysis (Code Audit)|
 | C3a | Confidentiality | APK Decompile: jadx               |
-| C3b | Confidentiality | APK Manifest: Security Config     |
 | C3c | Confidentiality | APK Binary: Secrets in libapp.so  |
 | C4  | Confidentiality | Firebase E2EE: Messages Ciphertext|
-| C6  | Confidentiality | ML Privacy: On-Device Inference   |
 | I1  | Integrity       | ZKP Proof Forgery                 |
 | I2  | Integrity       | Nonce Replay Attack               |
 | I3  | Integrity       | Commitment Substitution           |

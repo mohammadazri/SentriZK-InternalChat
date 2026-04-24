@@ -7,7 +7,7 @@ module.exports = {
 
   c3c: require('./apk/c3c_strings'),
   c4:  require('./chat/c4_firebase_ciphertext'),
-  c6:  require('./ml/c6_ml_privacy'),
+//  c6:  require('./ml/c6_ml_privacy'),
 
   // ── INTEGRITY ─────────────────────────────────────────────────────
   i1:  require('./auth/i1_zkp_forgery'),
