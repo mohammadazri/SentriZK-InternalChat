@@ -29,6 +29,9 @@ module.exports = {
 
     emit({ type: 'ATTACK', msg: '── Username injection on POST /commitment/:username ──' });
     for (const t of USERNAME_TESTS) {
+      const targetUrl = `/commitment/${t.username}`;
+      emit({ type: 'TRACE', msg: `>> GET ${targetUrl}` });
+
       const r = await axios.get(
         `${BASE}/commitment/${encodeURIComponent(t.username)}`,
         { validateStatus: () => true }
@@ -52,6 +55,7 @@ module.exports = {
     ];
 
     for (const t of THREAT_TESTS) {
+      emit({ type: 'TRACE', msg: `>> POST /threat-log BODY: ${JSON.stringify(t.body)}` });
       const r = await axios.post(`${BASE}/threat-log`, t.body, { validateStatus: () => true });
       // 400 = good validation. 401 = needs auth. Either is fine.  500 = crash = bad.
       const safe = r.status !== 500;
@@ -64,6 +68,7 @@ module.exports = {
 
     // ── Header injection attempt ───────────────────────────────────
     emit({ type: 'ATTACK', msg: '\n── Header injection on /login ──' });
+    emit({ type: 'TRACE', msg: '>> POST /login HEADERS: { "X-Custom-Inject": "value\\r\\nSet-Cookie: evil=1", ... }' });
     const rHeader = await axios.post(`${BASE}/login`, {}, {
       headers: {
         'Content-Type': 'application/json',
