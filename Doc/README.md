@@ -1,89 +1,88 @@
 # 📚 SentriZK Documentation
 
-Welcome to the SentriZK documentation. This index links to every doc in the project organized by component.
+> **Project**: SentriZK — Zero-Knowledge Authenticated Internal Chat with On-Device AI Threat Detection  
+> **Author**: Mohammad Azri Bin Aziz · BCSS · 2024/2025  
+> **Last Updated**: May 2026
 
 ---
 
-## 🏗️ Architecture
+## Documentation Map
 
-High-level system design and cross-cutting concerns.
+### 🏗️ Architecture
 
 | Document | Description |
 |----------|-------------|
-| [System Overview](architecture/system_overview.md) | Component diagram, tech stack, data flow between Backend ↔ Web ↔ Mobile ↔ Firebase |
-| [Authentication Flow](architecture/authentication_flow.md) | ZKP registration, login, MAT mobile-to-web bridge, nonce lifecycle |
-| [Security Model](architecture/security_model.md) | Threat model, cryptographic protocols, defense strategies |
+| [System Overview](./architecture/system_overview.md) | High-level architecture, component responsibilities, technology stack, and data flow summary |
+| [Authentication Flow](./architecture/authentication_flow.md) | Detailed ZKP registration and login flow with sequence diagrams |
+| [Security Model](./architecture/security_model.md) | Threat model, defense matrix, session lifecycle, and compliance |
+| [Advanced Diagrams](./architecture/SentriZK_Advanced_Diagrams.md) | Complete Mermaid diagram suite — architecture, auth flows, Signal Protocol, WebRTC, Firebase, ML pipeline, admin panel |
+
+### 🔌 API
+
+| Document | Description |
+|----------|-------------|
+| [API Reference](./api/api_reference.md) | Complete REST API reference — 20 endpoints with request/response schemas, auth requirements, and error codes |
+
+### 🔐 Security
+
+| Document | Description |
+|----------|-------------|
+| [Cryptographic Stack](./security/cryptographic_stack.md) | Consolidated reference for all cryptographic protocols — ZKP, key derivation, encryption, secure storage |
+| [Phishing Detection](./security/phishing_detection.md) | Multi-layer phishing and malicious URL detection architecture |
+| [Google Safe Browsing](./security/google_safe_browsing.md) | Safe Browsing API integration for real-time URL scanning |
+| [Security Caching](./security/security_caching.md) | URL scan result caching strategy (7-day TTL) |
+
+### 🤖 Machine Learning
+
+| Document | Description |
+|----------|-------------|
+| [Model Training Guide](./ml/model_training.md) | Dual-model training pipeline (Bi-LSTM + Conv1D), TFLite export, Flutter integration |
+
+### 🧪 Testing
+
+| Document | Description |
+|----------|-------------|
+| [Testing Overview](./testing/testing_overview.md) | CIA triad adversarial test suite — 18 tests across 4 categories |
+| [Adversarial Testing Plan](./testing/Testing_plan.md) | Real-world attack scenarios using actual offensive tools |
+| [Automated Testing Plan](./testing/automated_testing_plan.md) | Automated test execution via SSE-streaming dashboard |
+| [Manual Testing Plan](./testing/manual_testing_plan.md) | Manual test procedures for device-dependent scenarios |
+
+### 🗄️ Database
+
+| Document | Description |
+|----------|-------------|
+| [Schema Reference](./database/schema_reference.md) | Supabase PostgreSQL tables + Firebase Firestore collections |
+
+### 🚀 Deployment
+
+| Document | Description |
+|----------|-------------|
+| [Deployment Guide](./deployment/deployment_guide.md) | Backend, web, and mobile deployment steps with environment variable reference |
+
+### 📱 Frontend
+
+| Document | Description |
+|----------|-------------|
+| [Web Application](./Frontend/web/web_app.md) | Next.js 15 web portal — registration, login, admin dashboard |
+| [Mobile Application](./Frontend/mobile/mobile_app.md) | Flutter 3.8 mobile app — E2EE chat, calling, ML threat detection |
+
+### 📊 Project Management
+
+| Document | Description |
+|----------|-------------|
+| [Quick Setup Guide](../QUICK_SETUP_GUIDE.md) | Fast-track installation and configuration |
+| [Troubleshooting](../error_fix/) | Common errors and fixes |
 
 ---
 
-## ⚙️ Backend
+## Quick Links
 
-Node.js server, API endpoints, and ZKP circuits.
-
-| Document | Description |
-|----------|-------------|
-| [API Reference](backend/api_reference.md) | Complete REST API documentation with request/response examples |
-| [Server Setup](backend/server_setup.md) | How to install, configure, and run the backend server |
-| [ZKP Circuits](backend/zkp_circuits.md) | Circom circuit compilation, trusted setup, key generation |
-
----
-
-## 🖥️ Frontend
-
-### Web (Next.js)
-
-| Document | Description |
-|----------|-------------|
-| [Web Application](frontend/web/web_app.md) | Next.js app structure, ZKP proof generation in-browser, wallet simulator |
-
-### Mobile (Flutter)
-
-| Document | Description |
-|----------|-------------|
-| [Mobile Application](frontend/mobile/mobile_app.md) | Flutter app architecture, screens, services, deep linking, secure storage |
-| [E2EE Chat](frontend/mobile/e2ee_chat.md) | Signal Protocol (X3DH + Double Ratchet), key exchange, message encryption |
-| [Audio & Video Calling](frontend/mobile/audio_video_calling.md) | WebRTC P2P calling, DTLS-SRTP encryption, Firestore signaling |
-
----
-
-## 🛡️ Security
-
-Threat detection and security infrastructure.
-
-| Document | Description |
-|----------|-------------|
-| [Phishing Detection](security/phishing_detection.md) | On-device ML phishing detection, TFLite model, URL analysis pipeline |
-| [Google Safe Browsing](security/google_safe_browsing.md) | Safe Browsing API integration and lookup service |
-| [Security Caching](security/security_caching.md) | Isar-based scan result caching for performance |
-
----
-
-## 🤖 Machine Learning
-
-| Document | Description |
-|----------|-------------|
-| [Model Training](ml/model_training.md) | Python training pipeline, TFLite conversion, dataset preparation |
-
----
-
-## 📖 Guides
-
-Developer onboarding and deployment.
-
-| Document | Description |
-|----------|-------------|
-| [Quick Start](guides/quick_start.md) | Step-by-step setup for Backend, Web, and Mobile |
-| [Deployment](guides/deployment.md) | Production builds, APK generation, server deployment |
-
----
-
-## 🎓 Academic
-
-| Folder | Contents |
-|--------|----------|
-| [Ideas/](academic/Ideas/) | Brainstorming and feature ideas |
-| [Papers/](academic/Papers/) | Referenced academic papers |
-| [Proposal/](academic/Proposal/) | FYP proposal documents |
-| [Template/](academic/Template/) | Report templates |
-| [Report/](academic/report/) | Final report drafts |
-| [ThreatModel_Guide.md](academic/ThreatModel_Guide.md) | Threat modeling methodology guide |
+| Resource | Location |
+|----------|----------|
+| Backend source | [`Backend/server.js`](../Backend/server.js) |
+| ZKP circuits | [`Backend/circuits/`](../Backend/circuits/) |
+| SQL schema | [`Backend/supabase_schema.sql`](../Backend/supabase_schema.sql) |
+| Web frontend | [`Frontend/web/`](../Frontend/web/) |
+| Mobile app | [`Frontend/mobile/`](../Frontend/mobile/) |
+| ML pipeline | [`ML/sentrizk_master_trainer.py`](../ML/sentrizk_master_trainer.py) |
+| Test runner | [`Testing/`](../Testing/) |
