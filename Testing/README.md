@@ -81,7 +81,6 @@ npm run dev
 | A1  | Availability    | Rate Limit: Login (10/min)        |
 | A2  | Availability    | Rate Limit: Admin (5/min)         |
 | A3  | Availability    | Payload Flood: Body Size (100KB)  |
-| A4  | Availability    | Session Expiry Enforcement        |
 | ML1 | ML Detection    | Phishing Messages Detected        |
 | ML2 | ML Detection    | Safe Messages Pass Through        |
 | ML3 | ML Detection    | Short Messages Skipped            |
