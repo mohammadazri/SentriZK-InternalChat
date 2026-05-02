@@ -1,681 +1,219 @@
-# 📱 SentriZK Mobile App
+# 📱 Mobile Application — Flutter 3.8
 
-Flutter mobile application with deep linking and secure credential storage.
-
----
-
-## 📋 Table of Contents
-
-- [Overview](#overview)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Project Structure](#project-structure)
-- [Authentication Flow](#authentication-flow)
-- [Deep Linking Setup](#deep-linking-setup)
-- [Security](#security)
-- [Building](#building)
+> SentriZK mobile app for Android with E2EE messaging, WebRTC calling, on-device AI threat detection, and ZKP-based authentication.  
+> **Current Version**: 1.0.5+6
 
 ---
 
-## Overview
+## Technology Stack
 
-The SentriZK mobile app is a Flutter application that provides a native mobile interface for Zero-Knowledge Proof authentication. It features a modern glassmorphic UI, secure credential storage, and seamless integration with the web frontend through deep linking.
-
-### Key Features
-
-- ✅ **Native Mobile UI**: Beautiful animations and transitions
-- ✅ **Secure Storage**: Platform-specific encrypted storage
-- ✅ **Deep Linking**: Seamless web-to-mobile authentication
-- ✅ **Recovery Phrase**: Copyable recovery phrase dialog
-- ✅ **Session Management**: Automatic session validation
-- ✅ **Cross-Platform**: Android, iOS, Windows, Linux, macOS
-
----
-
-## Features
-
-### Authentication
-
-- **Registration Flow**
-  - Check for existing account
-  - Generate Mobile Access Token (MAT)
-  - Open system browser with MAT
-  - Handle deep link callback
-  - Display recovery phrase
-  - Secure storage of credentials
-
-- **Login Flow**
-  - Load encrypted salt from storage
-  - Generate MAT with credentials
-  - Open system browser
-  - Handle deep link callback
-  - Session management
-
-- **Account Management**
-  - Existing account detection
-  - Clear account option
-  - Logout functionality
-  - Session validation
-
-### UI/UX
-
-- **Glassmorphism Design**: Modern blurred glass aesthetic
-- **Particle Animations**: Animated background particles
-- **Pulse Animations**: Breathing shield logo effect
-- **Two-State Interface**: Landing page vs authenticated dashboard
-- **Recovery Phrase Dialog**: Copyable with confirmation flow
-- **Account Detection Dialog**: Modern gradient design with clear actions
-
-### Security
-
-- **Encrypted Storage**: Platform-specific secure storage
-- **MAT Protection**: One-time use tokens with 5-minute expiry
-- **Deep Link Validation**: URI scheme verification
-- **Timeout Protection**: 10-second network timeout
-- **Session Expiration**: Auto-logout after 30 minutes
-
----
-
-## Tech Stack
-
-| Category | Technology | Version |
-|----------|-----------|---------|
-| Framework | Flutter | 3.8.1+ |
-| Language | Dart | 3.8.1+ |
-| Secure Storage | flutter_secure_storage | 9.2.4 |
-| HTTP Client | http | 1.2.2 |
-| Deep Linking | app_links | 6.4.1 |
-| URL Launcher | url_launcher | 6.3.2 |
-| Local Storage | shared_preferences | 2.5.3 |
-| Encryption | encrypt | 5.0.3 |
-
----
-
-## Installation
-
-### Prerequisites
-
-- Flutter SDK 3.8.1 or higher
-- Dart SDK 3.8.1 or higher
-- Android Studio (for Android)
-- Xcode (for iOS, macOS only)
-- Backend server running
-
-### Installation Steps
-
-1. **Install Flutter**
-
-Follow the official Flutter installation guide:
-https://docs.flutter.dev/get-started/install
-
-2. **Clone Repository**
-
-```bash
-git clone https://github.com/mohammadazri/SentriZK-InternalChat.git
-cd SentriZK-InternalChat/Frontend/mobile
-```
-
-3. **Install Dependencies**
-
-```bash
-flutter pub get
-```
-
-4. **Configure Backend URL**
-
-Edit `lib/config/app_config.dart`:
-
-```dart
-class AppConfig {
-  static const String baseUrl = 'http://your-backend-url:3000';
-  // ... rest of configuration
-}
-```
-
-5. **Run App**
-
-```bash
-# On connected device/emulator
-flutter run
-
-# On specific device
-flutter devices
-flutter run -d device_id
-```
-
----
-
-## Configuration
-
-### Backend Configuration (`lib/config/app_config.dart`)
-
-```dart
-class AppConfig {
-  // Backend API URL
-  static const String baseUrl = 'http://10.0.2.2:3000'; // Android emulator
-  // static const String baseUrl = 'http://localhost:3000'; // iOS simulator
-  // static const String baseUrl = 'https://api.sentrizk.com'; // Production
-  
-  // API Endpoints
-  static const String generateMATEndpoint = '$baseUrl/generate-mobile-access-token';
-  static const String validateSessionEndpoint = '$baseUrl/validate-session';
-  static const String refreshSessionEndpoint = '$baseUrl/refresh-session';
-  static const String logoutEndpoint = '$baseUrl/logout';
-  
-  // Web App URLs
-  static const String webBaseUrl = 'http://localhost:3001';
-  static const String registerUrl = '$webBaseUrl/register';
-  static const String loginUrl = '$webBaseUrl/login';
-  
-  // Deep Link Scheme
-  static const String deepLinkScheme = 'sentriapp';
-}
-```
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| Flutter | 3.8.1 | Cross-platform UI framework |
+| Dart | 3.8 | Language |
+| firebase_core / cloud_firestore | latest | Real-time messaging backend |
+| firebase_auth | 6.1.3 | Custom token authentication |
+| firebase_messaging | latest | Push notifications (FCM) |
+| flutter_secure_storage | 10.0.0 | Android Keystore / iOS Keychain |
+| libsignal_protocol_dart | 0.7.2 | Signal Protocol E2EE |
+| tflite_flutter | 0.12.0 | On-device ML inference |
+| flutter_webrtc | 0.12.1 | WebRTC audio/video calling |
+| app_links | 7.0.0 | Deep link handling (`sentriapp://`) |
+| bip39 | 1.0.6 | Mnemonic generation |
+| encrypt | 5.0.3 | AES encryption utilities |
+| isar | 3.1.0 | Local embedded database |
+| device_info_plus | 11.1.1 | Device identifier |
+| provider | 6.1.5 | State management |
+| google_fonts | 8.0.2 | Typography (Material 3) |
+| image_picker | 1.1.2 | Profile avatar selection |
+| audioplayers | 6.6.0 | Call ringtones |
+| permission_handler | 11.3.1 | Runtime permissions |
 
 ---
 
 ## Project Structure
 
 ```
-Frontend/mobile/
-├── lib/
-│   ├── main.dart                  # App entry point
-│   ├── screens/
-│   │   └── auth_screen.dart       # Main authentication UI
-│   ├── services/
-│   │   └── auth_service.dart      # Authentication logic
-│   └── config/
-│       └── app_config.dart        # App configuration
+Frontend/mobile/lib/
+├── main.dart                    # App entry point, Firebase init, ML init
+├── firebase_options.dart        # Firebase configuration
 │
-├── android/
-│   ├── app/
-│   │   └── src/main/
-│   │       └── AndroidManifest.xml  # Deep link config
-│   └── build.gradle
+├── config/
+│   └── app_config.dart          # All URLs, timeouts, ML config, endpoints
 │
-├── ios/
-│   └── Runner/
-│       └── Info.plist             # Deep link config
+├── screens/                     # 7 app screens
+│   ├── auth_screen.dart         # Authentication (MAT + deep link)
+│   ├── user_list_screen.dart    # Contact list + user discovery
+│   ├── chat_screen.dart         # E2EE messaging UI
+│   ├── call_screen.dart         # WebRTC audio/video call UI
+│   ├── profile_setup_screen.dart# Display name, avatar, bio setup
+│   ├── settings_screen.dart     # App settings + account management
+│   └── security_test_screen.dart# Security test demonstration screen
 │
-├── windows/
-│   └── runner/
-│       └── main.cpp               # Windows config
+├── services/                    # 12 service files
+│   ├── auth_service.dart        # Session management, MAT, deep links
+│   ├── chat_service.dart        # Firestore chat CRUD, message sync
+│   ├── call_service.dart        # WebRTC, Firestore signaling, ICE
+│   ├── user_service.dart        # User profiles, avatar upload
+│   ├── notification_service.dart# FCM token management, local notifications
+│   ├── message_scan_service.dart# TFLite ML inference (singleton)
+│   ├── message_security_service.dart # 4-layer URL security scanning
+│   ├── recovery_service.dart    # Account recovery from mnemonic
+│   ├── permission_service.dart  # Camera, microphone permissions
+│   ├── sound_service.dart       # Call ringtone audio
+│   │
+│   ├── signal/                  # Signal Protocol E2EE
+│   │   ├── signal_manager.dart  # Session establishment, encrypt/decrypt
+│   │   └── signal_store_impl.dart# Local key/session persistence (Isar)
+│   │
+│   └── security/                # URL security layers
+│       ├── homograph_detector.dart    # Punycode/Unicode attack detection
+│       ├── local_phishing_database.dart# Known phishing domain database
+│       └── safe_browsing_service.dart  # Google Safe Browsing API
 │
-├── linux/
-│   └── ...
-│
-├── macos/
-│   └── ...
-│
-├── pubspec.yaml                   # Dependencies
-└── README.md
+├── models/                      # Data models
+├── providers/                   # State management (Provider)
+├── theme/                       # Material 3 theme configuration
+├── utils/                       # Utility functions
+└── widgets/                     # Reusable UI components
 ```
 
 ---
 
-## Authentication Flow
+## Core Features
 
-### Registration Flow
+### 1. Authentication (`auth_service.dart`)
 
-```dart
-// 1. Check for existing account
-Future<void> _checkBeforeRegistration() async {
-  final existing = await _authService.loadLoginData();
-  
-  if (existing['username'] != null && existing['encryptedSalt'] != null) {
-    // Show account detection dialog
-    final action = await showDialog(...);
-    
-    if (action == "login") {
-      await _openWebLogin();
-    } else if (action == "new") {
-      await _authService.clearAccountData();
-      await _openWebRegistration();
-    }
-  } else {
-    await _openWebRegistration();
-  }
-}
+The mobile app never handles ZKP proof generation directly — it delegates to the web portal:
 
-// 2. Generate MAT and open browser
-Future<void> _openWebRegistration() async {
-  final opened = await _authService.openUrlWithMAT(
-    AppConfig.registerUrl,
-    "register",
-  );
-}
-
-// 3. Handle deep link callback
-void _listenForRedirect() {
-  _appLinks.uriLinkStream.listen((uri) async {
-    if (uri.host.contains('auth-callback')) {
-      // Registration callback
-      final token = uri.queryParameters['token'] ?? "";
-      final username = uri.queryParameters['username'] ?? "";
-      final encryptedSalt = uri.queryParameters['encryptedSalt'] ?? "";
-      final encodedMnemonic = uri.queryParameters['mnemonic'] ?? "";
-      
-      final result = await _authService.saveRedirectData(
-        token: token,
-        username: username,
-        encryptedSalt: encryptedSalt,
-        encodedMnemonic: encodedMnemonic,
-      );
-      
-      // Show recovery phrase dialog
-      await _showRecoveryPhraseDialog(result.mnemonic);
-    }
-  });
-}
+```
+App starts → check stored sessionId
+  → POST /validate-session
+  → Valid? → skip login, go to chat
+  → Expired? → start auth flow:
+    1. POST /generate-mobile-access-token {deviceId, action}
+    2. Open browser: webUrl/login?mat=MAT&device=deviceId
+    3. Web generates ZKP proof, submits to backend
+    4. Backend redirects via deep link: sentriapp://auth?token=TOKEN
+    5. App intercepts deep link (app_links)
+    6. GET /validate-token?token=TOKEN&device=deviceId
+    7. Store sessionId in FlutterSecureStorage
+    8. POST /firebase-token {sessionId} → signInWithCustomToken
+    9. ✅ Fully authenticated
 ```
 
-### Login Flow
+**Session Refresh**: Auto-scheduled 60 seconds before expiry. Rotates sessionId and validates device binding.
+
+### 2. E2EE Messaging (`signal/signal_manager.dart`)
+
+Full Signal Protocol implementation using `libsignal_protocol_dart`:
+
+- **X3DH Key Agreement**: 4 Diffie-Hellman exchanges for initial session
+- **Double Ratchet**: Per-message key rotation with forward secrecy
+- **Pre-Key Bundles**: 100 one-time pre-keys uploaded to Firestore `signals/{username}`
+- **Key Storage**: Signal sessions stored in local Isar database
 
 ```dart
-// 1. Load credentials and generate MAT
-Future<void> _openWebLogin() async {
-  final loginData = await _authService.loadLoginData();
-  final encryptedSalt = loginData['encryptedSalt'];
-  final username = loginData['username'];
-  
-  final baseUrl = Uri.parse(AppConfig.loginUrl)
-      .replace(queryParameters: {
-        if (username != null) 'username': username,
-        'encryptedSalt': encryptedSalt,
-      })
-      .toString();
-  
-  await _authService.openUrlWithMAT(baseUrl, "login");
-}
+// First message to a new contact
+encryptMessage(recipientId, plaintext):
+  1. Fetch recipient's PreKey bundle from Firestore
+  2. Pick random preKey from 100 available (prevents collision bug)
+  3. SessionBuilder.processPreKeyBundle(bundle)  // X3DH
+  4. SessionCipher.encrypt(utf8.encode(plaintext))
+  5. → type: PREKEYTYPE (3), ciphertext: base64
 
-// 2. Handle login callback
-void _listenForRedirect() {
-  _appLinks.uriLinkStream.listen((uri) async {
-    if (uri.host.contains('login-success')) {
-      final token = uri.queryParameters['token'] ?? "";
-      final username = uri.queryParameters['username'] ?? "";
-      final sessionId = uri.queryParameters['sessionId'] ?? "";
-      
-      await _authService.updateLoginToken(
-        token: token,
-        username: username,
-        sessionId: sessionId,
-      );
-      
-      setState(() {
-        _isLoggedIn = true;
-        _username = username;
-      });
-    }
-  });
-}
+// Subsequent messages
+  → SessionCipher.encrypt(utf8.encode(plaintext))
+  → type: WHISPER (1), ciphertext: base64
+  → key ratcheted, old key deleted
 ```
+
+### 3. ML Threat Detection (`message_scan_service.dart`)
+
+Singleton service initialized at app startup:
+
+- **Model**: Conv1D TFLite (~300 KB)
+- **Vocab**: 10,000 words from `vocab.json`
+- **Input**: Tokenized message, padded to 120 tokens
+- **Output**: Threat score 0.0–1.0
+- **Threshold**: 0.65 (configurable in `AppConfig`)
+- **Skip**: Messages < 4 words (prevents OOV false positives)
+- **Hardware Acceleration**: GPU Delegate V2 + NNAPI for Android
+- **Inference Time**: < 100 ms on modern phones
+
+**Privacy**: Scanning happens **before** Signal Protocol encryption. The server never sees plaintext — only flagged messages are reported to `/threat-log`.
+
+### 4. 4-Layer URL Security (`message_security_service.dart`)
+
+Received messages are scanned through 4 layers:
+
+| Layer | Service | What It Detects |
+|-------|---------|-----------------|
+| 1 | `HomographDetector` | Unicode/Punycode lookalike domains (e.g., `gοogle.com` with Greek 'ο') |
+| 2 | `LocalPhishingDatabase` | Known phishing domains from embedded database |
+| 3 | HTTPS Check | HTTP-only links (missing TLS) |
+| 4 | `SafeBrowsingService` | Google Safe Browsing API v4 real-time check |
+
+Results are cached for 7 days (`AppConfig.scanCacheDays`) to avoid redundant API calls.
+
+### 5. WebRTC Calling (`call_service.dart`)
+
+Peer-to-peer encrypted audio/video calls:
+
+- **Signaling**: Firestore `calls/{callId}` documents
+- **ICE Candidates**: Exchanged via Firestore subcollection
+- **STUN Servers**: 3× Google STUN servers (`stun.l.google.com:19302`)
+- **Media Encryption**: DTLS-SRTP (media never passes through server)
+- **Missed Call Timer**: 45 seconds
+- **Controls**: Mute, camera toggle, camera switch, speaker toggle
+
+### 6. Push Notifications (`notification_service.dart`)
+
+- **Messages**: Data-only push (silent). App receives, decrypts, builds local notification.
+- **Calls**: Visible notification with `sentrizk_calls` channel, HIGH priority, ringtone.
+- **FCM Token**: Stored in Firestore `fcmTokens/{username}`, refreshed on update.
 
 ---
 
-## Deep Linking Setup
+## Configuration (`app_config.dart`)
 
-### Android Configuration
+| Config | Value | Description |
+|--------|-------|-------------|
+| `apiUrl` | `https://backend.sentrizk.me` | Backend API |
+| `webUrl` | `https://frontend.sentrizk.me` | Web frontend |
+| `deepLinkScheme` | `sentriapp` | Deep link URI scheme |
+| `sessionTimeoutMinutes` | 30 | Session TTL |
+| `matExpiryMinutes` | 5 | MAT TTL |
+| `mlModelAsset` | `assets/ml/sentrizk_model.tflite` | TFLite model path |
+| `mlVocabAsset` | `assets/ml/vocab.json` | Vocabulary path |
+| `mlMaxLen` | 120 | Max token sequence length |
+| `mlThreatThreshold` | 0.65 | Threat detection threshold |
+| `mlMinWordCount` | 4 | Minimum words for scanning |
+| `scanCacheDays` | 7 | URL scan cache duration |
 
-Edit `android/app/src/main/AndroidManifest.xml`:
+---
 
-```xml
-<activity
-    android:name=".MainActivity"
-    android:launchMode="singleTop">
-    
-    <!-- Deep Link Intent Filter -->
-    <intent-filter android:autoVerify="true">
-        <action android:name="android.intent.action.VIEW" />
-        <category android:name="android.intent.category.DEFAULT" />
-        <category android:name="android.intent.category.BROWSABLE" />
-        
-        <!-- Custom URI Scheme -->
-        <data android:scheme="sentriapp" />
-        <data android:host="auth-callback" />
-        <data android:host="login-success" />
-    </intent-filter>
-</activity>
-```
+## Secure Storage
 
-### iOS Configuration
+| Storage | Technology | Contents |
+|---------|-----------|----------|
+| `FlutterSecureStorage` | Android Keystore (HSM) | Encrypted salt, session ID |
+| `SharedPreferences` | XML (app sandbox) | Username (non-sensitive) |
+| `Isar DB` | Embedded NoSQL | Signal protocol sessions, scan cache |
 
-Edit `ios/Runner/Info.plist`:
+---
 
-```xml
-<key>CFBundleURLTypes</key>
-<array>
-    <dict>
-        <key>CFBundleTypeRole</key>
-        <string>Editor</string>
-        <key>CFBundleURLSchemes</key>
-        <array>
-            <string>sentriapp</string>
-        </array>
-    </dict>
-</array>
-```
-
-### Windows Configuration
-
-Edit `windows/runner/main.cpp`:
-
-```cpp
-// Add URL protocol handler
-HKEY hKey;
-RegOpenKeyEx(HKEY_CURRENT_USER, 
-    L"Software\\Classes\\sentriapp", 
-    0, KEY_ALL_ACCESS, &hKey);
-```
-
-### Testing Deep Links
+## Build Commands
 
 ```bash
-# Android
-adb shell am start -W -a android.intent.action.VIEW \
-  -d "sentriapp://auth-callback?token=xyz&username=alice"
+# Development
+flutter run
 
-# iOS
-xcrun simctl openurl booted \
-  "sentriapp://auth-callback?token=xyz&username=alice"
-```
-
----
-
-## Key Features Implementation
-
-### 1. Recovery Phrase Dialog
-
-```dart
-Future<void> _showRecoveryPhraseDialog(String mnemonic) async {
-  bool isCopied = false;
-  
-  return showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => StatefulBuilder(
-      builder: (context, setDialogState) => Dialog(
-        child: Container(
-          child: Column(
-            children: [
-              // Tap to copy
-              GestureDetector(
-                onTap: () async {
-                  await Clipboard.setData(ClipboardData(text: mnemonic));
-                  setDialogState(() => isCopied = true);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Copied to clipboard!')),
-                  );
-                },
-                child: SelectableText(mnemonic),
-              ),
-              
-              // Confirm button
-              ElevatedButton(
-                onPressed: () async {
-                  if (!isCopied) {
-                    final confirm = await showDialog<bool>(...);
-                    if (confirm != true) return;
-                  }
-                  
-                  Navigator.of(context).pop();
-                  setState(() {
-                    _mnemonicDisplay = '';
-                    _isLoggedIn = false;
-                  });
-                },
-                child: Text('I\'ve Saved It Securely'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-}
-```
-
-### 2. Secure Storage
-
-```dart
-class AuthService {
-  final _secureStorage = const FlutterSecureStorage();
-  
-  // Save credentials
-  Future<SaveResult> saveRedirectData({
-    required String token,
-    required String username,
-    required String encryptedSalt,
-    required String encodedMnemonic,
-  }) async {
-    // Decode mnemonic
-    String mnemonic = utf8.decode(base64Decode(encodedMnemonic));
-    
-    // Save to secure storage (encrypted by platform)
-    await _secureStorage.write(key: 'encrypted_salt', value: encryptedSalt);
-    await _secureStorage.write(key: 'token', value: token);
-    
-    // Save username to SharedPreferences
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('username', username);
-    
-    return SaveResult("Account registered successfully!", mnemonic);
-  }
-  
-  // Load credentials
-  Future<Map<String, String?>> loadLoginData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final username = prefs.getString('username');
-    final encryptedSalt = await _secureStorage.read(key: 'encrypted_salt');
-    
-    return {
-      'username': username,
-      'encryptedSalt': encryptedSalt
-    };
-  }
-}
-```
-
-### 3. MAT Generation
-
-```dart
-Future<Map<String, dynamic>> generateMobileAccessToken(String action) async {
-  final deviceId = await _getDeviceId();
-  
-  final response = await http.post(
-    Uri.parse(AppConfig.generateMATEndpoint),
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({
-      'deviceId': deviceId,
-      'action': action, // 'register' or 'login'
-    }),
-  );
-  
-  if (response.statusCode == 200) {
-    return jsonDecode(response.body);
-  } else {
-    throw Exception('Failed to generate MAT');
-  }
-}
-```
-
----
-
-## Security
-
-### Platform-Specific Secure Storage
-
-| Platform | Storage Mechanism |
-|----------|------------------|
-| Android | KeyStore (hardware-backed when available) |
-| iOS | Keychain |
-| Windows | Credential Manager (DPAPI) |
-| Linux | Secret Service API / libsecret |
-| macOS | Keychain |
-
-### Security Features
-
-1. **Encrypted Storage**: All sensitive data encrypted at rest
-2. **MAT Validation**: One-time use tokens with expiration
-3. **URI Scheme Validation**: Only accept `sentriapp://` scheme
-4. **Timeout Protection**: 10-second network timeout
-5. **Session Validation**: Check session on app launch
-6. **Error Handling**: Secure error messages
-
----
-
-## Building
-
-### Debug Build
-
-```bash
-# Android
-flutter build apk --debug
-
-# iOS
-flutter build ios --debug
-```
-
-### Release Build
-
-```bash
-# Android
+# Release APK
 flutter build apk --release
+
+# App Bundle (Google Play)
 flutter build appbundle --release
 
-# iOS
-flutter build ios --release
-
-# Windows
-flutter build windows --release
-
-# Linux
-flutter build linux --release
-
-# macOS
-flutter build macos --release
+# Current version: 1.0.5+6
 ```
-
-### Build Outputs
-
-- **Android APK**: `build/app/outputs/flutter-apk/app-release.apk`
-- **Android Bundle**: `build/app/outputs/bundle/release/app-release.aab`
-- **iOS**: `build/ios/iphoneos/Runner.app`
-- **Windows**: `build/windows/runner/Release/`
-
----
-
-## Testing
-
-```bash
-# Run all tests
-flutter test
-
-# Run with coverage
-flutter test --coverage
-
-# Integration tests
-flutter test integration_test/
-```
-
----
-
-## Troubleshooting
-
-### Issue: Deep links not working
-
-**Android:**
-1. Check `AndroidManifest.xml` configuration
-2. Verify `android:autoVerify="true"`
-3. Test with `adb shell am start`
-
-**iOS:**
-1. Check `Info.plist` configuration
-2. Verify URL scheme registration
-3. Test with `xcrun simctl openurl`
-
-### Issue: Secure storage fails
-
-**Solution:**
-```dart
-// Add error handling
-try {
-  await _secureStorage.write(key: 'test', value: 'value');
-} catch (e) {
-  print('Secure storage error: $e');
-  // Fallback to SharedPreferences
-}
-```
-
-### Issue: Network timeout
-
-**Solution:** Increase timeout or check network connection:
-```dart
-await http.post(uri).timeout(
-  Duration(seconds: 30),
-  onTimeout: () => throw TimeoutException('Request timeout'),
-);
-```
-
----
-
-## Deployment
-
-### Android
-
-1. **Generate Keystore**
-
-```bash
-keytool -genkey -v -keystore ~/upload-keystore.jks \
-  -keyalg RSA -keysize 2048 -validity 10000 \
-  -alias upload
-```
-
-2. **Configure Signing**
-
-Edit `android/key.properties`:
-```properties
-storePassword=<password>
-keyPassword=<password>
-keyAlias=upload
-storeFile=<path>/upload-keystore.jks
-```
-
-3. **Build & Upload**
-
-```bash
-flutter build appbundle --release
-# Upload to Google Play Console
-```
-
-### iOS
-
-1. **Configure Xcode**
-   - Open `ios/Runner.xcworkspace`
-   - Set Team and Bundle ID
-   - Configure signing
-
-2. **Build**
-
-```bash
-flutter build ios --release
-open build/ios/archive/Runner.xcarchive
-```
-
-3. **Upload to App Store Connect**
-
----
-
-## Support
-
-- **Documentation**: [Main README](../../README.md)
-- **API Docs**: [Backend API](../../Doc/Backend/api_reference.md)
-- **Email**: mohamedazri@protonmail.com
-
----
-
-## License
-
-MIT License - See [LICENSE](../../LICENSE) for details
