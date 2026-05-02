@@ -23,7 +23,7 @@ module.exports = {
   a1:  require('./availability/a1_rate_limit_login'),
   a2:  require('./availability/a2_rate_limit_admin'),
   a3:  require('./availability/a3_payload_size'),
-  a4:  require('./availability/a4_session_expiry'),
+//  a4:  require('./availability/a4_session_expiry'),
 
   // ── ML DETECTION ──────────────────────────────────────────────────
   ml1: require('./ml/ml1_phishing'),

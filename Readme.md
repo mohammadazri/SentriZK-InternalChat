@@ -19,7 +19,7 @@
 
 ### 📲 Download the App
 
-[![Download APK](https://img.shields.io/badge/⬇_Download_APK-SentriZK_v1.0.4+5-2ea44f?style=for-the-badge&logo=android&logoColor=white)](https://github.com/mohammadazri/SentriZK-InternalChat/releases/latest/download/sentrizk.apk)
+[![Download APK](https://img.shields.io/badge/⬇_Download_APK-SentriZK_v1.0.5+6-2ea44f?style=for-the-badge&logo=android&logoColor=white)](https://github.com/mohammadazri/SentriZK-InternalChat/releases/latest/download/sentrizk.apk)
 
 > Android 5.0+ · Enable "Install from unknown sources" in Settings → Security
 
@@ -496,12 +496,12 @@ template Login() {
 
 | Technology | Version | Role |
 |-----------|---------|------|
-| Flutter | 3.8 | Cross-platform UI framework |
+| Flutter | 3.8.1 | Cross-platform UI framework |
 | Dart | 3.8 | Language |
-| flutter_secure_storage | 9.x | KeyStore / Keychain / DPAPI encrypted storage |
+| flutter_secure_storage | 10.0.0 | Android Keystore / iOS Keychain encrypted storage |
 | firebase_core + cloud_firestore | — | Real-time messaging backend |
-| tflite_flutter | — | On-device ML inference |
-| app_links | 6.x | Deep link handling |
+| tflite_flutter | 0.12.0 | On-device ML inference |
+| app_links | 7.0.0 | Deep link handling |
 | encrypt | 5.x | AES encryption utilities |
 
 ### Circuits
