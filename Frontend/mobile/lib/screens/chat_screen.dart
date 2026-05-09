@@ -45,6 +45,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final ChatService _chatService = ChatService();
   final UserService _userService = UserService();
   final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   Isar? _isar;
   Stream<List<LocalMessage>>? _localMessagesStream;
   StreamSubscription? _deletionSubscription;
@@ -418,7 +419,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 final rawData = snapshot.data ?? [];
                 
                 final messages = List<LocalMessage>.from(rawData)
-                  ..sort((a, b) => a.id.compareTo(b.id));
+                  ..sort((a, b) => b.id.compareTo(a.id)); // Sort newest first for reverse ListView
 
                 // WhatsApp Read Receipt magic:
                 // If we are looking at this screen, any incoming message should be marked 'read'
@@ -445,10 +446,12 @@ class _ChatScreenState extends State<ChatScreen> {
                 }
 
                 return ListView.builder(
+                  controller: _scrollController,
+                  reverse: true,
                   padding: const EdgeInsets.all(8),
                   itemCount: messages.length + 1,
                   itemBuilder: (context, index) {
-                    if (index == 0) {
+                    if (index == messages.length) {
                       return Container(
                         margin: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
                         padding: const EdgeInsets.all(12),
@@ -474,7 +477,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       );
                     }
                     
-                    final msg = messages[index - 1];
+                    final msg = messages[index];
                     final isMe = msg.senderId == widget.username;
                     return Align(
                       alignment: isMe
@@ -733,6 +736,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     _controller.removeListener(_onTextChanged);
     _controller.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 }
