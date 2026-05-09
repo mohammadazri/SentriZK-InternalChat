@@ -445,12 +445,15 @@ class _ChatScreenState extends State<ChatScreen> {
                   });
                 }
 
-                return ListView.builder(
-                  controller: _scrollController,
-                  reverse: true,
-                  padding: const EdgeInsets.all(8),
-                  itemCount: messages.length + 1,
-                  itemBuilder: (context, index) {
+                return Align(
+                  alignment: Alignment.topCenter,
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    reverse: true,
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.all(8),
+                    itemCount: messages.length + 1,
+                    itemBuilder: (context, index) {
                     if (index == messages.length) {
                       return Container(
                         margin: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
@@ -595,8 +598,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     );
                   },
-                );
-              },
+                ),
+              );
+            },
             ),
           ),
           Container(
