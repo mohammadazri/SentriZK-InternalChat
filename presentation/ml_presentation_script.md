@@ -105,9 +105,27 @@ This is the exact sequence of events when a user taps "Send":
 
 ---
 
-## 6. Final Evaluation Metrics
-Based on the validation dataset (unseen during training), the Mobile Conv1D model achieved:
-- **Accuracy**: 89.2%
+## 6. Final Evaluation Metrics & How They Are Calculated
+Before deploying the model, we must mathematically prove its effectiveness. 
+
+### How Accuracy is Calculated
+To calculate accuracy, we split our dataset of 5,740 samples into two groups using an **80/20 split**:
+- **Training Data (80%)**: Used to teach the model.
+- **Validation Data (20%)**: Held back completely. The model never sees this during training. It is used as a final "exam" to test real-world accuracy.
+
+When the model takes this exam, it makes predictions that fall into one of four categories:
+1. **True Positives (TP)**: The model predicted "Threat", and it actually WAS a threat.
+2. **True Negatives (TN)**: The model predicted "Safe", and it actually WAS safe.
+3. **False Positives (FP)**: The model predicted "Threat", but it was just a safe message.
+4. **False Negatives (FN)**: The model predicted "Safe", but it was actually a malicious threat.
+
+The mathematical formula for **Overall Accuracy** is simply the total number of correct guesses divided by the total number of messages:
+
+$$ \text{Accuracy} = \frac{\text{TP} + \text{TN}}{\text{TP} + \text{TN} + \text{FP} + \text{FN}} $$
+
+### SentriZK Mobile Conv1D Results
+Based on the 20% validation dataset (unseen during training), the Mobile Conv1D model achieved:
+- **Overall Accuracy**: 89.2% (Calculated via the formula above).
 - **AUC-ROC (Area Under Receiver Operating Characteristic Curve)**: 0.962. 
   *(An AUC of 1.0 is perfect; 0.5 is random guessing. 0.962 proves the model has excellent discriminatory power between safe and malicious text).*
 - **Recall (Threats)**: 89.3% (Identified ~9 out of 10 actual threats successfully).
