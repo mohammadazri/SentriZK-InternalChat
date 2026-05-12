@@ -478,39 +478,47 @@ stateDiagram-v2
 
 ---
 
-## 11. Cryptographic Stack Summary
+## 11. Detailed Cryptographic Stack Flow
 
 ```mermaid
 flowchart TD
-    classDef default fill:#f9f9f9,stroke:#333,stroke-width:1px;
-    
-    subgraph Auth [ZKP Authentication Layer]
-        C1[Circom Circuits]
-        C2[Groth16 Prover]
-        C3[Poseidon ZK Hash]
+    classDef input fill:#e6f2ff,stroke:#0066cc,stroke-width:2px;
+    classDef process fill:#f9e6ff,stroke:#9900cc,stroke-width:2px;
+    classDef key fill:#e6ffe6,stroke:#009933,stroke-width:2px;
+    classDef storage fill:#fff2e6,stroke:#cc6600,stroke-width:2px;
+
+    subgraph Key_Derivation [Identity & Key Derivation]
+        PW([User Password]):::input
+        BIP39([24-Word Mnemonic]):::input
+        
+        BIP39 -->|PBKDF2 HMAC-SHA512| Seed[512-bit Seed]:::process
+        Seed -->|HKDF| Salt[128-bit ZKP Salt]:::key
+        Seed -->|HKDF| WalletSecret[256-bit Wallet Secret]:::key
+        
+        PW -->|Scrypt / PBKDF2| AESKey[AES-256-GCM Key]:::key
     end
 
-    subgraph Derivation [Key Derivation Layer]
-        D1[BIP-39 Mnemonic]
-        D2[PBKDF2/HKDF]
-        D3[Keccak-256]
+    subgraph ZKP_Auth [ZKP Commitment Generation]
+        Uname([Username]):::input
+        Uname -->|Keccak-256| UnameHash[Username Hash]:::process
+        
+        Salt & WalletSecret & UnameHash -->|Poseidon Hash| Commitment[Cryptographic Commitment]:::key
+        Salt & WalletSecret & UnameHash & Nonce([Server Nonce]):::input --> Groth16[Groth16 Prover]:::process
+        Groth16 --> ZKProof[zk-SNARK Proof]:::key
     end
 
-    subgraph Transport [Encryption & Transport Layer]
-        T1[AES-256-GCM]
-        T2[Signal Protocol]
-        T3[X3DH Key Agreement]
+    subgraph Transport_Encryption [E2EE Messaging - Signal Protocol]
+        PreKeys([Pre-Key Bundle]):::input
+        PreKeys -->|X3DH Agreement| MasterSecret[Master Shared Secret]:::key
+        MasterSecret --> KDF_Ratchet[Double Ratchet HKDF]:::process
+        KDF_Ratchet --> MsgKey[Message Key AES-256-GCM]:::key
     end
 
-    subgraph Secure [Secure Storage Layer]
-        S1[Mobile Keystore / Keychain]
-        S2[Encrypted Local DB]
+    subgraph Secure_Storage [Local Persistence]
+        AESKey -->|Encrypts| SaltEncrypted[(Encrypted Salt)]:::storage
+        AESKey -->|Encrypts| IsarDB[(Isar E2EE Message DB)]:::storage
+        SaltEncrypted --> AndroidKS[(Android Keystore)]:::storage
     end
-    
-    Auth --> Transport
-    Derivation --> Auth
-    Derivation --> Transport
-    Transport --> Secure
 ```
 
 ---
