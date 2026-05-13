@@ -54,6 +54,11 @@ android {
         versionName = flutter.versionName
     }
 
+    aaptOptions {
+        noCompress.add("tflite")
+        noCompress.add("json")
+    }
+
     buildTypes {
         release {
                 // Use the release signing config when `android/key.properties` is provided.
