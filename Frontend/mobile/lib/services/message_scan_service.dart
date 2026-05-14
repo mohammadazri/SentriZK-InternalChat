@@ -25,18 +25,57 @@ class MessageScanService {
     if (_isReady) return;
 
     try {
-      // Load TFLite model
-      final options = InterpreterOptions()..addDelegate(GpuDelegateV2());
-      options.useNnApiForAndroid = true;
-
-      _interpreter = await Interpreter.fromAsset(AppConfig.mlModelAsset, options: options);
-      print('✅ [ML] TFLite model loaded');
-
-      // Load vocabulary
+      // Load vocabulary first (needed for validation test)
       final vocabJson = await rootBundle.loadString(AppConfig.mlVocabAsset);
       _vocab = Map<String, int>.from(jsonDecode(vocabJson));
       print('✅ [ML] Vocabulary loaded (${_vocab!.length} words)');
 
+      // Load TFLite model — try GPU+NNAPI first, validate, fall back to CPU
+      Interpreter? interpreter;
+      bool usedAccelerator = false;
+
+      try {
+        // Attempt GPU + NNAPI delegates
+        final gpuOptions = InterpreterOptions()..addDelegate(GpuDelegateV2());
+        gpuOptions.useNnApiForAndroid = true;
+        interpreter = await Interpreter.fromAsset(
+            AppConfig.mlModelAsset, options: gpuOptions);
+        usedAccelerator = true;
+        print('✅ [ML] TFLite model loaded (GPU+NNAPI)');
+
+        // Validation: run two very different inputs and check the output differs.
+        // If the delegate is broken, it returns the same score for everything.
+        final safeInput = [_tokenize('hello how are you doing today friend')];
+        final threatInput = [_tokenize('URGENT click this link now to verify your password or your account will be deleted immediately')];
+        final out1 = [[0.0]];
+        final out2 = [[0.0]];
+        interpreter.run(safeInput, out1);
+        interpreter.run(threatInput, out2);
+        final diff = (out1[0][0] - out2[0][0]).abs();
+        print('🧪 [ML] Validation: safe=${(out1[0][0]*100).toStringAsFixed(1)}%, threat=${(out2[0][0]*100).toStringAsFixed(1)}%, diff=${(diff*100).toStringAsFixed(1)}%');
+
+        if (diff < 0.05) {
+          // Outputs are nearly identical for very different inputs → delegate is broken
+          print('⚠️ [ML] GPU/NNAPI producing identical scores — delegate is broken, falling back to CPU');
+          interpreter.close();
+          interpreter = null;
+          usedAccelerator = false;
+        }
+      } catch (delegateError) {
+        print('⚠️ [ML] GPU/NNAPI delegate failed ($delegateError), falling back to CPU');
+        interpreter = null;
+        usedAccelerator = false;
+      }
+
+      // Fall back to CPU-only if needed
+      if (interpreter == null) {
+        final cpuOptions = InterpreterOptions();
+        interpreter = await Interpreter.fromAsset(
+            AppConfig.mlModelAsset, options: cpuOptions);
+        print('✅ [ML] TFLite model loaded (CPU-only fallback)');
+      }
+
+      _interpreter = interpreter;
       _isReady = true;
     } catch (e) {
       print('❌ [ML] Failed to initialize: $e');
