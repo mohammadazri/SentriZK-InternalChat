@@ -375,6 +375,48 @@ class _UserListScreenState extends State<UserListScreen>
     );
   }
 
+  Future<void> _showDeleteChatDialog(String peerId, String peerName) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Chat?'),
+        content: Text('Are you sure you want to delete your local chat history with $peerName? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && _isar != null && _isar!.isOpen) {
+      await _isar!.writeTxn(() async {
+        await _isar!.localMessages
+            .filter()
+            .group((q) => q.senderIdEqualTo(widget.currentUserId).and().receiverIdEqualTo(peerId))
+            .or()
+            .group((q) => q.senderIdEqualTo(peerId).and().receiverIdEqualTo(widget.currentUserId))
+            .deleteAll();
+      });
+
+      if (mounted) {
+        setState(() {
+          _lastMessages.remove(peerId);
+          _drafts.remove(peerId);
+        });
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('draft_${widget.currentUserId}_$peerId');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -621,6 +663,9 @@ class _UserListScreenState extends State<UserListScreen>
                                 // Refresh drafts when returning from ChatScreen
                                 _loadDrafts();
                               },
+                              onLongPress: () {
+                                _showDeleteChatDialog(user['id'], displayName);
+                              },
                             );
                           }, childCount: filtered.length),
                         ),
@@ -692,6 +737,7 @@ class _UserRow extends StatelessWidget {
   final String time;
   final String lastMessage;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   const _UserRow({
     required this.name,
@@ -705,6 +751,7 @@ class _UserRow extends StatelessWidget {
     required this.time,
     required this.lastMessage,
     required this.onTap,
+    this.onLongPress,
   });
 
   ImageProvider? _getAvatarProvider() {
@@ -724,6 +771,7 @@ class _UserRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
+      onLongPress: onLongPress,
       splashColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
       highlightColor: Colors.transparent,
       child: Padding(
