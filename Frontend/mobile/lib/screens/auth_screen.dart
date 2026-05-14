@@ -239,6 +239,8 @@ class _AuthScreenState extends State<AuthScreen>
           callbackType = 'auth-callback';
         } else if (uriString.contains('login-success')) {
           callbackType = 'login-success';
+        } else if (uriString.contains('recover-success')) {
+          callbackType = 'recover-success';
         }
 
         final token = uri.queryParameters['token'] ?? "";
@@ -303,104 +305,26 @@ class _AuthScreenState extends State<AuthScreen>
           debugPrint('📱 Processing login callback...');
           final sessionId = uri.queryParameters['sessionId'] ?? "";
 
-          // Security: Validate required fields
-          if (token.isEmpty || username.isEmpty) {
-            _updateStatus(
-              "Login failed: Invalid credentials",
-              Icons.error,
-              Colors.redAccent,
-            );
-            return;
-          }
+          await _performLoginSequence(token, username, sessionId);
+        } else if (callbackType.contains('recover-success')) {
+          // Recovery callback
+          debugPrint('📱 Processing recovery callback...');
+          final sessionId = uri.queryParameters['sessionId'] ?? "";
 
-          try {
-            _updateStatus(
-              "Authenticating...",
-              Icons.lock_clock,
-              Colors.blueAccent,
-            );
+          _updateStatus(
+            "Securing credentials...",
+            Icons.lock_clock,
+            Colors.blueAccent,
+          );
 
-            if (mounted) {
-              setState(() {
-                _isLoading = true;
-              });
-            }
+          await _authService.saveRedirectData(
+            token: token,
+            username: username,
+            encryptedSalt: encryptedSalt,
+            encodedMnemonic: "",
+          );
 
-            // Secure login: validate token with backend and store validated session
-            await _authService
-                .processLoginRedirect(token: token, username: username)
-                .timeout(
-                  const Duration(seconds: 30),
-                  onTimeout: () => throw TimeoutException('Login timeout'),
-                );
-
-            // Sign in to Firebase Auth with custom token (required before Firestore writes)
-            final firebaseSessionId = await _authService.getSessionId();
-            if (firebaseSessionId != null) {
-              await _authService.signInToFirebase(firebaseSessionId);
-            }
-
-            _updateStatus(
-              "Preparing encryption secure keys...",
-              Icons.enhanced_encryption,
-              Colors.blueAccent,
-            );
-
-            // Create or update Firestore user profile after successful login
-            final deviceId = await _authService.getDeviceId();
-            final userService = UserService();
-
-            final userData = await userService.createOrUpdateUser(
-              userId: username, // Use a unique userId if available
-              username: username,
-              deviceId: deviceId,
-              // Add avatarUrl/phone if available
-            );
-
-            _updateStatus(
-              "Securing connection...",
-              Icons.cloud_sync,
-              Colors.blueAccent,
-            );
-
-            // Register and save FCM token for push notifications
-            await NotificationService.instance.saveFcmToken(userId: username);
-
-            _updateStatus(
-              "Welcome back, $username",
-              Icons.verified_user,
-              Colors.greenAccent,
-            );
-
-            if (mounted) {
-              setState(() {
-                _mnemonicDisplay = "";
-                _isLoggedIn = true;
-                _username = username;
-                // Leave _isLoading = true so the UI doesn't momentarily flash the login button
-              });
-
-              // Navigate to Dashboard with preloaded user data to save time!
-              _navigateToDashboard(userData);
-            }
-
-            HapticFeedback.mediumImpact();
-            await _showSuccessDialog(
-              'Login Successful',
-              'Welcome back, $username!',
-            );
-          } catch (e) {
-            if (mounted) {
-              setState(() {
-                _isLoading = false;
-              });
-            }
-            _updateStatus(
-              "Login error: ${e.toString()}",
-              Icons.error,
-              Colors.redAccent,
-            );
-          }
+          await _performLoginSequence(token, username, sessionId);
         } else {
           // Security: Log and reject unknown callbacks
           _updateStatus(
@@ -421,6 +345,116 @@ class _AuthScreenState extends State<AuthScreen>
         );
       },
     );
+  }
+
+  Future<void> _performLoginSequence(String token, String username, String sessionId) async {
+    // Security: Validate required fields
+    if (token.isEmpty || username.isEmpty) {
+      _updateStatus(
+        "Login failed: Invalid credentials",
+        Icons.error,
+        Colors.redAccent,
+      );
+      return;
+    }
+
+    try {
+      _updateStatus(
+        "Authenticating...",
+        Icons.lock_clock,
+        Colors.blueAccent,
+      );
+
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
+
+      // Secure login: validate token with backend and store validated session
+      await _authService
+          .processLoginRedirect(token: token, username: username)
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () => throw TimeoutException('Login timeout'),
+          );
+
+      // Sign in to Firebase Auth with custom token (required before Firestore writes)
+      final firebaseSessionId = await _authService.getSessionId();
+      if (firebaseSessionId != null) {
+        await _authService.signInToFirebase(firebaseSessionId);
+      }
+
+      _updateStatus(
+        "Preparing encryption secure keys...",
+        Icons.enhanced_encryption,
+        Colors.blueAccent,
+      );
+
+      // Create or update Firestore user profile after successful login
+      final deviceId = await _authService.getDeviceId();
+      final userService = UserService();
+
+      final userData = await userService.createOrUpdateUser(
+        userId: username, // Use a unique userId if available
+        username: username,
+        deviceId: deviceId,
+        // Add avatarUrl/phone if available
+      );
+
+      _updateStatus(
+        "Securing connection...",
+        Icons.cloud_sync,
+        Colors.blueAccent,
+      );
+
+      // Register and save FCM token for push notifications
+      await NotificationService.instance.saveFcmToken(userId: username);
+
+      _updateStatus(
+        "Welcome back, $username",
+        Icons.verified_user,
+        Colors.greenAccent,
+      );
+
+      if (mounted) {
+        setState(() {
+          _mnemonicDisplay = "";
+          _isLoggedIn = true;
+          _username = username;
+          // Leave _isLoading = true so the UI doesn't momentarily flash the login button
+        });
+
+        // Navigate to Dashboard with preloaded user data to save time!
+        _navigateToDashboard(userData);
+      }
+
+      HapticFeedback.mediumImpact();
+      await _showSuccessDialog(
+        'Login Successful',
+        'Welcome back, $username!',
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      _updateStatus(
+        "Login error: ${e.toString()}",
+        Icons.error,
+        Colors.redAccent,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Login failed: ${e.toString()}'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _showRecoveryPhraseDialog(String mnemonic) async {

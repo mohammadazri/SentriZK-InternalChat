@@ -164,10 +164,10 @@ export default function RecoverPage() {
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       if (/android/i.test(navigator.userAgent)) {
-        const intentUrl = `intent://auth-callback?${queryParams}#Intent;scheme=sentriapp;package=com.example.mobile;end`;
+        const intentUrl = `intent://recover-success?${queryParams}#Intent;scheme=sentriapp;package=com.example.mobile;end`;
         window.location.href = intentUrl;
       } else {
-        const redirectUrl = `sentriapp://auth-callback?${queryParams}`;
+        const redirectUrl = `sentriapp://recover-success?${queryParams}`;
         window.location.href = redirectUrl;
       }
 
