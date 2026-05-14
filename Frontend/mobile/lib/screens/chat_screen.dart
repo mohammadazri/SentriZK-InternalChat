@@ -14,6 +14,7 @@ import '../config/app_config.dart';
 import '../services/notification_service.dart';
 import 'call_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/services.dart';
 
 import 'package:isar/isar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -149,7 +150,7 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {});
   }
 
-  void _showDeleteOptions(LocalMessage msg) {
+  void _showMessageOptions(LocalMessage msg) {
     final isMe = msg.senderId == widget.username;
     final canDeleteEveryone = isMe && msg.firebaseId != null && _chatService.canDeleteForEveryone(msg.timestamp);
 
@@ -174,6 +175,18 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
             const SizedBox(height: 16),
+            if (!msg.deletedForEveryone)
+              ListTile(
+                leading: Icon(Icons.copy_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                title: Text('Copy Text', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Clipboard.setData(ClipboardData(text: msg.content));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Text copied to clipboard')),
+                  );
+                },
+              ),
             ListTile(
               leading: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
               title: Text('Delete for Me', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
@@ -487,7 +500,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           ? Alignment.centerRight
                           : Alignment.centerLeft,
                       child: GestureDetector(
-                        onLongPress: () => _showDeleteOptions(msg),
+                        onLongPress: () => _showMessageOptions(msg),
                         child: Container(
                           margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                           padding: const EdgeInsets.only(left: 14, right: 14, top: 10, bottom: 8),
