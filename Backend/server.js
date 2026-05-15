@@ -306,6 +306,9 @@ app.get("/check-username/:username", async (req, res) => {
 app.get("/commitment/:username", async (req, res) => {
   try {
     const username = req.params.username.toLowerCase();
+    if (!isValidUsername(username)) {
+      return res.status(400).json({ error: "Invalid username format" });
+    }
     const user = await getUser(username);
     if (!user) return res.status(404).json({ error: "User not found" });
 
