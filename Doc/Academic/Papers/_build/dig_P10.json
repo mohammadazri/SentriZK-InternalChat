@@ -1,0 +1,43 @@
+{
+  "paper_id": "P10",
+  "authors": "A. Gaurav, B. B. Gupta, and K. T. Chui",
+  "title": "AI-Driven Smishing Detection in Android Devices Using TinyBERT and Aquila Optimization",
+  "venue": "27th International Conference on Advanced Communications Technology (ICACT2025)",
+  "year": "2025",
+  "domain": 3,
+  "one_line": "A lightweight Android smishing (SMS phishing) detector that uses TinyBERT embeddings and Aquila Optimization for hyperparameter tuning, reaching 96.81% accuracy.",
+  "problem": "Smishing (SMS phishing) attacks on mobile/Android devices are rising sharply, and traditional spam-detection techniques struggle to distinguish legitimate from malicious messages due to the contextual, deceptive nature of smishing. The paper seeks a robust, efficient detection approach suitable for Android devices.",
+  "methods": "Pipeline: (1) collect the Kaggle SMS Spam Collection dataset (5,574 English messages labeled ham/spam); (2) preprocess via text cleaning (remove special characters, digits, punctuation), lowercasing, stopword removal, and lemmatization; (3) extract contextual embeddings using TinyBERT, a lightweight BERT variant, with t-SNE used to visually confirm feature separability; (4) tune deep-learning model hyperparameters with the Aquila Optimization (AO) metaheuristic, which balances exploration and exploitation to minimize validation loss; (5) train the optimized model for five epochs to keep it lightweight for Android. Evaluated with confusion matrix, classification report, and comparison against GRU, LSTM, RNN, Logistic Regression, Simple Neural Network, and SVM.",
+  "key_findings": [
+    "The AO-tuned TinyBERT-based model achieved 96.81% accuracy, outperforming standard models (GRU, LSTM, RNN ~85.98%) and performing on par with or slightly better than SVM (96.61%).",
+    "TinyBERT embeddings visualized via t-SNE showed clear separation between ham and spam clusters, confirming effective contextual feature extraction.",
+    "The model was deliberately trained for only five epochs to remain lightweight and suitable for on-device Android deployment.",
+    "Spam recall was the weakest metric (82% in the classification report), indicating some missed spam, while ham detection was very strong (F1 0.98)."
+  ],
+  "metrics": [
+    "Accuracy: 96.81%",
+    "Precision: 96.76%",
+    "Recall: 96.81%",
+    "F1-score: 96.71%",
+    "Confusion matrix: 882 ham correct, 119 spam correct, 26 false negatives, 7 false positives",
+    "Per-class classification report: ham precision 0.97 / recall 0.99 / F1 0.98; spam precision 0.94 / recall 0.82 / F1 0.88",
+    "Dataset: Kaggle SMS Spam Collection, 5,574 English SMS (ham/spam)",
+    "Training: 5 epochs",
+    "Baselines: SVM accuracy 96.61%; GRU/LSTM/RNN ~85.98%"
+  ],
+  "strengths": [
+    "Explicitly targets a lightweight, on-device Android deployment by using TinyBERT and limiting training to five epochs.",
+    "Uses transformer-based contextual embeddings (TinyBERT) rather than shallow features, capturing the semantic nature of smishing.",
+    "Provides a thorough comparative analysis against multiple ML and DL baselines across accuracy, precision, recall, and F1.",
+    "Reproducible use of a well-known public dataset (Kaggle/UCI SMS Spam Collection) with clearly described preprocessing."
+  ],
+  "weaknesses": [
+    "No on-device latency, memory, model-size, or inference-time measurements are reported despite the lightweight/Android claim; AO runtime is shown only per optimization iteration (~5.5-5.9 s).",
+    "Spam recall is modest (82% per the classification report), meaning a notable fraction of smishing messages can be missed.",
+    "Evaluated only on a single English SMS dataset; generalization to other languages, regions, or evolving smishing tactics is untested.",
+    "The specific deep-learning model architecture and the AO-selected hyperparameters are not fully detailed.",
+    "Reported aggregate metrics differ slightly from the per-class classification report (e.g., headline accuracy 96.81% vs. 97% in the report), and no actual TensorFlow Lite/on-device implementation is demonstrated."
+  ],
+  "relevance": "This paper directly supports SentriZK's second pillar (on-device, lightweight AI threat detection) by showing how a compact transformer (TinyBERT) plus metaheuristic hyperparameter tuning can deliver high-accuracy smishing/phishing detection intended for Android. It motivates running message-threat classification locally on the device to avoid cloud latency and privacy leakage, aligning with SentriZK's privacy-preserving, mobile-first design even though SentriZK leans toward BiLSTM-style models and TensorFlow Lite deployment.",
+  "ieee_reference": "A. Gaurav, B. B. Gupta, and K. T. Chui, \"AI-Driven Smishing Detection in Android Devices Using TinyBERT and Aquila Optimization,\" in Proc. 27th Int. Conf. Advanced Communications Technology (ICACT), 2025, pp. 99-105, ISBN: 979-11-88428-13-7."
+}

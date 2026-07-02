@@ -1,0 +1,78 @@
+{
+  "section_title": "SYNTHESIS AND RESEARCH GAPS",
+  "blocks": [
+    {
+      "type": "body",
+      "text": "The preceding three domains each mature a single dimension of secure enterprise messaging in isolation: confidential transport with privacy-preserving authentication (Domain 1), zero-knowledge authentication theory and deployment (Domain 2), and on-device intelligent threat detection (Domain 3). Read together, however, the twelve sources expose a set of cross-domain gaps that no individual study resolves, and a corresponding integration opportunity that defines the SentriZK contribution. This section does not restate the per-domain findings but instead reasons across them to articulate four gaps, summarised in Table IV, and to position SentriZK's unified architecture as the response."
+    },
+    {
+      "type": "subheading",
+      "text": "A. Confidential Transport Without Trustworthy Authentication"
+    },
+    {
+      "type": "body",
+      "text": "The first cross-domain gap is that strong E2EE is necessary but not sufficient for trust establishment. The implemented Diffie-Hellman/ECDH plus AES-256 system of Perkasa et al. demonstrates that message confidentiality against a compromised server is a solved engineering problem, yet the same work concedes that its ECDH exchange has no authentication mechanism and that MitM resistance therefore depends on out-of-band trust [P5]. The systematisation by Alatawi and Saxena generalises this single observation into a structural finding across nineteen popular applications: every one of them operates only in opportunistic E2EE mode and relies on optional manual fingerprint-verification ceremonies that routinely fail because of human error [P1]. The conceptual remedy is supplied by Domain 2: zero-knowledge proofs allow a party to prove possession of a credential without disclosing or transmitting it, removing the disclosure-based weakness that the ceremonies were intended, and fail, to compensate for [P6]. The gap is thus the absence of any reviewed messaging system that couples vetted E2EE primitives with an automated, non-interactive authentication mechanism; SentriZK closes it by retaining Diffie-Hellman and AES-256 transport [P5] while replacing the fragile ceremony [P1] with non-interactive zk-SNARK authentication [P6]."
+    },
+    {
+      "type": "subheading",
+      "text": "B. Accurate Detection Versus On-Device Feasibility"
+    },
+    {
+      "type": "body",
+      "text": "The second gap concerns a recurring mismatch between detection accuracy and deployment feasibility. Deep sequence models such as BiLSTM are repeatedly shown to be the most effective family for insider-threat and anomaly detection over behavioural logs [P2], [P3], [P9], yet the same literature documents that these models are heavy, that LSTM in particular demands significant time and bandwidth on mobile hardware [P9], and that the leading insider-threat proposal reports no latency or resource-cost analysis at all, leaving on-device feasibility entirely unaddressed [P2]. Where efficiency is treated explicitly, it is through composite metrics or compressed transformers evaluated only on server timings rather than real edge hardware, with no quantisation or TensorFlow Lite conversion measured [P11]. The common thread is that accuracy has been demonstrated in laboratory or cloud settings, but the model-size, memory, and inference-latency budgets of a smartphone remain an open engineering agenda. SentriZK responds by selecting BiLSTM-style detection [P2], [P3] specifically engineered for lightweight on-device inference via TensorFlow Lite, treating the efficiency framing of [P11] and the resource constraints catalogued in [P9] as first-class design requirements rather than afterthoughts."
+    },
+    {
+      "type": "subheading",
+      "text": "C. The Tension Between Strong Detection and User Privacy"
+    },
+    {
+      "type": "body",
+      "text": "The third gap is the latent tension between intelligent threat detection and the very privacy that E2EE and zero-knowledge authentication are meant to protect. Effective behavioural and content-based detection conventionally requires inspecting user activity and message text, which conflicts with confidentiality; Domain 3 repeatedly frames cloud-based detection as a source of latency and privacy leakage [P10], and Domain 1's threat review notes that encrypted-channel exfiltration itself defeats deep packet inspection, forcing detection onto privacy-preserving, metadata- and behaviour-based methods [P3]. The resolution that emerges across domains is twofold. First, performing detection locally on the device, as the smishing and phishing studies advocate, keeps both message content and behavioural signals on the user's hardware and avoids cloud disclosure [P10]. Second, zero-knowledge authentication contributes a complementary privacy property at the trust layer: it provides anonymity and MitM resistance while leaking no secret to the verifier [P7], and it can deliver password-less, identity-hiding authentication on a real cryptographic stack while still preserving selective disclosure and traceability for accountability [P8]. No reviewed system combines on-device detection with zero-knowledge authentication to reconcile this tension; SentriZK's pairing of local TensorFlow Lite inference [P10] with NIZK/zk-SNARK authentication [P7], [P8] is precisely that combination."
+    },
+    {
+      "type": "subheading",
+      "text": "D. Architectural Fragmentation Across the Three Pillars"
+    },
+    {
+      "type": "body",
+      "text": "The fourth and overarching gap is fragmentation. The reviewed corpus treats encrypted transport, authentication, and threat detection as separate research programmes: implemented E2EE systems omit on-device detection and authenticated key exchange [P5]; zk-SNARK identity systems address authentication but assume a blockchain settlement layer whose 192 MB proving keys, multi-second proving times, and high gas costs are explicitly infeasible under typical mobile memory limits [P8]; and the detection literature optimises classifiers without integrating them into a confidential, authenticated messaging fabric [P9], [P10], [P11], [P12]. Threat-modelling work for enterprise messaging confirms that these concerns belong to one attack surface and even calls for fusing AI-driven anomaly detection with the broader security design, yet stops at a conceptual mitigation taxonomy rather than a built system [P4]. No single reviewed system unifies E2EE transport, privacy-preserving authentication, and on-device detection. This unmet integration is the SentriZK gap: the proposed architecture consolidates the otherwise scattered mitigations into one mobile-first platform, while explicitly heeding the cost warnings of [P8] by favouring lighter proving and zk-SNARK-friendly circuits and avoiding on-chain settlement for routine authentication."
+    },
+    {
+      "type": "body",
+      "text": "In summary, the literature validates each pillar individually but leaves their integration, and the privacy, feasibility, and trust tensions that arise only at their intersection, unaddressed. SentriZK is positioned at this intersection: it is a design-stage proposal to unify confidential transport, non-interactive zero-knowledge authentication, and lightweight on-device threat detection in a single privacy-preserving Android messaging platform. As the work is at the design and review stage, no performance claims are made; the contribution of this review is to motivate the unified architecture from the cross-domain gaps identified above and to set the engineering agenda, on-device model efficiency, lightweight proving, and the careful balance of detection against privacy, that subsequent implementation and evaluation must resolve."
+    }
+  ],
+  "tables": [
+    {
+      "caption": "TABLE IV. RESEARCH GAPS AND SentriZK RESPONSE",
+      "columns": ["Research Gap", "Evidence", "SentriZK Response"],
+      "rows": [
+        [
+          "E2EE secures message content but authentication is left to optional manual ceremonies that fail through human error, leaving an active-MitM trust gap.",
+          "Implemented ECDH/AES-256 system has no authentication and depends on out-of-band trust [P5]; all 19 surveyed apps use opportunistic E2EE with optional, error-prone ceremonies [P1]; ZKP can prove a credential without transmitting it [P6].",
+          "Retains Diffie-Hellman and AES-256 transport while replacing the manual ceremony with non-interactive zk-SNARK (Groth16) authentication that removes human intervention from trust establishment."
+        ],
+        [
+          "Deep-learning detection is accurate but heavy and cloud-bound, with on-device latency, memory, and model size largely unmeasured.",
+          "BiLSTM/LSTM lead on detection accuracy [P2], [P3]; LSTM needs significant time and bandwidth on mobile [P9]; leading insider model gives no latency/resource analysis [P2]; efficiency studies use server timings without TensorFlow Lite/quantisation [P11].",
+          "Adapts BiLSTM-style detection for lightweight on-device inference via TensorFlow Lite, treating model-size, memory, and latency budgets as first-class design constraints."
+        ],
+        [
+          "Strong content/behaviour detection conflicts with the privacy that encryption and authentication aim to protect.",
+          "Cloud detection causes latency and privacy leakage [P10]; encrypted-channel exfiltration defeats packet inspection [P3]; ZKP leaks no secret to the verifier and gives anonymity [P7]; zk-SNARK enables identity-hiding authentication with selective disclosure [P8].",
+          "Runs all detection locally so content and behaviour never leave the device, and uses NIZK/zk-SNARK authentication to add a privacy-preserving, secret-less trust layer with optional accountability."
+        ],
+        [
+          "zk-SNARK identity systems assume a blockchain settlement layer with prohibitive proving and gas costs for mobile use.",
+          "Pinocchio/Groth16 identity scheme has a 192 MB proving key, ~37 s proof generation, infeasibility under 4 GB RAM, and high on-chain gas (auth ~1.85M, full open ~5.77M) [P8].",
+          "Adopts the zk-SNARK (Groth16) family for authentication but favours lighter proving and zk-SNARK-friendly circuits and avoids on-chain settlement for routine login in its mobile-first design."
+        ],
+        [
+          "No reviewed system unifies E2EE transport, privacy-preserving authentication, and on-device detection within one platform.",
+          "E2EE systems lack on-device detection and authenticated key exchange [P5]; detection studies are not embedded in a confidential, authenticated fabric [P9], [P11], [P12]; threat modelling treats these as one attack surface but builds no integrated system [P4].",
+          "Consolidates confidential transport, non-interactive zero-knowledge authentication, and lightweight on-device threat detection into a single privacy-preserving, mobile-first Android messaging platform (design stage)."
+        ]
+      ]
+    }
+  ]
+}

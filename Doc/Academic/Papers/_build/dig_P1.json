@@ -1,0 +1,43 @@
+{
+  "paper_id": "P1",
+  "authors": "Mashari Alatawi and Nitesh Saxena",
+  "title": "SoK: An Analysis of End-to-End Encryption and Authentication Ceremonies in Secure Messaging Systems",
+  "venue": "Proceedings of the 16th ACM Conference on Security and Privacy in Wireless and Mobile Networks (WiSec '23), Guildford, United Kingdom",
+  "year": "2023",
+  "domain": 1,
+  "one_line": "A systematization-of-knowledge study of 19 popular E2EE messaging apps showing that all rely on opportunistic E2EE (vulnerable to active MitM) and on optional, usability-flawed manual authentication ceremonies that users routinely fail to complete.",
+  "problem": "Modern IM/VoIP apps claim end-to-end encryption but operate in an opportunistic E2EE mode that defends only against passive MitM; defeating an active MitM (e.g., a malicious or coerced key-distribution server mounting key-substitution attacks) requires users to manually verify key fingerprints via an authentication ceremony. The paper asks whether current E2EE apps and their ceremonies actually deliver secure, usable authentication.",
+  "methods": "Systematization of knowledge over the most popular E2EE apps (17 cross-platform plus FaceTime and Messages by Apple) selected by Google Play installs/ratings. Two-stage analysis: (1) review of white papers, official E2EE documentation, protocol specs, and academic literature to extract each app's E2EE protocol and cryptographic primitives; (2) hands-on testing on four devices (iPhone X, iPhone 7 Plus, Samsung Android 5, Google Pixel) for one-to-one and three-member group text, audio, and video, recording default vs opt-in E2EE. Apps are evaluated against defined security criteria (protocol, default/opt-in, group support, MitM vulnerability, ceremony availability) and usability criteria (terminology, fingerprint representation, OOB-channel support, susceptibility to human error). Results summarized in comparison Tables 1 and 2.",
+  "key_findings": [
+    "All evaluated E2EE apps implement only opportunistic E2EE (by default or opt-in), which stops passive MitM but is vulnerable to active MitM via server key-substitution attacks.",
+    "The authentication ceremony that would enable authenticated E2EE mode is optional in every app studied, and apps rely on users to find, understand, and complete it.",
+    "Several apps do not enable E2EE by default (Facebook Messenger, KakaoTalk, Linphone, Skype, Telegram, Zoom), risking user confusion and exposure of sensitive data.",
+    "Fingerprint representations vary widely (QR code, numeric, hexadecimal/Base32 alphanumeric, graphical image/emoji, short authentication strings), and prior studies cited show users detect attacks better with word/sentence representations than numeric or hexadecimal ones.",
+    "Manual comparison makes nearly all ceremonies vulnerable to human error; cited user studies (Signal, WhatsApp, Viber, Telegram, Facebook Messenger) found users frequently fail to authenticate even when instructed.",
+    "Group authentication is almost universally pairwise rather than group-based (only Zoom uses a single group security code), making ceremonies impractical as group size grows; LINE's Letter Sealing was shown vulnerable to integrity/forgery attacks.",
+    "Only Signal and WhatsApp provide in-app direct exchange of numeric fingerprints over an OOB channel; only 7 apps support any in-app OOB fingerprint exchange.",
+    "Recommendations: make E2EE default, treat the authentication ceremony as a primary task with start-of-conversation prompts, support in-app OOB fingerprint exchange, prefer textual/visual fingerprint representations, and pursue automated or semi-automated ceremonies."
+  ],
+  "metrics": [
+    "19 E2EE apps analyzed (17 cross-platform plus FaceTime and Messages by Apple)",
+    "Tested on 4 devices; group size of 3 smartphones",
+    "QR-code fingerprint offered by 5 apps; numeric by 6; alphanumeric/hexadecimal by 7; graphical by 3; SAS by 2",
+    "Only 7 apps support in-app OOB fingerprint exchange (Linphone, Signal, Silent Phone, Threema, Viber, WhatsApp, Wickr)",
+    "Example fingerprint lengths: WhatsApp 60-digit numeric (12 blocks of 5); Zoom 40-digit (8 blocks of 5); Viber 48-digit; Telegram/Wire 64 hex chars; Wickr 51 Base32 chars",
+    "Google Play popularity (Table 3): WhatsApp/Facebook Messenger/Google Meet 5B+ installs; Signal 100M+ installs, 4.4 rating"
+  ],
+  "strengths": [
+    "Broadest comparative coverage to date of popular E2EE apps and their authentication ceremonies, combining documentation review with hands-on device testing.",
+    "Clear separation of security vs usability criteria with consolidated comparison tables (Tables 1-2) and per-app protocol/primitive details in the appendix.",
+    "Grounds claims in a rich body of prior usability and cryptographic-attack literature, strengthening the conclusion that manual ceremonies are broken.",
+    "Concrete, actionable design recommendations directly relevant to building more secure messaging systems."
+  ],
+  "weaknesses": [
+    "No new user study or experimental measurements of its own; conclusions about human error rely on cited prior work.",
+    "Group testing limited to a size of three, and findings reflect app versions/documentation as of late 2022 (snapshot may age quickly).",
+    "Largely descriptive/qualitative; recommendations (e.g., automated ceremonies) are proposed but not implemented or evaluated.",
+    "Some assessments depend on vendor white papers whose accuracy cannot be independently verified."
+  ],
+  "relevance": "This paper is the core motivation for SentriZK's authentication pillar: it documents that the manual authentication ceremonies in today's E2EE apps are optional and routinely fail due to human error, leaving users open to active MitM attacks. SentriZK's proposal to replace these error-prone fingerprint-verification ceremonies with non-interactive zk-SNARK (Groth16) authentication directly targets the human-error gap this SoK identifies, while its reliance on Diffie-Hellman key exchange plus AES aligns with the established E2EE primitives the paper surveys.",
+  "ieee_reference": "M. Alatawi and N. Saxena, \"SoK: An analysis of end-to-end encryption and authentication ceremonies in secure messaging systems,\" in Proc. 16th ACM Conf. Security and Privacy in Wireless and Mobile Networks (WiSec '23), Guildford, U.K., 2023, pp. 187-201, doi: 10.1145/3558482.3581773."
+}

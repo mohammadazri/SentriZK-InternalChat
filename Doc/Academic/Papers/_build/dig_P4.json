@@ -1,0 +1,31 @@
+{
+  "paper_id": "P4",
+  "authors": "Ilesanmi Michael",
+  "title": "Threat Modeling for Enterprise Secure Messaging Applications",
+  "venue": "Unpublished / preprint (no journal or conference venue stated in the document)",
+  "year": "2025",
+  "domain": 1,
+  "one_line": "A conceptual study that applies structured threat-modeling frameworks (STRIDE, PASTA, Attack Trees, MITRE ATT&CK) to enterprise secure messaging apps and proposes a tailored threat-modeling process with technical, administrative, and monitoring mitigations.",
+  "problem": "Many enterprise messaging platforms lack systematic threat modeling, leaving them exposed to data leakage, unauthorized access, phishing/impersonation, and insider threats. There is limited research focused specifically on enterprise messaging applications and on integrating threat modeling with continuous security testing.",
+  "methods": "Mixed-method (qualitative threat identification plus quantitative likelihood/impact scoring). Proposes a six-step threat-modeling process: asset identification, attack-surface analysis, threat enumeration (STRIDE/PASTA), vulnerability assessment, risk analysis (likelihood/impact risk matrix), and mitigation strategies. Tools cited include Microsoft Threat Modeling Tool and OWASP Threat Dragon, plus penetration-testing frameworks and security logging/anomaly-detection systems. Validation via case studies of popular platforms and controlled attack simulations.",
+  "key_findings": [
+    "Threats to enterprise messaging were categorized via STRIDE: spoofing, tampering, repudiation, information disclosure, denial of service, and elevation of privilege.",
+    "High-priority threats were frequently associated with human factors (insider misuse) and integration points such as APIs and third-party services.",
+    "Case studies revealed recurring vulnerability patterns: insufficient access-control enforcement and incomplete encryption coverage.",
+    "Mitigations are grouped into technical controls (E2EE, multi-factor authentication, hardened APIs, secure endpoints), administrative controls (policies, awareness training, incident response), and continuous monitoring (logging, anomaly detection, alerting).",
+    "Future work suggests integrating AI-driven anomaly detection with threat modeling and embedding automated threat modeling in DevSecOps pipelines."
+  ],
+  "metrics": [],
+  "strengths": [
+    "Provides a clear, messaging-specific threat-modeling workflow grounded in established frameworks (STRIDE, PASTA, MITRE ATT&CK).",
+    "Organizes mitigations into a practical technical/administrative/monitoring taxonomy useful for design-stage projects.",
+    "Explicitly identifies insider threats and API integration points as high-priority risk areas, aligning with real enterprise concerns."
+  ],
+  "weaknesses": [
+    "No quantitative experimental results, datasets, or measured metrics are reported; risk scoring is described conceptually only.",
+    "Validation relies on simulations and case studies that the author notes may not replicate real operational environments, limiting generalizability.",
+    "Document lacks a formal published venue and is light on technical depth for cryptographic or authentication countermeasures."
+  ],
+  "relevance": "This paper supplies the threat-model backbone for SentriZK's Domain 1 motivation: it enumerates the exact attack vectors SentriZK targets (unauthorized access/spoofing, data interception, insider threats) and frames mitigations as E2EE, strong authentication, and anomaly/insider-threat monitoring. Its future-work call to fuse AI-driven anomaly detection with threat modeling directly motivates SentriZK's on-device AI threat-detection pillar, while its emphasis on authentication and human-factor risks supports the case for zero-knowledge-proof authentication.",
+  "ieee_reference": "M. Ilesanmi, \"Threat modeling for enterprise secure messaging applications,\" 2025. (unpublished)"
+}

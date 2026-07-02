@@ -257,3 +257,6 @@ Testing/attack_output
 #ignore vite cache
 .vite   
 
+# Large video demo
+Doc/Academic/Final_Checklist/Sentri_ZK_Demo.mp4
+

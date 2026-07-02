@@ -1,0 +1,42 @@
+{
+  "paper_id": "P8",
+  "authors": "Duc Anh Luong, Jong Hwan Park",
+  "title": "Privacy-Preserving Identity Management System on Blockchain Using zk-SNARK",
+  "venue": "IEEE Access",
+  "year": "2023",
+  "domain": 2,
+  "one_line": "A blockchain-based privacy-preserving identity management system that uses zk-SNARK for anonymous authentication and Shamir Secret Sharing plus blockchain consensus to keep users' real identities hidden even from the identity provider while remaining traceable for policy violators.",
+  "problem": "Existing blockchain-based privacy-preserving identity management (PPIdM) systems hide users' real identities from the public but still rely on a trusted identity provider (IP) that knows the mapping between the pseudonym and the primary identity attribute (PIA), creating a single point of privacy failure if the IP is malicious or colludes with service providers. Naive anonymous authentication via zk-SNARK loses traceability of malicious users and is vulnerable to collusion attacks where a certificate is reused by multiple users. None of the prior systems support selective disclosure of identity attributes.",
+  "methods": "Combines a public blockchain (PoS consensus), zk-SNARK (Parno et al. / Pinocchio PGHR13 proving scheme), Shamir Secret Sharing (k,n)-threshold scheme, ElGamal encryption, EdDSA signatures, and a hash-based commitment scheme. The IP issues each user an EdDSA-signed certificate over their committed identity attributes. Two arithmetic circuits are designed: Circuit C handles anonymous authentication, SSS share distribution, and selective disclosure (using a fresh nonce hashed as h-hat to block collusion/reuse), and Circuit D proves validators honestly decrypt and submit their SSS shares during PIA-opening. A Solidity smart contract acts as the zk-SNARK verifier and stores commitments. The user's PIA is split into n encrypted SSS shares distributed to validators; reconstructing the PIA requires k validators to cooperate via blockchain consensus. Security (unforgeability, anonymity, traceability) is proved informally with a game-based proof strategy. Off-chain simulation used ZoKrates with MiMC/SHA256 hashes and ALT-BN128/Baby Jubjub curves; on-chain simulation deployed the contract to the Ropsten testnet via Remix and MetaMask.",
+  "key_findings": [
+    "The proposed system achieves 'High' privacy and is the only one in the comparison table supporting anonymous (zk-SNARK) authentication, selective disclosure, and consensus+SSS-based PIA-opening, hiding identities even from the IP.",
+    "No single party can trace a user's PIA; opening a malicious user's identity requires agreement of k of n validators (k=6, n=10 in the simulation), with the assumption that at least k validators are honest and k > n/2.",
+    "A per-proof nonce identifier h-hat = H(mi+1) recorded by the verifier prevents certificate-reuse / collusion attacks.",
+    "Security is argued via game-based proofs for unforgeability, anonymity, and traceability under standard cryptographic assumptions (collision-resistant/one-way hash, EdDSA unforgeability, zk-SNARK soundness/zero-knowledge, ElGamal CPA security, binding/hiding commitments, SSS correctness, blockchain immutability/anonymity).",
+    "Most computational cost is one-time setup (key/proof generation); the authors argue the system is efficient and realistic despite large key sizes."
+  ],
+  "metrics": [
+    "zk-SNARK proving key PKC: 192 MB (1,536,047,032 bits); verification key VKC: 6.5 MB; PKD: 38.9 MB; VKD: 3.4 MB; certificate size: 1,274 bits; proof size: 4,528 bits (JSON)",
+    "Off-chain time: IP setup 106.24 s (Compile+Setup for C); user proof generation (proof piC) 36.62 s; total user time ~38.04 s; circuit D proof piD 1.58 s; PIA reconstruction 0.55 s",
+    "Off-chain simulation environment: Intel Core i5-4210M @ 2.60 GHz, 4 GB RAM, Ubuntu 21.10, ZoKrates, PGHR13 scheme, MiMC/SHA256, ALT-BN128/Baby Jubjub, 10 validators, SSS threshold 6 of 10",
+    "On-chain gas cost: SC deployment 3,977,797 gas; authentication() 1,852,354 gas; openPIA() 961,035 gas (x6 = 5,766,210 to open a PIA); queryPS() 26,008 gas; queryPIA() 32,696 gas; queryMIA() 51,941 gas (vs Ethereum 21,000-gas token transfer)",
+    "On-chain environment: Ropsten Testnet, Solidity, MetaMask v10.14.6, Remix IDE"
+  ],
+  "strengths": [
+    "Removes the trusted-IP single point of privacy failure by hiding the PIA from the IP itself, using threshold SSS so PIA-opening needs k cooperating validators tied to blockchain consensus.",
+    "Provides formal security treatment (game-based proofs) for unforgeability, anonymity, and traceability under explicit cryptographic assumptions.",
+    "Uses EdDSA inside the circuit to support an unlimited number of users with a single arithmetic circuit, and explicitly defends against certificate-reuse/collusion attacks via a per-proof nonce.",
+    "Adds selective disclosure of minor identity attributes via hash-based commitments, a feature absent from compared prior work.",
+    "Concrete, reproducible implementation with both off-chain (ZoKrates) and on-chain (Solidity on Ropsten) measurements, including deployed contract address."
+  ],
+  "weaknesses": [
+    "Heavy zk-SNARK computational and storage cost: 192 MB proving key and ~37 s user proof generation; resource-constrained devices with under 4 GB RAM cannot run it, especially for n > 15, limiting mobile applicability.",
+    "Security is proved only informally (game-based reasoning), not with full formal/mechanized proofs.",
+    "Traceability fails if too many validators leave so that n < k, and the scheme assumes at least k honest validators.",
+    "Collusion of k or more malicious validators performing PIA-opening off-chain cannot be detected.",
+    "High on-chain gas costs (authentication ~1.85M gas, full PIA open ~5.77M gas) make real deployment expensive compared to a 21,000-gas standard transfer.",
+    "Requires a trusted setup for the zk-SNARK proving/verification keys (PGHR13/Pinocchio)."
+  ],
+  "relevance": "This paper is the closest published analogue to SentriZK's first pillar: it shows how non-interactive zk-SNARKs (over the same Pinocchio/Groth16 family) can deliver password-less, secret-less anonymous authentication on a real Solidity/EVM stack, directly motivating SentriZK's goal of replacing error-prone manual authentication ceremonies. Its quantified zk-SNARK cost figures (large keys, ~37 s proving time, infeasibility under 4 GB RAM) are a crucial design warning for SentriZK's mobile-first, on-device constraints, reinforcing the need to favor lighter proving schemes and zk-SNARK-friendly circuits. Its selective-disclosure and traceability ideas also inform how an enterprise messaging app could balance user privacy with accountability.",
+  "ieee_reference": "D. A. Luong and J. H. Park, \"Privacy-Preserving Identity Management System on Blockchain Using zk-SNARK,\" IEEE Access, 2023, doi: 10.1109/ACCESS.2022.3233828."
+}

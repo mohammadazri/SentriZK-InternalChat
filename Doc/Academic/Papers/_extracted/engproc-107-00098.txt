@@ -1,0 +1,1248 @@
+
+----- PAGE 1/27 -----
+Academic Editors: Debopriyo Roy,
+George F. Fragulis and Peter Ilic
+Published: 3 September 2025
+Citation:
+Perkasa, M.J.P.; Ramdan,
+H.M.; Maliki, A.J.; Somantri.
+Implementation of Secure End-to-End
+Encrypted Chat Application Using
+Diffie–Hellman Key Exchange and
+AES-256 in a Microservice
+Architecture. Eng. Proc. 2025, 107, 98.
+https://doi.org/10.3390/
+engproc2025107098
+Copyright: © 2025 by the authors.
+Licensee MDPI, Basel, Switzerland.
+This article is an open access article
+distributed under the terms and
+conditions of the Creative Commons
+Attribution (CC BY) license
+(https://creativecommons.org/
+licenses/by/4.0/).
+Proceeding Paper
+Implementation of Secure End-to-End Encrypted Chat
+Application Using Diffie–Hellman Key Exchange and AES-256 in
+a Microservice Architecture †
+Moch Juang Pajri Perkasa, Hari Muhammad Ramdan, Abdul Jabar Maliki and Somantri *
+Department of Informatics Engineering, Nusa Putra University, Sukabumi 43152, West Java, Indonesia;
+moch.juang_ti22@nusaputra.ac.id (M.J.P.P.); hari.ramdan_ti22@nusaputra.ac.id (H.M.R.);
+abdul.jabar_ti22@nusaputra.ac.id (A.J.M.)
+* Correspondence: somantri@nusaputra.ac.id
+† Presented at the 7th International Global Conference Series on ICT Integration in Technical Education & Smart
+Society, Aizuwakamatsu City, Japan, 20–26 January 2025.
+Abstract
+Ensuring secure and private digital communication is crucial due to increasing threats
+like data breaches and unauthorized access. We propose a secure end-to-end encrypted
+chat application using Diffie–Hellman Key Exchange and AES-256 within a microservice
+architecture. Our system leverages Diffie–Hellman for secure key exchange and AES-
+256 for efficient symmetric encryption. The microservice architecture ensures scalability
+and modularity, reducing single points of failure. Tests confirm secure communication
+with low latency and high throughput. The key exchange process generates an identical
+shared key in real-time without transmitting a private key, ensuring encryption integrity.
+Messages are encrypted before transmission and can only be decrypted by the intended
+users, maintaining confidentiality. This approach offers a robust and scalable solution for
+secure messaging systems.
+Keywords: end-to-end encryption; Diffie–Hellman; AES-256; microservice architecture;
+scalability; real-time communication
+1. Introduction
+Diffie and Hellman introduced the concept of public-key cryptography, which allows
+secure key exchanges over public channels without requiring secure key distribution
+channels [1]. Furthermore, the RSA algorithm, introduced by Rivest, Shamir, and Adleman,
+supports the implementation of digital signatures that can be publicly verified, which is
+crucial for applications such as electronic mail and electronic funds transfer [2].
+Maintaining data integrity and privacy is crucial when creating secure communication
+networks. Concerns about security, data encryption, key sharing, and the application’s
+scalability and maintenance over time are among the difficulties in this situation. In partic-
+ular, there are special challenges with encryption and key exchange. The safe exchange of
+encryption keys between the client and server in client–server architectures or REST APIs
+can reveal weaknesses that, if left unchecked, could permit unwanted access. Additionally,
+when these applications expand, their scalability and maintainability may become prob-
+lematic, necessitating effective strategies to manage growing traffic and guarantee system
+stability over the long run.
+Eng. Proc. 2025, 107, 98
+https://doi.org/10.3390/engproc2025107098
+
+----- PAGE 2/27 -----
+Eng. Proc. 2025, 107, 98
+2 of 27
+Using a microservice architecture is one of the suggested ways to deal with these
+problems. Microservices increase scalability by dividing the application into smaller, more
+manageable services, which facilitates system expansion and maintenance. To improve
+security and system performance, each service might concentrate on a particular area of
+the application, such as data management, key exchange, or encryption.
+RSA for asymmetric encryption, AES-256 for symmetric encryption, and Diffie–
+Hellman key exchange for secure key negotiation are used in the implementation of a
+secure end-to-end encrypted chat application. A microservice architecture is used in the
+application’s design to solve the issues of scalability, key exchange, and security.
+The application is constructed with a microservice architecture to make the system
+scalable and manageable. This method divides the functionality into more manageable,
+separate services that may securely communicate while managing various aspects of the
+application, including chat management, user authentication, and delivery.
+The main goal of this article is to design and build a safe chat application by combining
+popular encryption methods such as AES-256 for high-performance message encryption,
+RSA for tiny data encryption, and Diffie–Hellman for secure key exchange. By integrating
+these tried-and-true techniques, we hope to guarantee that communications are safely sent
+from sender to recipient and cannot be decrypted by an intermediary.
+In addition to offering insights for developers working on related projects, this study
+aims to contribute to the growing need for secure digital communication.
+2. Literature Review
+2.1. Previous Research
+Microservice architecture is an architectural concept designed to decouple solutions
+by breaking functionality into discrete services [3]. Classically, as revealed by the PRISM
+program of the NSA, e-mail is sent unencrypted and so the server has full access to the
+content of email. Thus, there has been a long-standing program to send email via “end-
+to-end” encryption [4]. In a “public-key cryptosystem” each user places in a public file
+an encryption procedure E. That is, the public file is a directory giving the encryption
+procedure of each user [5]. The AES is a symmetric key algorithm, in which both the sender
+and the receiver use a single key for encryption and decryption. AES defines the data block
+length to 128 bits, and the key lengths to 128, 192, or 256 bits. It is an iterative algorithm and
+each iteration is called a round. The total number of rounds, Nr, is 10, 12, or 14 when the
+key length is 128, 192, or 256 bits, respectively [6]. Cryptosystems are naturally classified
+into two classes, symmetric or asymmetric, depending only on whether the keys at the
+transmitter and receiver are easily computed from each other [7].
+2.2. Microservice
+A microservice is an independently deployable component of bounded scope that
+supports interoperability through message-based communication. Microservice architec-
+ture is a style of engineering highly automated, evolvable software systems made up of
+capability-aligned microservices [8]. Microservice architecture is an architectural concept
+designed to decouple solutions by breaking functionality into discrete services. Because
+microservice designs are more flexible and easier to scale than monolithic applications, they
+are utilized as an alternative. Because each service component should be straightforward
+and simple to implement, microservices demand careful design. Another architecture
+that is more adaptable and scalable is microservice architecture. Information systems
+built using a microservice architecture are intended to be dispersed and offer services
+in a more targeted and targeted manner. Large issues will be divided into a number of
+smaller solutions and combined into a single service, each of which will be responsible for
+
+----- PAGE 3/27 -----
+Eng. Proc. 2025, 107, 98
+3 of 27
+its own tasks. Insulation is a fundamental idea in resilient engineering as seen through
+the lens of microservices architecture. Some services require high availability but are low
+volume, and it is the opposite for other services. A microservice approach allows us to
+tune for both of these situations, whereas in a monolith it is all or nothing [9]. Because
+of its scalability, microservices technology architecture is one of the technologies that has
+been utilized a lot lately. One unique feature of microservices architecture is that it uses
+lightweight techniques to support business objectives; The requirements of the application
+being utilized determine how the services communicate with one another. Additionally,
+the costs of creating microservices will be comparatively lower because of their scalability.
+2.3. Asymmetric Encryption
+We can consider that the delegator, proxy, and delegatee are peers; they have their own
+encryption public/private keys and sign/verify keys [10]. Public–private key encryption,
+sometimes referred to as asymmetric encryption, is a clever method of message security.
+The public key and the private key are two keys that you might imagine possessing. I secure
+my mails by using my private key, which prevents unauthorized individuals from reading
+them. Anyone who has my public key can then view and unlock those communications.
+This method is similar to having a padlock that can only be opened with my private key.
+The cool thing is that my private key cannot be deduced by reverse engineering, even if
+someone has my public key. It functions similarly to magic math in protecting the privacy
+and security of our talks. With this system, I can also use a private key to digitally “sign”
+messages, proving that they are authentically from me. The public key can be used by
+others to validate this signature, guaranteeing that the message is authentic and has not
+been altered. Asymmetric encryption is, therefore, all about this ingenious dance between
+two keys: one for unlocking and one for locking. Within the realm of online security, it is a
+major participant. As shown in Figure 1, the process of asymmetric encryption involves
+the use of a public key for encryption and a private key for decryption.
+Figure 1. Flowchart of asymmetric encryption.
+Asymmetric encryption is a method of encryption that uses two distinct keys for the
+encryption and decryption processes. These two keys are as follows:
+•
+Public Key: This key can be freely shared with anyone. It is used to encrypt data.
+•
+Private Key: This key is confidential and known only to the recipient. It is used to
+decrypt data that has been encrypted with the public key.
+In contrast to symmetric encryption, which employs a single key for both encryp-
+tion and decryption, asymmetric encryption is based on the fundamental idea that the
+encryption and decryption processes should be separated using distinct keys [11].
+a.
+Symmetric encryption
+Performance evaluation for symmetric algorithms DES, 3DES, AES, and Blowfish
+were implemented in java and used two different hardware platforms. Algorithms were
+compared with block cipher with different block sizes and different key sizes [12]. Breaking
+an information security service (which often involves more than simply encryption) implies
+defeating the objective of the intended service. A passive adversary is an adversary who
+is capable only of reading information from an unsecured channel. An active adversary
+
+----- PAGE 4/27 -----
+Eng. Proc. 2025, 107, 98
+4 of 27
+is an adversary who may also transmit, alter, or delete information on an unsecured
+channel [13]. A cryptographic technique called symmetric encryption uses the same key for
+both encryption and decryption. With this approach, the data is encrypted using a shared
+key by the sender and decrypted by the recipient using the same key. Since symmetric
+encryption is quick and effective, it is perfect for encrypting big data sets. In order to avoid
+unwanted access, the primary difficulty is in safely exchanging the key between the sender
+and the recipient. The Advanced Encryption Standard (AES), Data Encryption Standard
+(DES), and 3DES are typical instances of symmetric encryption methods. The following
+diagram shows how safe data transfer between a sender and a recipient is accomplished via
+symmetric encryption. The same key is used by the sender and the recipient for encryption
+and decryption in symmetric encryption. Only those who have the key can decode the data
+thanks to this shared key. Figure 2 illustrates the symmetric encryption process, where a
+single key is used for both encryption and decryption:
+Figure 2. Flowchart of symmetric encryption.
+Symmetric encryption is a method of encryption that uses the same key for both the
+encryption and decryption processes. A single key is involved in the same key; the same
+key is used to encrypt data before it is sent and to decrypt the data once it is received. This
+key must be kept confidential and known only to the sender and the recipient. Symmetric
+encryption differs from asymmetric encryption in that it employs a single key for both
+encryption and decryption, whereas asymmetric encryption requires two different public
+and private keys.
+b.
+End-to-End Encryption
+In end-to-end encryption, the encryption technique ensures that only the authorized
+sender and receiver may read sent messages or data. This indicates that the communication
+can only be accessed and decrypted by the receiver, who has the matching decryption
+key (often a private key) [14]. E2EE, or end-to-end encryption, makes sure that only
+the people who are communicating can read the communications. The content of the
+communication cannot be seen by the server hosting the messages or by any third-party
+interceptor under this encryption approach. This is so because the encryption is not
+performed on a central server but rather on the client devices (the “endpoints”). E2EE aims
+to preserve communication privacy by making sure that information is safe while being
+transmitted. It has grown in popularity as a result of worries about privacy violations
+and spying, which have been brought to light by incidents like the Snowden disclosures.
+Standardizing and implementing safe and intuitive protocols across decentralized platforms
+continue to be a difficulty even though proprietary apps like Facebook Messenger and
+WhatsApp have used E2EE. All correspondence between the sender and the receiver is
+encrypted during transmission, making it impossible for other parties—including servers
+that transmit the messages—to see or view the information.
+As presented in Figure 3, end-to-end encryption ensures that only the intended recipi-
+ent can decrypt the transmitted message.
+
+----- PAGE 5/27 -----
+Eng. Proc. 2025, 107, 98
+5 of 27
+Figure 3. Flowchart of end-to-end encryption.
+The diagram illustrates the concept of end-to-end encryption (E2EE) in a communica-
+tion process involving a sender, a server, and a receiver. Here is the explanation:
+1.
+Sender:
+•
+The sender encrypts the message using the receiver’s public key. This ensures
+that only the intended receiver, who possesses the corresponding private key,
+can decrypt the message.
+•
+The encryption process transforms the original message into an encrypted format
+that is unreadable to unauthorized parties.
+2.
+Server:
+•
+The encrypted message is transmitted through a server or intermediary.
+•
+The server only acts as a conduit for delivering the encrypted message and
+does not have the ability to decrypt it. This ensures that the content of the
+communication remains confidential even if the server is compromised.
+3.
+Receiver:
+•
+The receiver decrypts the message using their private key. The private key is
+kept secret and is mathematically linked to the public key used for encryption.
+•
+Upon decryption, the original message is restored and can be read by the receiver.
+4.
+Key Features:
+•
+Public Key: shared openly and used by the sender to encrypt the message.
+•
+Private Key: kept confidential by the receiver and used to decrypt the message.
+•
+Confidentiality: only the receiver can decrypt and access the message content,
+ensuring secure communication.
+This system exemplifies the basic ideas of public-key cryptography, which is used in
+E2EE to protect communications while they are being sent.
+c.
+AES-256 (Advanced Encryption Standard)
+The AES is a symmetric key algorithm in which both the sender and the receiver use a
+single key for encryption and decryption. The AES defines the data block length to 128 bits,
+and the key lengths to 128, 192, or 256 bits. It is an iterative algorithm and each iteration
+is called a round. The total number of rounds, Nr, is 10, 12, or 14 when the key length is
+128, 192, or 256 bits, respectively [15]. The RSA algorithm uses a public key and private
+key. It was developed in 1977 by Ron Rivest, Adi Shamir, and Leonard Adleman. It is a
+block cipher for digital signatures algorithms or key exchange algorithms. The RSA uses
+variable length keys and variable length blocks of encryption. A message is encrypted by a
+cloud service provider (sender), and it is decrypted by a cloud service consumer (receiver).
+Hence the message is encrypted with a public key; it is decrypted with an appropriate
+private key that is owned by the receiver. The RSA algorithm consists of three steps: key
+generation, encryption, and decryption. The process of the RSA encryption algorithm. The
+main weakness in the RSA is attack by possible brute-force attacks, mathematical attacks,
+timing attacks, and chosen ciphertext attacks [16].
+
+----- PAGE 6/27 -----
+Eng. Proc. 2025, 107, 98
+6 of 27
+Symmetric Encryption Type:
+In the area of symmetric encryption, one of the most used algorithms is the AES
+(Advanced Encryption Standard). The AES is a very effective and safe encryption method
+that employs key lengths of 128, 192, or 256 bits.
+Advantages:
+•
+High Security: AES-256 offers a very high level of security and is still considered safe
+against brute-force attacks.
+•
+Speed: the AES is very fast, both in hardware and software implementations.
+•
+Wide Adoption: the AES is used in many secure communication protocols such as
+HTTPS and VPNs.
+d.
+Diffie–Hellman (DH)
+The Diffie–Hellman algorithm was the first public key algorithm constructed by
+Witfield Diffie and Martin Hellman in 1976 [17]. A cryptographic technique called Diffie–
+Hellman is used to safely agree on a key (key exchange) between two untrustworthy parties.
+In order to create a shared secret key that may be used to encrypt additional communication,
+the two parties in Diffie–Hellman exchange certain information. This approach focuses on
+generating a secure key for upcoming conversations rather than immediately encrypting
+messages. The process of safely creating a shared secret key between Alice and Bob is
+depicted in the accompanying graphic to help you better understand how the Diffie–
+Hellman Key Exchange Protocol operates. This protocol, in contrast to encryption, enables
+both parties to independently compute the same shared key using modular arithmetic
+rather than exchanging real keys. A primitive root (g) and a publicly known prime integer
+(P) are used for this, and each party’s private key is kept confidential. Secure symmetric
+encryption may then be performed using the generated shared key.
+The Diffie–Hellman key exchange protocol is depicted in Figure 4, which shows
+how two parties can generate a shared secret key without directly transmitting their
+private keys.
+Figure 4. Flowchart of Diffie–Hellman (DH).
+Figure 5 illustrates the server-side implementation of the Diffie–Hellman key
+exchange process.
+
+----- PAGE 7/27 -----
+Eng. Proc. 2025, 107, 98
+7 of 27
+Figure 5. Flowchart of implementation in server.
+In the diagram above, the Diffie—Hellman Key Exchange process proceeds as follows:
+1.
+Public Values:
+•
+A prime number (P = 23) and a primitive root (g = 5) are agreed upon and
+shared publicly.
+2.
+Private Keys:
+•
+Alice chooses her private key a = 3
+•
+Bob chooses his private key b = 7
+Both values are kept secret and never shared.
+3.
+Public Computation:
+•
+Alice computes her public value using:
+A = ga mod P
+With a = 3, this results in A = 10.
+•
+Bob computes his public value using:
+B = gb mod P
+With b = 7, this results in B = 17.
+4.
+Public Exchange:
+•
+Alice and Bob exchange their public values over the insecure channel:
+A = 10,
+B = 17
+5.
+Shared Key Computation:
+•
+Alice computes the shared key using Bob’s public value:
+K = Ba mod P
+•
+Bob computes the shared key using Alice’s public value:
+K = Ab mod P
+
+----- PAGE 8/27 -----
+Eng. Proc. 2025, 107, 98
+8 of 27
+•
+Because of the properties of modular arithmetic, both results are identical, giving
+Alice and Bob the same shared secret key. Key = 14.
+By using this method, Alice and Bob can create a shared secret key without actually
+sending it. Without the private keys, the shared key cannot be calculated even if the public
+values are intercepted. It is now possible to employ symmetric encryption with this shared
+key to provide safe communication across an unprotected channel.
+e.
+ECDH (Elliptic Curve Diffie–Hellman)
+The Elliptic Curve Diffie–Hellman (ECDH) protocol is a key exchange protocol that
+is widely used in information technology systems. However, the ECDH protocol still
+has inherent weaknesses due to the lack of a user authentication mechanism and it is
+affected by man-in-the-middle attacks. In this paper, we propose two novel variants of
+the ECDH protocol using the Schnorr Zero-Knowledge Proof (ZKP) for a Client-Server
+network model [18]. Elliptic Curve Cryptography (ECC) itself has been highlighted as
+a modern approach to public key cryptography due to its efficiency and strong security
+guarantees with smaller key sizes [19]. The Elliptic Curve Digital Signature Algorithm
+(ECDSA) further extends these benefits by ensuring authentication and data integrity
+in secure exchanges [20]. Similarly, the Elliptic Curve Diffie–Hellman (ECDH) method
+provides a robust mechanism for generating shared secrets, making it suitable for secure
+message encoding and transmission [21].
+Key Steps in ECDH
+1.
+Generate Key Pairs:
+°
+Each party generates the following:
+•
+Private Key: a large random number kept secret.
+•
+Public Key: a point on the elliptic curve derived from the private key
+using the curve’s generator point GGG.
+2.
+Exchange Public Keys:
+°
+The two parties exchange their public keys over an insecure channel.
+3.
+Compute Shared Secret:
+°
+Both parties use their private key and the other party’s public key to compute
+the same shared secret due to the properties of elliptic curves:
+•
+Shared Secret = a × B = b × A, where A = a × G and B = b × G
+with G being the generator point of the elliptic curve. This ensures that
+both Alice and Bob arrive at the identical shared secret: S = (ab) × G
+Advantages of ECDH
+•
+High Security with Smaller Keys: a 256-bit key in ECDH offers security equivalent to
+a 3072-bit key in classic Diffie–Hellman.
+•
+Efficiency: computations on elliptic curves are faster and require less processing power.
+•
+Wide Compatibility: ECDH is widely used in protocols like TLS/SSL, IPsec, and SSH.
+Mathematical Foundation
+•
+Elliptic Curve Equation: y2 = x3 + ax + b(modp)
+•
+where x, y : coordinates of a point on the curve. a, b: curve parameters that
+•
+Hard Problem: the Elliptic Curve Discrete Logarithm Problem (ECDLP) ensures
+security by making it computationally infeasible to derive the private key from the
+public key.
+
+----- PAGE 9/27 -----
+Eng. Proc. 2025, 107, 98
+9 of 27
+Applications
+•
+Secure Key Exchange in TLS/SSL: used to negotiate shared secrets for encrypted web
+communications (HTTPS).
+•
+Symmetric Key Derivation: the shared secret is used to generate keys for symmetric
+encryption (e.g., AES).
+Security Considerations
+•
+Confidentiality: private keys are never transmitted, ensuring secrecy.
+•
+Authentication: to prevent man-in-the-middle attacks, ECDH is often combined with
+authentication methods like ECDSA.
+Standards and Libraries
+•
+Standards: NIST P-curves (e.g., P-256, P-384) and RFC 7748 define common elliptic
+curves and implementation practices.
+•
+Libraries: popular cryptographic libraries like OpenSSL, libsodium, and WebCrypto
+API provide ECDH implementations.
+Why ECDH Matters
+ECDH is a cornerstone of modern cryptography, offering secure and efficient key
+exchange critical for protecting sensitive communications across the internet.
+In modern distributed applications, the adoption of scalable architectures also plays
+a key role. Concepts such as modular and microservice-based system designs offer flexi-
+bility, scalability, and maintainability in handling secure communication workloads [22].
+Monitoring and intelligent management strategies for microservice applications have been
+proposed to ensure reliability and fault tolerance in distributed environments [23]. From the
+practitioners’ perspective, design, monitoring, and testing remain critical for maintaining
+the security and performance of microservices-based systems [24].
+Security enhancements have also been made on symmetric encryption methods. For
+instance, AES-CBC improvements have been evaluated using the avalanche effect, demon-
+strating stronger resistance against cryptanalytic attacks [25]. In addition, combining the
+Diffie–Hellman key exchange with AES has been proposed for effective key management,
+ensuring both secure exchange and efficient symmetric encryption [26]. These approaches
+demonstrate how hybrid cryptographic models can improve confidentiality and robustness
+in communication systems.
+Finally, the application of microservice architecture in various domains, including
+e-learning and secure communication, further illustrates its versatility. Implementations
+of microservices in learning management systems show how modularization and service-
+oriented designs can improve scalability, integration, and security [27,28]. This combination
+of cryptographic techniques with microservice-based architectures provides a strong foun-
+dation for developing secure end-to-end encrypted chat applications that are both scalable
+and resistant to modern cyber threats.
+3. Research Method
+3.1. Implementing in Server
+Alice and Bob use asymmetric cryptography techniques to enable safe communication,
+and the figure below shows how they exchange public keys and generate shared keys.
+In this process, there are three main steps:
+•
+Alice sends her public key to Bob: Alice shares her public key, allowing Bob to use this
+key in calculations to generate a shared key.
+•
+Bob sends his public key to Alice: similarly, Bob shares his public key with Alice.
+
+----- PAGE 10/27 -----
+Eng. Proc. 2025, 107, 98
+10 of 27
+•
+Alice and Bob generate a shared key: Both parties use a combination of the received
+public key and their own private key to generate the same shared key. This shared key
+is then used for secure communication.
+Encryption and decryption process:
+•
+Alice encrypts the message using the generated shared key.
+•
+Bob then decrypts the message using the same shared key.
+Thus, even with a public network, secure communication is possible. This figure illus-
+trates the fundamental idea behind algorithms such as the Diffie–Hellman Key Exchange
+or how public and private keys are used in asymmetric cryptography systems.
+3.2. Designing Microservice Architecture
+Figure 6 shows the proposed microservice architecture used in the system design.
+Figure 6. Flowchart of designing microservice architecture.
+An application for real-time conversation that is both safe and scalable is depicted in
+the diagram. There are several parts to the system, and each has a distinct function. Table 1
+shows explanation of the architecture:
+Table 1. Description of designing microservice architecture.
+No
+Name
+Role
+Responsibilities
+1
+Alice and Bob
+End-users of the chat
+application
+Alice and Bob interact with the system
+through a web or mobile client to
+initiate communication.
+Their requests are routed to the backend via
+the API Gateway for further processing.
+
+----- PAGE 11/27 -----
+Eng. Proc. 2025, 107, 98
+11 of 27
+Table 1. Cont.
+No
+Name
+Role
+Responsibilities
+2
+1API Gateway
+(NGINX)
+Acts as the entry point for
+all user requests.
+Routes traffic to the appropriate backend
+service depending on the type of request
+(e.g., authentication, WebSocket
+connections, and chat messages).
+Real-Time Communication: upgrades
+HTTP connections to WebSocket for
+bi-directional communication.
+Load Balancing and Reverse Proxy:
+distributes traffic evenly across multiple
+backend services for high availability and
+ensures security
+3
+Authentication Service
+(Port 8081)
+Handles user login,
+authentication, and
+authorization processes.
+Credential Verification: verifies user
+credentials against the database (e.g.,
+username and password).
+JWT Token Issuance: issues a JSON Web
+Token (JWT) to users upon successful
+authentication.
+Data Storage:
+•
+Manages user credentials securely in
+the PostgreSQL Database.
+•
+Tracks user sessions for monitoring
+and security.
+4
+WebSocket Service
+(Port 8082)
+Facilitates real-time,
+bi-directional
+communication between
+users (Alice and Bob) using
+WebSocket connections.
+Connection Management: establishes,
+maintains, and terminates WebSocket
+connections as required.
+Message Routing: routes encrypted
+messages between users in real-time.
+Intermediary Role: acts as the intermediary
+between clients (web or mobile) and the
+Chat Service, ensuring secure and
+low-latency communication.
+5
+Chat Service (Ports
+8083/8084)
+Responsible for managing
+chat-specific functionalities,
+such as processing
+messages, handling
+conversations, and
+supporting advanced
+features like file uploads.
+Message Storage: stores encrypted chat
+messages in the PostgreSQL Database
+Conversation Management: manages user
+conversations, including threads and
+metadata (e.g., timestamps and status).
+Additional Features:
+•
+Supports file sharing and uploads.
+•
+Provides APIs for retrieving chat
+histories and managing conversations.
+Scalability: multiple instances (e.g., on ports
+8083 and 8084) enable horizontal scaling to
+handle high traffic.
+6
+PostgreSQL Database
+(Port 5432)
+Centralized database for
+storing authentication data,
+chat messages, and other
+metadata.
+Data Security: securely stores user
+authentication data and encrypted
+chat messages
+Persistence and Reliability: ensures that all
+chat data and user-related information are
+durable and retrievable.
+High Performance: supports high-volume
+read/write operations for real-time message
+delivery and user interaction.
+
+----- PAGE 12/27 -----
+Eng. Proc. 2025, 107, 98
+12 of 27
+Table 1. Cont.
+No
+Name
+Role
+Responsibilities
+7
+RabbitMQ Message
+Broker (Port 5672)
+Acts as a message broker to
+enable asynchronous
+communication between
+microservices
+Handles queue-based message passing
+between the API Gateway, WebSocket
+Service, and Chat Service.
+Ensures decoupled communication for
+better system scalability and fault tolerance.
+Processes and prioritizes background tasks
+like message delivery confirmations
+and notifications.
+Key Flowchart Highlights:
+1.
+User Request Flow:
+°
+Alice and Bob initiate communication via a web/mobile client. Requests are
+first routed to the API Gateway.
+°
+The API Gateway processes and routes the requests to the appropriate services:
+■
+Authentication Service for user verification.
+■
+WebSocket Service for establishing real-time communication.
+■
+Chat Service for message storage and retrieval.
+2.
+Authentication Flow:
+°
+The Authentication Service interacts with the PostgreSQL Database to validate
+credentials and issue JWT tokens.
+°
+Upon successful authentication, the token is sent back through the API Gate-
+way to the client.
+3.
+Real-Time Communication Flow:
+°
+The WebSocket Service establishes a persistent connection with clients, routing
+real-time messages securely between Alice and Bob.
+4.
+Message Processing Flow:
+°
+Messages sent by users are processed by the Chat Service, encrypted, and
+stored in the PostgreSQL Database.
+°
+RabbitMQ facilitates communication between services, ensuring efficient de-
+livery and handling of background tasks.
+5.
+Scalability and Load Balancing:
+°
+Multiple instances of services (e.g., Chat Service on ports 8083 and 8084)
+allow for load balancing and horizontal scaling to handle increased traffic and
+high concurrency.
+Key Architectural Features:
+•
+Scalability:
+°
+Modular design enables independent scaling of services to accommodate in-
+creased traffic.
+•
+Real-Time Communication:
+°
+The WebSocket Service ensures low-latency interactions between users.
+•
+Security:
+°
+JWT tokens for authentication.
+°
+End-to-end encryption for chat messages.
+
+----- PAGE 13/27 -----
+Eng. Proc. 2025, 107, 98
+13 of 27
+•
+Reliability:
+°
+PostgreSQL ensures data persistence, while RabbitMQ enhances communica-
+tion robustness.
+•
+Extensibility:
+°
+Modular architecture allows the addition of new features, such as advanced
+analytics, AI–driven chatbots, or integration with third-party services.
+3.3. Create User—Generate Asymmetric Key (Generate ECDH Public and Private Key)
+The use of JWT (JSON Web Token) is essential to a system’s user authentication and
+secure communication. The steps involved in user authentication, JWT token creation, and
+verification are depicted in the accompanying figure. The user, an authentication service,
+an API gateway, and other services that depend on secure communication are all involved
+in this process. The sequential process for creating, storing, and verifying JWT tokens is
+shown below.
+The steps for generating RSA keys are detailed in Figure 7.
+Figure 7. Flowchart of how to generate RSA public and private key.
+In the diagram above, the authentication flow is described on Table 2:
+Table 2. Description of how to create user.
+No
+Function
+Responsibilities
+1
+User
+Sends a request with a phone number to initiate the authentication process.
+2
+Authentication Service
+Creates a user if they do not exist and generates a verification code for new or
+existing users.
+3
+Authentication Service
+Sends user-related data as a response to the authentication request.
+4
+User
+Sends the received verification code to verify the phone number.
+5
+Authentication Service
+Processes and validates the verification code sent by the user.
+6
+Authentication Service
+Sends a JWT token to authenticate the user after successful verification.
+7
+User
+Saves the JWT token and generates an ECDH key to ensure
+secure communication.
+8
+User
+Updates the user profile and sends Alice’s public key for
+encryption purposes.
+9
+Authentication Service
+Stores the user profile for future authentication purposes.
+
+----- PAGE 14/27 -----
+Eng. Proc. 2025, 107, 98
+14 of 27
+3.4. Create Conversation—Key Exchange
+Key exchanges and JWT–based authentication must be handled correctly in order
+to create secure user communication in a chat system. Alice and Bob, two users, engage
+over an API Gateway to generate shared keys, publish their public keys, and securely
+communicate. The series of events is depicted in the following diagram. Along with
+the storing of pertinent data in PostgreSQL, the procedure also makes use of the API
+Gateway, WebSocket Service, and Chat Service. The thorough flow is shown below: Figure 8
+demonstrates the key exchange process during conversation creation.
+Figure 8. Flowchart of how to create conversation—key exchange.
+In the diagram above, the secure key exchange and authentication process are depicted
+in Table 3 as follows:
+Table 3. Create conversation.
+No
+Function
+Responsibilities
+1
+User (Alice)
+Sends request and JWT Token
+2
+Chat Service
+Verifies JWT Token and creates conversation
+3
+Chat Service
+Sends conversation and public key (Bob) to Alice
+4
+User (Alice)
+Receives and stores conversation and public key (Bob)
+5
+User (Alice)
+Generates a shared key using private key (Alice) and public key
+(Bob) and then encrypts using AES CBC
+3
+Chat Service
+Sends conversation with public key (Alice) to RabbitMQ
+4
+WebSocket Service
+WebSocket Service listener for conversation from RabbitMQ and
+sends to user (Bob)
+5
+User (Bob)
+Receives conversation and public key Alice
+6
+User (Bob)
+Generates a shared key using private key (Bob) and public key
+(Alice) and then encrypts using AES-256 CBC
+3.5. Send and Receive Message
+In the diagram above, the secure messaging process using WebSocket and encryption
+is depicted on Table 4, as follows:
+
+----- PAGE 15/27 -----
+Eng. Proc. 2025, 107, 98
+15 of 27
+Table 4. Description of how to send and receive message.
+No
+Function
+Responsibilities
+1
+Users
+(Alice)
+Send JWT Token and user ID to authenticate and connect websocket.
+2
+WebSocket Service
+Verify tokens and improve protocols for WebSocket communications.
+3
+WebSocket Service
+Upgrade protocol to 101 real-time communication status.
+4
+Users (Alice)
+Confirm protocol upgrade with status 101.
+5
+Users (Alice)
+Send an encrypted chat message to user B using the shared key.
+6
+WebSocket Service
+Process text requests and forward messages.
+7
+Chat Service
+Save messages to the database.
+8
+Chat Service
+Confirm that the message was saved successfully.
+9
+WebSocket Service
+Send a message to user B’s connection.
+10
+Users (Bob)
+Receive messages via WebSocket and decrypt them using a shared key.
+The following diagram illustrates the overall workflow of a secure chat communication
+system using an API Gateway. The process begins when a user initiates a connection by
+sending a JWT token and establishing a WebSocket connection. The API Gateway (Nginx)
+verifies the token, upgrades the protocol, and forwards the request to the backend services.
+Messages sent between users are encrypted using a shared key, transmitted through the
+WebSocket channel, and then stored securely in the chat service database. Finally, the
+recipient receives the encrypted message, which is decrypted locally using the shared
+key, ensuring confidentiality and integrity of the communication. Figure 9 presents the
+workflow of sending and receiving messages in the secure chat system.
+Figure 9. Flowchart of how to send and receive message.
+4. Result and Discussion
+4.1. Create User
+As shown in Figure 10, the system test begins with the user creation process.
+
+----- PAGE 16/27 -----
+Eng. Proc. 2025, 107, 98
+16 of 27
+Figure 10. Test create user.
+4.1.1. Login
+As shown in Figure 11 User enters phone number and chooses to proceed to authenti-
+cation process.
+Figure 11. Test login.
+4.1.2. Verification
+As shown in Figure 12, The system sends a verification code via SMS to verify the
+phone number. The user enters the received code into the verification page.
+Figure 12. Test verification.
+4.1.3. JWT Token Generation and ECDH Key Generation
+After successfully verifying the code, the server generates a JWT token for authentica-
+tion. As shown in Figure 13 The user (e.g., Alice) generates a public/private key pair using
+the Web Crypto API. The public key is sent to the server for storage.
+
+----- PAGE 17/27 -----
+Eng. Proc. 2025, 107, 98
+17 of 27
+ 
+Figure 13. Local storage token Andi ECDH Key.
+•
+Log: JWT and Public Key stored in local storage
+[INFO]—User entered verification code: 123456 [INFO]—Authentication service verified
+code and issued JWT token [INFO]—JWT Token generated:
+{
+“access_token”:“eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZjEwNTViMT
+QtNWU3OS00NWE5LTkxMmUtYjkxMDc4NWM0YzFkIiwiZXhwIjoxNzM3OTczNTM2f
+Q.9fjva92mWvMAGmSBhGwLqyuDnN7Qx74r2SYECCCfBOE”,
+“refresh_token”:“eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZjEwNTViM
+TQtNWU3OS00NWE5LTkxMmUtYjkxMDc4NWM0YzFkXzE3Mzc5Njk5MzYiLCJleHAi
+OjE3MzgwNTYzMzZ9.iAqN9p9gQ6YgFlFnohtB8hn3_XHF6rYb8bT8r-PF-9E”,
+“expires_in”:“2025-01-27T17:25:36.368513422+07:00”,
+“refresh_expires_in”:“2025-01-28T16:25:36.368518506+07:00”
+}
+[INFO]—ECDH key generation successful for user Alice [INFO]—Generated ECDH
+Key Pair:
+{
+“publicKey”:“MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEccxI69eSnTngR7PIJjRM
+CFecdizar8cTGqpH58CWoPBBqAYv3fHRSH/tOSvuqAuUr9RrYeEZEvFEkxN1ItKuuw==“,
+“privateKey”:“MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg
+xVFHISjq6LF88Yi5VLg7yWeUTg5uOc8VxCxH4GipTfChRANCAARxzEjr15KdOeBHs8g
+mNEwIV5x2LNqvxxMaqkfnwJag8EGoBi/d8dFIf+05K+6oC5Sv1Gth4RkS8USTE3Ui0q67”
+}
+4.1.4. Send Public Key Chat Service
+Send request to chat service for update of public key.
+{
+“name”: “Alice”,
+“picture”: “assets/icon.png”,
+“public_key”: “MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEccxI69eSnTngR7PIJj
+RMCFecdizar8cTGqpH58CWoPBBqAYv3fHRSH/tOSvuqAuUr9RrYeEZEvFEkxN1ItKuu
+w==“
+}
+
+----- PAGE 18/27 -----
+Eng. Proc. 2025, 107, 98
+18 of 27
+•
+Logs Server (Chat Service)
+2025-01-29 22:54:37 Payload
+{“name”:“Alice”,”picture”:“assets/icon.png”,”public_key”:“MFkwEwYHKoZIzj0CAQYI
+KoZIzj0DAQcDQgAEccxI69eSnTngR7PIJjRMCFecdizar8cTGqpH58CWoPBBqAYv3fHRS
+H/tOSvuqAuUr9RrYeEZEvFEkxN1ItKuuw==“}
+2025-01-29 22:54:36
+2025-01-29 22:54:51 [4.367ms] [rows:1] SELECT * FROM “users” WHERE uuid = ‘df98b7
+5d-6261-442d-970b-caf982c9d4b3’ ORDER BY “users”.”id” LIMIT 1
+2025-01-29 22:54:51
+2025-01-29 22:54:51 2025/01/29 15:54:51
+/usr/src/app/internal/repository/postgresql/user_repository.go:43
+2025-01-29 22:54:51 [3.585ms] [rows:1] UPDATE “users” SET “uuid”=‘df98b75d-6261-
+442d-970b-
+caf982c9d4b3’,”name”=‘Test’,”picture”=‘assets/icon.png’,”phone_number”=‘0839873543’,
+”public_key”=‘MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAElg/ueB3TClDdqCwGC
+jqNcU/bdQiBzeTVwyWmeLYEyefRqeH8rU7TDe2GP7IOJclESXnUtnJhE0/DjH0ukJXfhw
+==‘,”status”=‘’,”created_at”=‘2025-01-29 15:54:04.142’ WHERE “id” = 8
+2025-01-29 22:54:51 15:54:51 | 201 |
+13.549375ms | 172.22.0.7 | PUT | /users | -
+4.2. Key Exchange and Conversation Creation
+The following diagram illustrates the process of public key exchange and shared key
+generation in a secure communication system. The process begins when a user (Alice)
+selects another contact (Bob) to start a conversation. The system then facilitates the exchange
+of public keys through the WebSocket Service and Chat Service.
+As shown in Figure 14, both parties generate an identical shared key, enabling the
+establishment of an end-to-end encrypted communication channel.
+Figure 14. Test key exchange and conversation creation.
+1. User (Alice)
+Click Contact
+°
+As shown in Figure 15, The user selects a contact (e.g., Bob) to start a conversation.
+
+----- PAGE 19/27 -----
+Eng. Proc. 2025, 107, 98
+19 of 27
+Figure 15. List Contact.
+Send Request and Key Exchange
+°
+As shown in Figure 16, Conversation and key exchange requests are sent to the server.
+The server sends Alice public key to be used as a shared key.
+ 
+Figure 16. Response to create conversation.
+
+----- PAGE 20/27 -----
+Eng. Proc. 2025, 107, 98
+20 of 27
+•
+Logs request for conversation creation (Chat Service)
+2025-01-29 23:46:18 Payload { “participants”: [“”, “”] }
+2025-01-29 23:46:18 [7.317ms] [rows:2] INSERT INTO “conversation_participants”
+(“conversation_id”,”user_id”) VALUES (27,8),(27,7) ON CONFLICT DO NOTHING
+2025-01-29 23:46:18
+2025-01-29 23:46:18 2025/01/29 16:46:18
+/Users/mochjuang/projects/go/test-chat-telkomsel/chat-
+service/internal/repository/postgresql/conversation_repository.go:20
+2025-01-29 23:46:18 [28.239ms] [rows:1] INSERT INTO “conversations”
+(“uuid”,”type”,”created_at”) VALUES
+(‘8c20c29d-396c-4ec3-80c4-f853f2a34e20’,’private’,’2025-01-29 16:46:18.556’)
+RETURNING “id”
+2025-01-29 23:46:18
+2025-01-29 23:46:18 16:46:18 | 201 |
+59.713ms | 172.22.0.7 | POST | /conversations
+| -
+Generate Shared Key and Encrypt using AES-CBC
+As shown in Figure 17:
+°
+JS uses the public key received from the rest API to generate a shared key
+using ECDH.
+°
+The shared key is then encrypted using AES-CBC before being used to encrypt
+subsequent messages.
+ 
+Figure 17. View of redux Alice.
+2. Users (Bob)
+•
+WebSocket Response
+As shown in Figure 18 The server sends conversation data and Alice’s public key
+via WebSocket.
+
+----- PAGE 21/27 -----
+Eng. Proc. 2025, 107, 98
+21 of 27
+ 
+Figure 18. Response of WebSocket to create conversation.
+•
+Logs Server
+Chat Service Logs:
+2025-01-29 23:46:18 [4.820ms] [rows:0] SELECT “mes-
+sages”.”id”,”messages”.”uuid”,”messages”.”sender_id”,”messages”.”conversation_id”,
+”messages”.”content”,”messages”.”is_read”,”messages”.”send_at” FROM “messages”
+INNER JOIN conversations ON messages.conversation_id = conversations.id WHERE
+conversations.uuid = ‘8c20c29d-396c-4ec3-80c4-f853f2a34e20’ ORDER BY send_at asc
+LIMIT 30
+2025-01-29 23:46:18 16:46:18 | 200 | 5.47625ms | 172.22.0.7 | GET | /conversations/
+8c20c29d-396c-4ec3-80c4-f853f2a34e20/messages | -
+2025-01-29 23:46:18 2025/01/29 16:46:18 [x] Sent to conversation: {“uuid”:“8c20c29d-
+396c-4ec3-80c4-f853f2a34e20”,”participants”:[“6a6a700a-0637-4fff-abfd-a278c6a11cc3”,
+”df98b75d-6261-442d-970b-caf982c9d4b3”],”receiver”:{“uuid”:“df98b75d-6261-442d-
+970b-caf982c9d4b3”,”name”:“Test”,”picture”:“assets/icon.png”,”status”:“”,”public_k
+ey”:“MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAElg/ueB3TClDdqCwGCjqNcU/bd
+QiBzeTVwyWmeLYEyefRqeH8rU7TDe2GP7IOJclESXnUtnJhE0/DjH0ukJXfhw==“,”pho
+ne_number”:“0839873543”,”created_at”:“0001-01-01T00:00:00Z”},”unread_message”:
+0,”last_message”:null,”created_at”:“2025-01-29 16:46:18”,”updated_at”:“2025-01-29
+16:46:18”}
+
+----- PAGE 22/27 -----
+Eng. Proc. 2025, 107, 98
+22 of 27
+WebSocket Service Logs:
+2025-01-29 23:46:18 2025/01/29 16:46:18 Received a message from conversation:
+{“uuid”:“8c20c29d-396c-4ec3-80c4-f853f2a34e20”,”participants”:[“6a6a700a-0637-4fff-
+abfd-a278c6a11cc3”,”df98b75d-6261-442d-970b-
+caf982c9d4b3”],”receiver”:{“uuid”:“df98b75d-6261-442d-970b-
+caf982c9d4b3”,”name”:“Test”,”picture”:“assets/icon.png”,”status”:“”,”public_key”:“MF
+kwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAElg/ueB3TClDdqCwGCjqNcU/bdQiBzeT
+VwyWmeLYEyefRqeH8rU7TDe2GP7IOJclESXnUtnJhE0/DjH0ukJXfhw==“,”phone_num
+ber”:“0839873543”,”created_at”:“0001-01-
+01T00:00:00Z”},”unread_message”:0,”last_message”:null,”created_at”:“2025-01-29
+16:46:18”,”updated_at”:“2025-01-29 16:46:18”}
+2025-01-29 23:46:18 2025/01/29 16:46:18 jobing message to 1 users:
+{“type”:“conversation”,”data”:{“uuid”:“8c20c29d-396c-4ec3-80c4-
+f853f2a34e20”,”participants”:[“6a6a700a-0637-4fff-abfd-a278c6a11cc3”,”df98b75d-
+6261-442d-970b-caf982c9d4b3”],”receiver”:{“uuid”:“df98b75d-6261-442d-970b-
+caf982c9d4b3”,”name”:“Test”,”picture”:“assets/icon.png”,”status”:“”,”public_key”:“MF
+kwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAElg/ueB3TClDdqCwGCjqNcU/bdQiBzeT
+VwyWmeLYEyefRqeH8rU7TDe2GP7IOJclESXnUtnJhE0/DjH0ukJXfhw==“,”phone_num
+ber”:“0839873543”,”created_at”:“0001-01-
+01T00:00:00Z”},”unread_message”:0,”last_message”:null,”created_at”:“2025-01-29
+16:46:18”,”updated_at”:“2025-01-29 16:46:18”}}
+Generate Shared Key and Encrypt using AES-CBC
+As shown Figure 19:
+°
+JS uses the public key received from the WebSocket to generate a shared key using ECDH.
+°
+The shared key is then encrypted using AES-CBC before being used to encrypt
+subsequent messages.
+ 
+Figure 19. View of redux Bob.
+
+----- PAGE 23/27 -----
+Eng. Proc. 2025, 107, 98
+23 of 27
+Based on the test results, when the key exchange occurs, the server only knows the
+public key sent by the user. The process of creating a shared key between the sender and
+recipient is guaranteed to produce an identical and real-time shared key. Key exchange
+carried out using Diffie–Hellman ensures that both parties (sender and recipient) have the
+same shared key without ever sending a private key. In this way, the shared key is used
+for real-time encryption and decryption of messages, ensuring that only the sender and
+recipient can access the encrypted message.
+4.3. Message Encryption and Sending to WebSocket
+The following diagram demonstrates the process of sending and receiving encrypted
+messages within a secure communication system. In this flow, a user (Alice) composes a
+message and encrypts it before sending. The encrypted message is then transmitted through
+the WebSocket Service and stored in the Chat Service. Finally, the intended recipient (Bob)
+receives the message and decrypts it, ensuring that the communication remains private
+and protected from unauthorized access. As shown in Figure 20, Flow for send message:
+Figure 20. Test message encryption and sending to WebSocket.
+1. Submit Message (Alice)
+As shown in Figure 21, The user (e.g., Alice) writes a message and presses the
+Send button.
+ 
+Figure 21. Alice send message.
+2. Encrypt Message with Shared Key (AES-256 CBC)
+Before being sent, the message is encrypted using a previously generated shared key.
+
+----- PAGE 24/27 -----
+Eng. Proc. 2025, 107, 98
+24 of 27
+2025-01-30 00:15:14 (service) Process message:
+{e4523a8192829b7fce114396a3dd878a:d88669d49b64160d8cb49f6ff7887a75 de00fac5-052f-
+4d34-8937-bb6254bce677}
+2025-01-30 00:15:14 (service) Send Message:
+{e4523a8192829b7fce114396a3dd878a:d88669d49b64160d8cb49f6ff7887a75 de00fac5-
+052f-4d34-8937-bb6254bce677}
+2025-01-30 00:15:14 (service) Get conversation:
+{e4523a8192829b7fce114396a3dd878a:d88669d49b64160d8cb49f6ff7887a75 de00fac5-
+052f-4d34-8937-bb6254bce677}
+2025-01-30 00:15:14 (service) Get conversation: de00fac5-052f-4d34-8937-bb6254bce677
+3. Send Encrypted Message via WebSocket
+As shown in Figure 22, The encrypted message is sent to WebSocket, which is then
+forwarded to the Chat Service for further distribution.
+ 
+Figure 22. Message encrypted via WebSocket.
+4. Decrypt Message on Receiving Side (Bob)
+As shown in Figure 23, Bob receives the encrypted message via WebSocket and
+decrypts it using the same shared key.
+ 
+Figure 23. Receive message encrypted from WebSocket.
+
+----- PAGE 25/27 -----
+Eng. Proc. 2025, 107, 98
+25 of 27
+As shown in Figure 24, The encrypted message that Bob received from Alice was
+successfully decrypted using the same shared key.
+ 
+Figure 24. Message decrypt.
+•
+Logs Server (WebSocket Service)
+2025-01-30 00:15:14 2025/01/29 17:15:14 Received message from user f1055b14-5e79-
+45a9-912e-b910785c4c1d: {“conversation_uuid”:“de00fac5-052f-4d34-8937-bb6254bce6
+77”,”message”:“e4523a8192829b7fce114396a3dd878a:d88669d49b64160d8cb49f6ff7887
+a75”}
+2025-01-30 00:15:14 2025/01/29 17:15:14 jobing message to 2 users:
+{“type”:“message”,”data”:{“uuid”:“39f7ccf8-afdb-46ce-901f-e34aa9ae2ab4”,
+”conversation_uuid”:“de00fac5-052f-4d34-8937-bb6254bce677”,
+”sender_uuid”:“f1055b14-5e79-45a9-912e-b910785c4c1d”,”sent_at”:“2025-01-29
+17:15:14”,”message_type”:“”,”message”:“e4523a8192829b7fce114396a3dd878a:
+d88669d49b64160d8cb49f6ff7887a75”}}
+As shown in Figure 25, all messages stored in the database are guaranteed to
+be encrypted.
+ 
+Figure 25. Message encrypted.
+Based on the test results, messages sent through the system have been guaranteed to
+be encrypted using a shared key. The encryption process is carried out before the message
+is sent, and only the sender and recipient who have the identical shared key can decrypt the
+message. Thus, the security of communication between users is maintained by ensuring
+that messages remain confidential and cannot be accessed by unauthorized third parties.
+4.4. Benchmarking AES Encryption and Decryption Performance on Various Number of Messages
+As shown in Figure 26, This test aims to evaluate the performance of AES encryption
+and decryption on various message counts, using the message “Hello, secure world!”. We
+measured the time required for encryption, decryption, and encryption + decryption of the
+message at different message counts, namely 10, 100, 1000, 10,000, and 100,000.
+
+----- PAGE 26/27 -----
+Eng. Proc. 2025, 107, 98
+26 of 27
+ 
+Figure 26. Benchmark encryption and decryption.
+Author Contributions: Conceptualization, M.J.P.P. and S.; methodology, M.J.P.P., H.M.R. and S.; soft-
+ware, M.J.P.P.; validation, M.J.P.P., H.M.R., A.J.M. and S.; formal analysis, M.J.P.P. and S.; investigation,
+M.J.P.P., H.M.R. and S.; resources, M.J.P.P.; data curation, M.J.P.P. and H.M.R.; writing—original draft
+preparation, M.J.P.P., H.M.R. and A.J.M.; writing—review and editing, S.; visualization, M.J.P.P. and
+H.M.R.; supervision, S.; project administration, M.J.P.P., H.M.R. and S. All authors have read and
+agreed to the published version of the manuscript.
+Funding: This research received no external funding.
+Institutional Review Board Statement: Not applicable.
+Informed Consent Statement: Not applicable.
+Data Availability Statement: The benchmark datasets generated during the study are available from
+the corresponding author upon reasonable request.
+Conflicts of Interest: The authors declare no conflict of interest.
+References
+1.
+Diffie, W.; Hellman, M. New directions in cryptography. IEEE Trans. Inf. Theory 1976, 22, 644–654. [CrossRef]
+2.
+Rivest, L.; Shamir, A.; Adleman, L. A Method for Obtaining Digital Signatures and Public-Key Components. Commun. ACM 1978,
+21, 120–126. [CrossRef]
+3.
+Thönes, J. Microservices. IEEE Softw. 2015, 32, 116. [CrossRef]
+4.
+Ermoshina, K.; Musiani, F.; Halpin, H. End-to-End Encrypted Messaging Protocols: An Overview. In Internet Science. INSCI 2016;
+Springer: Cham, Switzerland, 2016; Volume 9934, pp. 244–254. [CrossRef]
+5.
+Shamir, A. New Directions in Cryptography.
+In Cryptographic Hardware and Embedded Systems—CHES 2001; Springer:
+Berlin/Heidelberg, Germany, 2001; Volume 2162, p. 159. [CrossRef]
+6.
+Vaidehi, M.; Rabi, B.J. Design and Analysis of AES-CBC Mode for High Security Applications. In Proceedings of the Second
+International Conference on Current Trends in Engineering and Technology—ICCTET 2014, Coimbatore, India, 8 July 2014;
+pp. 499–502. [CrossRef]
+7.
+Simmons, G.J. Symmetric and Asymmetric Encryption. ACM Comput. Surv. 1979, 11, 305–330. [CrossRef]
+8.
+Torvekar, N.; Game, P.S. Microservices and Its Applications: An Overview. Int. J. Comput. Sci. Eng. 2019, 7, 803–809. [CrossRef]
+9.
+Baškarada, S.; Nguyen, V.; Koronios, A. Architecting Microservices: Practical Opportunities and Challenges. J. Comput. Inf. Syst.
+2020, 60, 428–436. [CrossRef]
+10.
+Wei, P.; Wang, X.A.; Yang, X. Proxy Re-Encryption Schemes with Proxy Having Its Own Public/Private Keys. In Proceedings of
+the 2010 2nd International Workshop on Database Technology and Applications, Prague, Czech Republic, 7–9 July 2010; pp. 2–5.
+[CrossRef]
+11.
+Yassein, M.B.; Aljawarneh, S.; Qawasmeh, E.; Mardini, W.; Khamayseh, Y. Comprehensive Study of Symmetric Key and
+Asymmetric Key Encryption Algorithms. In Proceedings of the 2017 International Conference on Engineering and Technology
+(ICET), Antalya, Turkey, 21–23 August 2017.
+
+----- PAGE 27/27 -----
+Eng. Proc. 2025, 107, 98
+27 of 27
+12.
+Mahalle, V.S.; Shahade, A.K. Enhancing the Data Security in Cloud by Implementing Hybrid (RSA & AES) Encryption Algorithm.
+In Proceedings of the 2014 International Conference on Power, Automation and Communication (INPAC), Maharashtra, India,
+6–8 October 2014; pp. 146–149. [CrossRef]
+13.
+Endeley, R.E. End-to-End Encryption in Messaging Services and National Security—Case of WhatsApp Messenger. J. Inf. Secur.
+2018, 9, 95–99. [CrossRef]
+14.
+Borcea, C.; Gupta, A.; Polyakov, Y.; Rohloff, K.; Ryan, G. PICADOR: End-to-End Encrypted Publish–Subscribe Information
+Distribution with Proxy Re-Encryption. Future Gener. Comput. Syst. 2017, 71, 177–191. [CrossRef]
+15.
+Utama, F.P.; Wijaya, G.; Faurina, R.; Vatresia, A. Implementasi Algoritma AES 256 CBC, Base 64, dan SHA 256 dalam. J. Teknol. Inf.
+Ilmu Komput. 2023, 10, 945–954. [CrossRef]
+16.
+Khalkar, K. Decentralized Chat Application Using Blockchain Technology. Int. J. Res. Appl. Sci. Eng. Technol. 2023, 11, 813–816.
+[CrossRef]
+17.
+Biswas, S. Diffie-Hellman Key Exchange in End-to-End Encryption (E2EE). Available online: https://shubhomoybiswas.medium.
+com/diffie-hellman-key-exchange-in-end-to-end-encryption-e2ee-2366e056661 (accessed on 25 December 2024).
+18.
+Van Nghi, N.; Trung, D.Q.; Thanh, D.T. Two Novel Variants of ECDH Key Exchange Protocol Using Schnorr Zero-Knowledge
+Proof. In Proceedings of the 2023 15th International Conference on Knowledge and Systems Engineering (KSE), Ha Noi, Vietnam,
+18–20 October 2023.
+19.
+Azaim, M.H.; Sudiharto, D.W.; Jadied, E.M. Design and Implementation of Encrypted SMS on Android Smartphone Combining
+ECDSA-ECDH and AES. In Proceedings of the 2016 Asia Pacific Conference on Multimedia and Broadcasting (APMediaCast),
+Bali, Indonesia, 17–19 November 2016; pp. 18–23. [CrossRef]
+20.
+Vo, A.T. Elliptic Curve Cryptography—A New Approach to Public Key Cryptography. Int. J. Eng. Sci. Res. Technol. 2014, 3, 69–73.
+21.
+Johnson, D.; Menezes, A.; Vanstone, S. Elliptic Curve Digital Signature Algorithm (ECDSA). Int. J. Inf. Secur. 2001, 1, 36–63.
+[CrossRef]
+22.
+Saepulrohman, A.; Negara, T.P. Implementation of Elliptic Curve Diffie-Hellman (ECDH) for Encoding Messages Becomes a
+Point on the GF(p). Int. J. Adv. Sci. Technol. 2020, 29, 3264–3273.
+23.
+Nadareishvili, I.; Mitra, R.; Mclarty, M.; Amundsen, M. Modular Supercomputing Architecture; O’Reilly: Sebastopol, CA, USA, 2022.
+24.
+Jiang, Y.; Zhang, N.; Ren, Z. Research on Intelligent Monitoring Scheme for Microservice Application Systems. In Proceedings of
+the 2020 International Conference on Intelligent Transportation, Big Data & Smart City (ICITBS), Vientiane, Laos, 11–12 January
+2020; pp. 791–794. [CrossRef]
+25.
+Waseem, M.; Liang, P.; Shahin, M.; Di Salle, A.; Márquez, G. Design, Monitoring, and Testing of Microservices Systems: The
+Practitioners’ Perspective. J. Syst. Softw. 2021, 182, 111061. [CrossRef]
+26.
+Assafli, H.T.; Hashim, I.A. Security Enhancement of AES-CBC and Its Performance Evaluation Using the Avalanche Effect. In
+Proceedings of the 2020 3rd International Conference on Engineering Technology and Its Applications (IICETA), Al-Najaf, Iraq,
+6–7 September 2020; pp. 7–11. [CrossRef]
+27.
+Yusfrizal, Y.; Meizar, A.; Kurniawan, H.; Agustin, F. Key Management Using Combination of Diffie-Hellman Key Exchange with
+AES Encryption. In Proceedings of the 2018 6th International Conference on Cyber and IT Service Management (CITSM), Parapat,
+Indonesia, 7–9 August 2018; pp. 1–6. [CrossRef]
+28.
+Dahri, F.; El Hanafi, A.M.; Handoko, D.; Wulan, N. Implementation of Microservices Architecture in Learning Management
+System E-Course Using Web Service Method. Sinkron 2022, 7, 76–82. [CrossRef]
+Disclaimer/Publisher’s Note: The statements, opinions and data contained in all publications are solely those of the individual
+author(s) and contributor(s) and not of MDPI and/or the editor(s). MDPI and/or the editor(s) disclaim responsibility for any injury to
+people or property resulting from any ideas, methods, instructions or products referred to in the content.

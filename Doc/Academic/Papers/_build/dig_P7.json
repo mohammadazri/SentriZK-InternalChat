@@ -1,0 +1,38 @@
+{
+  "paper_id": "P7",
+  "authors": "Z. Chen, Y. Jiang, X. Song, and L. Chen",
+  "title": "A Survey on Zero-Knowledge Authentication for Internet of Things",
+  "venue": "Electronics (MDPI)",
+  "year": "2023",
+  "domain": 2,
+  "one_line": "A survey of zero-knowledge-proof (ZKP) based authentication schemes for resource-constrained IoT, categorizing protocols by network type and security properties and arguing ZKP offers privacy-preserving, lightweight authentication versus PKI.",
+  "problem": "Traditional IoT authentication relies on transmitting sensitive factors (passwords, PINs, biometrics) and on PKI/CA-based trust, which leaks user privacy, depends on costly centralized third parties, and is too heavy for resource-constrained IoT devices. The survey asks how zero-knowledge authentication can secure IoT nodes without revealing identity or secret data.",
+  "methods": "Literature survey. It (1) frames IoT security/privacy across the three-layer architecture (perception, network, application); (2) reviews authentication factors and requirements and contrasts PKI; (3) formally introduces ZKP: interactive ZKP (GMW graph-isomorphism protocol, Sigma-protocol, discrete-log example), non-interactive ZKP (NIZK with Gen/P/V), and the Fiat-Shamir heuristic; (4) tabulates recent (5-year) ZKP schemes by communication complexity and security assumption (bilinear, sum-check, MPC-in-the-Head, inner-product, Reed-Solomon, lattice); (5) classifies ZKP-based IoT authentication by network (MANET, vehicular, WSN, WBAN, crowdsourcing) and by property (anonymity, decentralization, post-quantum); (6) discusses challenges and future directions (5G, decentralization, post-quantum).",
+  "key_findings": [
+    "ZKP provides anonymity and man-in-the-middle resistance natively, and also defends against forgery, replay, password attacks, and tracking, while leaking no secret to the verifier.",
+    "ZKP has lower overhead than symmetric-key distribution and PKI, reducing both computational and communication complexity, making it better suited to resource-constrained IoT.",
+    "Non-interactive ZKP (NIZK), via the Fiat-Shamir heuristic, removes the heavy multi-round message exchange of interactive ZKP, which is essential for large-scale IoT.",
+    "ZKP-based authentication is being applied across MANET, vehicular networks, WSN, WBAN, crowdsourcing IoT, and blockchain-based/decentralized IoT.",
+    "Lattice-based ZKP is highlighted as an effective post-quantum-resistant direction for IoT authentication.",
+    "Compared in Table 5, ZKP supports both decentralization and MIMA resistance, whereas CA-based PKI lacks decentralization and non-CA-based PKI cannot resist MIMA."
+  ],
+  "metrics": [
+    "M-ZAS (multi-graph ZKP): ~3x more efficient than GMW-ZKP and ~7x more efficient than traditional authentication mechanisms (figures cited from referenced works)",
+    "TinyZKP vs ECDSA-based TinyECC / WM-ECC: operates 1.9x and 1.4x faster, with 48% and 28% lower energy cost respectively (cited)",
+    "BANZKP vs TinyZKP: ~17x more efficient in running time with 94.11% less energy (cited)",
+    "LiteZKP: reduces energy consumption and latency of IoT edge-computing platforms by more than 55% (cited)",
+    "Note: all numeric figures are reported from the surveyed primary works, not original experiments of this survey."
+  ],
+  "strengths": [
+    "Clear, well-organized synthesis linking IoT layer-specific privacy threats to ZKP-based countermeasures.",
+    "Provides both formal definitions (interactive ZKP, Sigma-protocol, NIZK, Fiat-Shamir) and applied taxonomies (by network and by property), useful as a single reference.",
+    "Includes a comparative table of recent ZKP constructions with communication complexity and underlying assumptions, including post-quantum lattice schemes."
+  ],
+  "weaknesses": [
+    "As a survey it presents no original experiments; all efficiency/energy numbers are second-hand from cited papers.",
+    "Focused on IoT/sensor and embedded device scenarios rather than mobile messaging apps, so direct architectural mapping to a smartphone E2EE messenger requires adaptation.",
+    "Does not deeply treat zk-SNARK constructions like Groth16 in the authentication application context, and contains some repeated/duplicated sentences indicating light editing."
+  ],
+  "relevance": "This survey directly supports SentriZK's first pillar by establishing that zero-knowledge (especially non-interactive) authentication lets a node prove legitimacy without transmitting passwords or identity, providing anonymity and MIMA resistance with lower overhead than PKI. It motivates SentriZK's choice of NIZK/zk-SNARK (Groth16) authentication to replace password transmission and manual verification ceremonies, and its emphasis on lightweight ZKP for constrained, mobile-first environments aligns with on-device deployment goals.",
+  "ieee_reference": "Z. Chen, Y. Jiang, X. Song, and L. Chen, \"A survey on zero-knowledge authentication for Internet of Things,\" Electronics, vol. 12, no. 5, art. 1145, 2023, doi: 10.3390/electronics12051145."
+}

@@ -1,0 +1,55 @@
+{
+  "paper_id": "P9",
+  "authors": "S. Natha, M. Leghari, M. A. Rajput, S. S. Zia, J. Shabir",
+  "title": "A Systematic Review of Anomaly Detection Using Machine and Deep Learning Techniques",
+  "venue": "Quaid-e-Awam University Research Journal of Engineering Science & Technology (QUEST Research Journal)",
+  "year": "2022",
+  "domain": 3,
+  "one_line": "A two-stage systematic review (2019-2021) of machine and deep learning techniques for anomaly detection, surveying methods, application domains, datasets, performance metrics, and open challenges.",
+  "problem": "Anomaly detection (identifying data instances/events that deviate from expected behavior) is challenging due to limited anomalous data, ground-truth scarcity, environmental variability, and noisy/complex datasets. The paper addresses the need for a comprehensive, up-to-date review consolidating ML and DL anomaly detection techniques, their strengths/weaknesses, accuracy metrics, datasets, and application domains across 2019-2021.",
+  "methods": "Systematic literature review organized in two stages: (1) a search strategy across Google Scholar, Elsevier, Springer, ACM Digital Library, and IEEE Xplore using the term 'Anomaly detection' refined with Boolean operators; (2) answering study questions. Reviews ML methods (k-NN, SVM/one-class SVM, decision trees, random forests, swarm intelligence, neural networks) and DL methods (CNN, LSTM/autoencoder, GAN, attention networks, hierarchical temporal memory, multi-model approaches). Categorizes anomalies into point, contextual, and collective. Tabulates each work's strengths/weaknesses (Table 1) and datasets/metrics/results (Table 2).",
+  "key_findings": [
+    "A large share of surveyed anomaly-detection works target the surveillance domain; many use real-world datasets for training/testing.",
+    "Deep learning (CNN, LSTM/autoencoder, GAN, attention) has driven major advances over classical statistical and ML methods, especially for high-dimensional, temporal, and spatial data.",
+    "Each technique has clear trade-offs: e.g., random forests and Adaboost are computationally expensive and noise-sensitive; one-class SVM underfits with noisy data or when features exceed training samples; unsupervised methods (e.g., HTM) yield lower accuracy.",
+    "Khokhlov et al. demonstrate LSTM-based anomaly detection of complex threats on mobile/Android devices in monitored data streams, though LSTM needs significant time and bandwidth.",
+    "Open challenges include input-dataset nature, data-stream/limited-memory detection, noise and data complexity, unknown nature of anomalies (lack of labels), time complexity vs. accuracy trade-off, and lack of standardized benchmark datasets.",
+    "Future directions: richer datasets covering diverse failure scenarios, cross-validation, improving detection using low-cost sensors and small datasets, global benchmark datasets, and interdisciplinary collaboration."
+  ],
+  "metrics": [
+    "Hasan et al. 2019 (Neural network, DS2OS dataset): Accuracy 0.990",
+    "Zhang et al. 2019 (Neural network, real-world dataset): Accuracy 0.920",
+    "Selvaraj et al. 2019 (swarm intelligence): Precision 0.957",
+    "Yihunie et al. 2019 (Decision Tree/Random Forest, NSL-KDD): Precision 0.999, Recall 0.999",
+    "Alrashdi et al. 2019 (AD-IoT, UNSW-NB15): classification accuracy 99.34%; Precision 0.990, Recall 0.980",
+    "Quatrini et al. 2019/2020 (decision forest/jungle, real-world): Precision 0.996, Recall 0.997",
+    "Wang et al. 2019 (financial IT): Precision 0.888, Recall 0.700",
+    "Ganokratanaa et al. 2020 (GAN, CUHK Avenue): Accuracy 0.980",
+    "Alafif et al. 2021 (GAN, Hajj real-world data): Accuracy 0.796",
+    "Bhatia et al. 2019 (SVM, benign IoT traffic): Accuracy 0.999",
+    "Aziz et al. 2021 (SVM, UMN datasets): Accuracy 0.970",
+    "Ilyas et al. 2021 (SVM, PETS 2009): Accuracy 0.990",
+    "Pu/Pang et al. 2021 (SVM, NSL-KDD): Accuracy 0.890",
+    "Liu et al. 2020 (one-class SVM, synthetic/public data): Accuracy 0.890",
+    "Aboah et al. 2021 (CNN, live CCTV): Accuracy 0.850",
+    "Punmiya et al. 2019 (kNN/histogram-based outlier detection): Accuracy 0.910",
+    "Liu et al. 2020 (LSTM encoder-decoder, real-world): Accuracy 0.978",
+    "Chen et al. 2019 (data clustering): up to 99% detection accuracy with <1% false positive rate",
+    "Hasan et al. 2019 (decision trees + ANN): test accuracy 99.40%",
+    "Selvaraj et al. 2019 (swarm intelligence): accuracy 95.70%"
+  ],
+  "strengths": [
+    "Broad, consolidated coverage of both classical ML and modern DL anomaly-detection techniques with explicit per-method strengths and weaknesses (Table 1).",
+    "Aggregates accuracy/precision/recall metrics and datasets across many recent (2019-2021) works in a single comparative table (Table 2), useful as a quick reference.",
+    "Clearly articulates open challenges and future directions, including resource-limited and small-dataset detection relevant to edge/mobile deployment.",
+    "Compares itself against prior surveys, clarifying its broader scope (applications, metrics, and anomaly classification together)."
+  ],
+  "weaknesses": [
+    "It is a review, not an empirical study; reported metrics are from cited works under heterogeneous datasets/settings, so they are not directly comparable.",
+    "Single corresponding author from a regional journal with limited indexing; some entries in tables are inconsistent (duplicated references, mismatched years, N/A values).",
+    "No taxonomy depth on privacy-preserving or on-device/edge anomaly detection beyond brief mention of resource-limited future work.",
+    "Scope deliberately restricted to 2019-2021, so it omits newer transformer/self-supervised anomaly-detection advances and does not deeply treat security/insider-threat-specific detection."
+  ],
+  "relevance": "Domain 3 of SentriZK concerns on-device/lightweight AI threat and anomaly detection. This survey maps the ML/DL anomaly-detection landscape (including LSTM/autoencoder approaches and the cited Khokhlov et al. work running LSTM-based anomaly detection on Android devices), grounding SentriZK's choice of deep-learning anomaly/insider-threat detection and its identified challenges (noisy data, small datasets, limited memory/time, real-time streams) directly motivate the need for efficient, low-resource detection suitable for TensorFlow Lite on-device deployment.",
+  "ieee_reference": "S. Natha, M. Leghari, M. A. Rajput, S. S. Zia, and J. Shabir, \"A Systematic Review of Anomaly Detection Using Machine and Deep Learning Techniques,\" Quaid-e-Awam Univ. Res. J. Eng. Sci. Technol. (QUEST Research Journal), vol. 20, no. 1, pp. 83-94, Jan.-Jun. 2022, doi: 10.52584/QRJ.2001.11."
+}

@@ -1,0 +1,140 @@
+Litrature Review Draft
+
+Domain 1: Secure Internal Messaging & Insider Threats
+Paper 1: "SoK: An Analysis of End-to-End Encryption and Authentication Ceremonies in Secure Messaging Systems" (2023)
+Focus: Evaluating the security and usability of authentication ceremonies (like scanning QR codes) in 17 popular E2EE apps (WhatsApp, Signal, Zoom, etc.).
+Problem Statement: While "Opportunistic" encryption (default) stops passive snooping, it fails against active Man-in-the-Middle (MitM) attacks. Existing manual "Authentication Ceremonies" are optional, hard to find, and prone to human error.
+Method: Systematization of Knowledge (SoK) & Comparative Analysis. Analyzed 17 apps, reviewed white papers, and conducted usability tests on how users verify keys (fingerprints).
+Findings: All current E2EE apps are vulnerable to active MitM attacks by default. None offer a "usable" mandatory authentication method, and users consistently fail to verify long numeric/hexadecimal strings correctly.
+Strengths/Weaknesses:
+Strength: Extremely comprehensive scope (17 apps) and clearly identifies "Human Error" as the weak link in current E2EE security.
+Weakness: Diagnoses the problem effectively but suggests "recommendations" rather than building a novel technical solution.
+Future Directions: Need for automated or semi-automated authentication ceremonies to remove the burden from the user.
+Table Data: Domain: Secure Messaging | Method: SoK/Analysis | Outcome: Current auth ceremonies are broken/unused.
+Synthesis Tip: "As demonstrated by Alatawi and Saxena (2023), reliance on manual 'Authentication Ceremonies' leaves major platforms vulnerable to active MitM attacks. SentriZK addresses this critical gap by automating trust verification via Zero-Knowledge Proofs, eliminating the risk of human error."
+Paper 2: "Insider Threat Detection and Secure Data Transfer Leveraging Bidirectional LSTM" (2025)
+1. Focus: Using advanced Deep Learning (Bi-LSTM) to detect malicious insiders who are already inside the network.
+2. Problem Statement: Traditional security focuses on firewalls (external threats), but "insiders" (employees) often bypass these checks. Standard detection methods struggle to catch subtle behavioral changes in encrypted traffic.
+3. Method: Proposed a Bidirectional Long Short-Term Memory (Bi-LSTM) network. This is a type of Recurrent Neural Network (RNN) that learns patterns in data sequences (forward and backward) to predict if a user's behavior is normal or malicious.
+4. Findings: The Bi-LSTM model achieved higher accuracy than standard machine learning models because it understands the "context" of user actions over time, not just single events.
+5. Strengths/Weaknesses:
+Strength: High detection accuracy for time-series data (user behavior logs).
+Weakness: Deep learning models like LSTM are computationally heavy and usually require a server (not ideal for mobile/edge).
+6. Future Directions: Improving the speed of training and testing on diverse datasets.
+7. Table Data: Domain: Insider Threat | Method: Bi-LSTM | Outcome: Improved Accuracy.
+8. Synthesis Tip: Link this to SentriZK: "While [Paper 1] proves LSTM is effective for threat detection, SentriZK adapts this concept to mobile devices by using a lighter model (TFLite) to preserve battery life."
+Paper 3: "A Review of Recent Advances, Challenges, and Opportunities in Malicious Insider Threat Detection Using Machine Learning Methods" (2024)
+1. Focus: A comprehensive survey (review) of all current ML techniques used to catch insider threats.
+2. Problem Statement: There is no single "perfect" algorithm; different attacks require different detection methods. Also, balancing False Positives (flagging innocent users) vs. False Negatives (missing attackers) is a major challenge.
+3. Method: Systematic Literature Review (SLR). The authors analyzed dozens of papers to categorize techniques into Supervised, Unsupervised, and Deep Learning.
+4. Findings: Deep Learning is becoming the standard, but it lacks "explainability" (we don't know why the AI flagged a user). Data imbalance (too few examples of attacks) makes training hard.
+5. Strengths/Weaknesses:
+Strength: Excellent overview of the "state of the art."
+Weakness: Does not propose a new tool, only reviews existing ones.
+6. Future Directions: Need for "Explainable AI" (XAI) and privacy-preserving detection methods.
+7. Table Data: Domain: Survey | Method: SLR | Outcome: Taxonomy of ML methods.
+8. Synthesis Tip: Use this to justify your specific choice of ML algorithm. "As highlighted by [Paper 2], data imbalance is a challenge; SentriZK addresses this by using pre-trained models..."
+Paper 4: "Threat Modeling for Enterprise Secure Messaging Applications" (2025)
+1. Focus: Identifying specific security holes in apps like Slack, Teams, and WhatsApp Enterprise.
+2. Problem Statement: Enterprise apps are complex. They mix file sharing, video, and chat. This complexity creates new attack surfaces (e.g., malicious file uploads, link previews) that simple "encryption" cannot fix.
+3. Method: Threat Modeling (STRIDE or similar). The authors systematically mapped out architecture diagrams of chat apps and identified where attacks could happen.
+4. Findings: End-to-End Encryption (E2EE) protects data in transit, but metadata (who spoke to whom) and endpoint security (the phone itself) remain vulnerable.
+5. Strengths/Weaknesses:
+Strength: Very specific to your exact domain (chat apps).
+Weakness: Focuses on finding problems rather than building a solution.
+6. Future Directions: Recommends better endpoint verification and minimizing metadata collection.
+7. Table Data: Domain: Messaging Security | Method: Threat Modeling | Outcome: Identified endpoint vulnerabilities.
+8. Synthesis Tip: This is your "Why". "Following the threat model analysis by [Paper 3], SentriZK focuses on securing the endpoint (the mobile app) since the network layer is already encrypted."
+
+Domain 2: Zero-Knowledge Proofs (Authentication)
+Paper 1: "Enhancing Digital Privacy: The Application of Zero-Knowledge Proofs in Authentication Systems" (2024)
+1. Focus: The application of Zero-Knowledge Proofs (ZKPs), specifically zk-SNARKs and zk-STARKs, as a solution to replace traditional password-based authentication.
+2. Problem Statement: Traditional authentication methods (like password hashing) expose credentials to theft and rely on centralized databases that create single points of failure. There is a conflict between the need for security and the need to preserve user privacy.
+3. Method: Comparative Analysis Methodology. The authors contrasted ZKP-based systems against traditional authentication using specific metrics: computational efficiency, scalability, and degree of privacy preservation.
+4. Findings: ZKP systems offer superior privacy because they verify users without transmitting any private data. The paper highlights that zk-STARKs improve upon zk-SNARKs by removing the need for a "trusted setup" and offering quantum resistance, though they currently have larger proof sizes.
+5. Strengths/Weaknesses:
+Strength: Clearly distinguishes between zk-SNARKs (efficient, small proofs) and zk-STARKs (transparent, no trusted setup), helping justify protocol choices.
+Weakness: Acknowledges that high computational complexity and the requirement for specialized cryptographic knowledge are major barriers to widespread adoption.
+6. Future Directions: Research should focus on developing user-friendly frameworks and APIs to lower the entry barrier for developers, and optimizing protocols to run efficiently on standard hardware.
+7. Table Data: Domain: ZKP Authentication | Method: Comparative Analysis | Outcome: ZKP offers superior privacy but requires UI/UX improvements.
+8. Synthesis Tip: "Bhattacharya et al. (2024) emphasize that while ZKPs provide superior privacy by eliminating password transmission, widespread adoption is hindered by complexity. SentriZK addresses this by wrapping the complex zk-SNARK protocol inside a user-friendly mobile interface, as recommended in their future directions."
+Paper 2: "A Survey on Zero-Knowledge Authentication for Internet of Things" (2023)
+1. Focus: How to use ZKP on weak devices like IoT sensors (which are similar to mobile phones in terms of battery/CPU limits).
+2. Problem Statement: IoT devices have low battery and memory. Standard ZKP (like older protocols) is too heavy/slow for them.
+3. Method: Survey & Comparative Analysis. Compared different ZKP schemes (zk-SNARKs vs. Sigma protocols) based on computation cost and energy usage.
+4. Findings: Non-interactive Zero-Knowledge Proofs (NI-ZKP) are best for devices with unstable internet. zk-SNARKs (Groth16) are identified as highly efficient due to small proof size.
+5. Strengths/Weaknesses:
+Strength: Directly validates the use of lightweight ZKP on restricted hardware.
+Weakness: Focuses on IoT sensors, not specifically smartphones (though the math is the same).
+6. Future Directions: Optimizing the "Setup Phase" of zk-SNARKs to be less dependent on a trusted third party.
+7. Table Data: Domain: ZKP/IoT | Method: Survey | Outcome: NI-ZKP is best for low-power devices.
+8. Synthesis Tip: "Since mobile devices share resource constraints with IoT, SentriZK adopts the efficiency recommendations from [Paper 4], utilizing Groth16 for minimal battery impact."
+Paper 3: "Privacy-Preserving Identity Management System on Blockchain Using zk-SNARK" (2023)
+1. Focus: Proving identity without revealing it, using Blockchain and zk-SNARKs.
+2. Problem Statement: Centralized Identity Providers (like "Log in with Google") track user activity. Users lose privacy.
+3. Method: System Implementation. Built a prototype using Ethereum (Blockchain) and ZoKrates/Circom (ZKP toolkit) to create a "Self-Sovereign Identity" system.
+4. Findings: The system successfully verified users without storing passwords or personal data. Gas costs (transaction fees) were the main bottleneck, but the privacy was absolute.
+5. Strengths/Weaknesses:
+Strength: Practical implementation details (code, tools used) that you can reference.
+Weakness: Blockchain focus might be "overkill" for a simple chat app, but the ZKP part is relevant.
+6. Future Directions: reducing the computational cost of generating proofs on the client side.
+7. Table Data: Domain: Identity/ZKP | Method: Prototype | Outcome: Complete privacy preservation.
+8. Synthesis Tip: "SentriZK leverages the identity hiding properties demonstrated in [Paper 5], ensuring that even the chat server cannot link a session to a real-world identity."
+Paper 4: "A Secure Framework for Privacy-Preserving Analytics in Healthcare Records Using Zero-Knowledge Proofs" (2025)
+1. Focus: Applying ZKP to highly sensitive data (Medical Records) to prove data validity without leaking patient info.
+2. Problem Statement: Healthcare data needs to be analyzed for research, but privacy laws (HIPAA/GDPR) make sharing hard.
+3. Method: Framework Design. Proposed a system where hospitals generate ZKPs that prove "This patient has disease X" without revealing the patient's name or ID.
+4. Findings: ZKP allows for "Auditability without Visibility"—you can check the math is correct without seeing the data.
+5. Strengths/Weaknesses:
+Strength: Demonstrates high-stakes trust in ZKP (if it's good enough for hospitals, it's good for chat).
+Weakness: Complex setup required for multiple organizations.
+6. Future Directions: Integrating this with Federated Learning.
+7. Table Data: Domain: Privacy/Healthcare | Method: Framework | Outcome: Auditability without data leakage.
+8. Synthesis Tip: "Similar to the healthcare framework in [Paper 6], SentriZK ensures 'Auditability without Visibility,' proving a user is authorized without revealing their password."
+
+Domain 3: AI Anomaly Detection (On-Device/Lightweight)
+Paper 1: "A Systematic Review of Anomaly detection using Machine and Deep Learning Techniques" (2022)
+1. Focus: A comprehensive review of Machine Learning (SVM, k-NN) and Deep Learning (CNN, LSTM, Autoencoders) techniques used to detect anomalies across various domains (IoT, Video, Network traffic).
+2. Problem Statement: Detecting anomalous activities is challenging due to the "unknown nature of anomalies" (they don't look like known attacks), noise in real-world data, and the inability of static algorithms to adapt to changing environmental conditions.
+3. Method: Systematic Literature Review (SLR). The authors analyzed research papers published between 2019–2021, categorizing them by algorithm type (ML vs. DL) and application domain to evaluate their strengths and weaknesses.
+4. Findings: Deep Learning (DL) models generally outperform traditional Machine Learning in handling high-dimensional data (like images or complex logs). However, DL models like LSTM require significant bandwidth and time resources, whereas models like SVM often underfit when data is complex.
+5. Strengths/Weaknesses:
+Strength: Provides a specific critique of One-Class SVM (it struggles with noisy datasets), which justifies your choice to use more advanced Deep Learning methods.
+Weakness: Notes that high accuracy in Deep Learning often comes at the cost of high computational power, posing a challenge for real-time detection.
+6. Future Directions: The authors suggest improving performance in limited resource environments (like IoT/Mobile) by utilizing low-cost sensors and optimizing algorithms to work with smaller sampled data.
+7. Table Data: Domain: Anomaly Detection | Method: Systematic Review | Outcome: Deep Learning handles complex data better than traditional ML.
+8. Synthesis Tip: "Natha et al. (2022) highlight that traditional ML methods like SVM often underfit complex, noisy data. Consequently, SentriZK leverages Deep Learning (TensorFlow Lite) to capture high-dimensional behavioral patterns, addressing the resource constraints of mobile devices as suggested in their review of future directions."
+Paper 2: "AI-Driven Smishing Detection in Android Devices Using TinyBERT and Aquila Optimization" (2025)
+Focus: Detecting SMS phishing (Smishing) specifically on Android devices using lightweight Deep Learning models.
+Problem Statement: Traditional rule-based spam filters miss context-heavy phishing attacks. Standard Deep Learning models (like full BERT) are too computationally heavy for mobile phones.
+Method: Hybrid Deep Learning. Utilized TinyBERT for contextual feature extraction and Aquila Optimization (AO) to automatically tune hyperparameters for maximum efficiency on mobile.
+Findings: The model achieved 96.81% accuracy with high precision (96.76%), significantly outperforming traditional models like SVM, LSTM, and GRU. It proved effective at reducing false positives.
+Strengths/Weaknesses:
+Strength: High accuracy specifically tailored for the Android platform, validating your choice of OS.
+Weakness: While "Tiny," BERT-based models can still be heavier than non-transformer models (like Random Forest) if battery optimization isn't perfect.
+Future Directions: Integrating this detection engine into real-time prevention systems to block attacks instantly.
+Table Data: Domain: Mobile AI | Method: TinyBERT + Optimization | Outcome: 96.81% Accuracy on Android.
+Synthesis Tip: "Validating the feasibility of on-device AI, Gaurav et al. (2025) achieved 96% accuracy in Android smishing detection using optimized models. SentriZK adopts this architecture, deploying lightweight inference models locally to ensure real-time protection without compromising user privacy."
+Paper 3: "PHILDER: Lightweight Framework for Intelligent Phishing Detection on Resource-Limited Devices" (2025)
+1. Focus: Running phishing detection directly on mobile phones (Edge Computing).
+2. Problem Statement: Most anti-phishing tools run in the Cloud. This introduces Latency (slow check times) and Privacy Risks (sending your URLs to a server).
+3. Method: Experimental Implementation. Developed a compressed Deep Learning model optimized for mobile processors (ARM architecture).
+4. Findings: Achieved high accuracy (90%+) with very low latency (<100ms) and minimal battery drain. Proved that "heavy" cloud servers aren't always needed.
+5. Strengths/Weaknesses:
+Strength: This is the exact validation for your project's AI module.
+Weakness: Limited to URL detection (doesn't check file attachments).
+6. Future Directions: Expanding the model to detect SMS phishing (Smishing) and QR codes.
+7. Table Data: Domain: Mobile AI | Method: Experiment | Outcome: Low latency, high privacy.
+8. Synthesis Tip: "SentriZK mirrors the architecture of PHILDER [Paper 7], deploying a TensorFlow Lite model locally to eliminate the latency and privacy risks of cloud-based scanning."
+Paper 4: "Phishing Detection System Through Hybrid Machine Learning Based on URL" (2023)
+1. Focus: Combining different ML algorithms to get better results (Hybrid approach).
+2. Problem Statement: Single algorithms (like just Random Forest or just SVM) often have blind spots.
+3. Method: Hybrid Model Experiment. Combined "shallow" learning (Random Forest) with "deep" learning features to analyze URLs.
+4. Findings: Hybrid models performed better than any single model alone. They extracted lexical features (URL length, special characters) effectively.
+5. Strengths/Weaknesses:
+Strength: Provides specific features to look for (e.g., number of dots in a URL, presence of '@' symbol).
+Weakness: Hybrid models can be slower and larger, which might be tricky for mobile.
+6. Future Directions: Real-time updating of the model as new phishing trends emerge.
+7. Table Data: Domain: ML/Phishing | Method: Hybrid ML | Outcome: Better feature extraction.
+8. Synthesis Tip: "Drawing on the feature extraction techniques in [Paper 8], SentriZK's AI analyzes specific lexical patterns in URLs, such as character randomness and domain length."
+

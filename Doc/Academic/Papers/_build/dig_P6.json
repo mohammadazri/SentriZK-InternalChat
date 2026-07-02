@@ -1,0 +1,32 @@
+{
+  "paper_id": "P6",
+  "authors": "Saurav Bhattacharya, Dhruv Seth, Sriram Panyam, Puneet Gangrade",
+  "title": "Enhancing Digital Privacy: The Application of Zero-Knowledge Proofs in Authentication Systems",
+  "venue": "International Journal of Computer Trends and Technology (IJCTT)",
+  "year": "2024",
+  "domain": 2,
+  "one_line": "A review arguing that Zero-Knowledge Proofs (zk-SNARKs/zk-STARKs) provide a superior, privacy-preserving alternative to traditional authentication by verifying credentials without disclosing any personal information.",
+  "problem": "Traditional authentication mechanisms compel users to disclose sensitive personal information (passwords, credentials), risking privacy through data breaches and identity theft, and centralized systems create single points of failure. The paper asks how authentication can reconcile the dual imperatives of security and privacy.",
+  "methods": "A literature review and comparative analysis (no experiments). It surveys the theoretical foundations of ZKPs (interactive vs. non-interactive proofs, computational hardness, polynomial-based proofs), contrasts zk-SNARKs (succinct, fast to verify, but require a trusted setup) with zk-STARKs (no trusted setup, quantum-resistant, larger proofs), and qualitatively compares ZKP-based authentication against traditional methods across privacy preservation, computational efficiency, and scalability. It also reviews real-world ZKP applications (securitization analytics, blockchain in education and pharma, zero-trust architecture, ad-tech via MPC, smart-home security, cloud computing, private payments) and discusses deployment challenges and future directions.",
+  "key_findings": [
+    "ZKPs allow a prover to convince a verifier that a statement is true without revealing any information beyond the statement's validity, enabling authentication without exposing credentials.",
+    "ZKP-based authentication is presented as superior to traditional methods in privacy preservation, computational efficiency, and scalability, with non-interactive proofs (zk-SNARKs/zk-STARKs) reducing the prover/verifier burden.",
+    "zk-SNARKs offer small, fast-to-verify proofs but require a trusted setup; zk-STARKs remove the trusted setup and add quantum resistance at the cost of larger proof sizes.",
+    "Key deployment challenges are computational complexity, the need for specialized cryptographic knowledge, integration with existing infrastructure, and interoperability/standardization; proposed solutions include algorithm optimization, open-source/education efforts, modular design, and industry standards.",
+    "Future directions include protocol optimization for resource-constrained/real-time use, user-friendly frameworks/APIs, integration with quantum computing and IoT, and alignment with privacy regulations such as GDPR."
+  ],
+  "metrics": [],
+  "strengths": [
+    "Clear, accessible synthesis of ZKP theory (interactive vs. non-interactive, zk-SNARK vs. zk-STARK trade-offs) useful for grounding a design rationale.",
+    "Broad survey of real-world ZKP application domains, demonstrating practical versatility beyond cryptocurrency.",
+    "Explicitly frames ZKP authentication as 'prove possession of a secret without disclosing it,' directly motivating password-free, privacy-preserving login."
+  ],
+  "weaknesses": [
+    "Purely conceptual/comparative review with no empirical evaluation, benchmarks, or quantitative metrics; claims of efficiency and scalability are qualitative.",
+    "No concrete protocol, implementation, or mobile/on-device considerations are provided.",
+    "Comparisons (e.g., 'comparably efficient') are asserted rather than measured, and the paper provides no dataset or experimental setup."
+  ],
+  "relevance": "This paper directly supports SentriZK's first pillar: privacy-preserving ZKP authentication that verifies a user's credential without transmitting passwords or secrets, removing disclosure-based risk. Its discussion of zk-SNARKs (succinct, non-interactive, fast verification) reinforces SentriZK's choice of non-interactive Groth16 zk-SNARKs, while its noted challenges (computational cost, resource-constrained/IoT and real-time use, user-friendly frameworks) frame the engineering concerns relevant to a mobile-first Android deployment.",
+  "doi": "10.14445/22312803/IJCTT-V72I4P104",
+  "ieee_reference": "S. Bhattacharya, D. Seth, S. Panyam, and P. Gangrade, \"Enhancing digital privacy: The application of zero-knowledge proofs in authentication systems,\" International Journal of Computer Trends and Technology, vol. 72, no. 4, pp. 34-41, Apr. 2024, doi: 10.14445/22312803/IJCTT-V72I4P104."
+}

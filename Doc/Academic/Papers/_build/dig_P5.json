@@ -1,0 +1,38 @@
+{
+  "paper_id": "P5",
+  "authors": "M. J. P. Perkasa, H. M. Ramdan, A. J. Maliki, and Somantri",
+  "title": "Implementation of Secure End-to-End Encrypted Chat Application Using Diffie-Hellman Key Exchange and AES-256 in a Microservice Architecture",
+  "venue": "Engineering Proceedings (MDPI), Proc. 7th International Global Conference Series on ICT Integration in Technical Education & Smart Society (ICTI 2025)",
+  "year": "2025",
+  "domain": 1,
+  "one_line": "A working secure end-to-end encrypted chat application combining ECDH/Diffie-Hellman key exchange and AES-256 (CBC) within a scalable microservice backend, validated through functional tests and an AES throughput benchmark.",
+  "problem": "Securely exchanging encryption keys in client-server/REST architectures can expose weaknesses that enable unauthorized access, and chat applications struggle with scalability and maintainability as traffic grows. The authors aim to build a chat system that guarantees message confidentiality from sender to recipient (no intermediary, including the server, can decrypt) while remaining scalable and modular.",
+  "methods": "The system uses Diffie-Hellman / Elliptic Curve Diffie-Hellman (ECDH, via the Web Crypto API) to derive an identical shared secret on each client without ever transmitting private keys, then encrypts messages with AES-256 in CBC mode before transmission; RSA is also referenced for asymmetric/small-data use. The backend is a microservice architecture: NGINX API Gateway (routing, WebSocket upgrade, load balancing/reverse proxy), Authentication Service (port 8081, credential verification, JWT issuance), WebSocket Service (8082, real-time bi-directional message routing), Chat Service (8083/8084, message storage and conversation management with horizontal scaling), PostgreSQL (5432, stores encrypted messages and auth data), and RabbitMQ (5672, asynchronous inter-service messaging). Authentication uses phone-number plus SMS verification code then JWT; flows for user creation/key generation, conversation creation/key exchange, and send/receive are described. Evaluation is functional testing of each stage (showing messages stored encrypted in the DB and decrypted only by holders of the shared key) plus an AES encrypt/decrypt benchmark over varying message counts (10; 100; 1000; 10,000; 100,000) using the test string 'Hello, secure world!'.",
+  "key_findings": [
+    "Diffie-Hellman/ECDH key exchange produced an identical, real-time shared key on both client sides without transmitting any private key; the server only ever sees the public keys.",
+    "Messages are encrypted (AES-256 CBC) on the client before transmission and are stored encrypted in PostgreSQL, so only the sender and recipient holding the identical shared key can decrypt them, achieving end-to-end confidentiality even against a compromised server.",
+    "The microservice architecture (API Gateway, Auth, WebSocket, Chat, PostgreSQL, RabbitMQ) supports scalability, modularity, and reduced single points of failure, with horizontal scaling of the Chat Service across multiple ports.",
+    "Functional tests confirmed the full pipeline (account creation, JWT auth, ECDH key generation, conversation/key exchange, encrypted send/receive and successful decryption) works with low latency and high throughput, per the authors' qualitative claims.",
+    "An AES encryption/decryption benchmark was run across message counts of 10 to 100,000 to characterize performance (results shown only as a figure)."
+  ],
+  "metrics": [
+    "Diffie-Hellman illustrative example: prime P=23, primitive root g=5, Alice private a=3 (public A=10), Bob private b=7 (public B=17), shared key=14",
+    "ECDH key strength claim: 256-bit ECDH key ~ equivalent security to 3072-bit classic Diffie-Hellman",
+    "AES: 128-bit block; key lengths 128/192/256 bits; rounds Nr = 10/12/14 respectively",
+    "AES benchmark message counts tested: 10, 100, 1000, 10,000, 100,000 (timing results presented only in Figure 26, no numeric values given in text)",
+    "Sample server request latencies from logs: PUT /users 13.5 ms; POST /conversations ~59.7 ms"
+  ],
+  "strengths": [
+    "Concrete, implemented end-to-end system (not just a design) with real test logs, JWT tokens, ECDH keys, and encrypted DB records demonstrating that the server cannot read message content.",
+    "Clear separation of concerns via microservices (gateway, auth, websocket, chat, broker, database) giving practical scalability, modularity, and fault tolerance guidance.",
+    "Uses standard, well-vetted primitives (ECDH via Web Crypto API, AES-256-CBC, JWT) and documents the full key-exchange and messaging flow step by step."
+  ],
+  "weaknesses": [
+    "Quantitative evaluation is thin: the AES benchmark results are shown only as a figure with no reported numbers, and 'low latency/high throughput' claims are not backed by stated metrics.",
+    "AES-CBC is used without explicit mention of authenticated encryption (e.g., HMAC/GCM), leaving integrity/tampering protection unclear; ECDH lacks an authentication mechanism, so man-in-the-middle resistance depends on out-of-band trust (the paper itself notes ECDH's MITM weakness).",
+    "Authentication relies on phone-number plus SMS code and server-stored credentials, which is susceptible to SIM-swap/interception and is not privacy-preserving; no formal security analysis or threat model is provided.",
+    "The literature-review section is loosely written and partly repetitive, and the inconsistent references to RSA, DH, and ECDH make the exact deployed key-exchange scheme slightly ambiguous."
+  ],
+  "relevance": "This paper directly underpins SentriZK's third pillar (end-to-end encrypted transport via Diffie-Hellman/ECDH key exchange plus AES-256) and demonstrates a concrete microservice backend (API gateway, WebSocket service, message broker, encrypted-at-rest storage) of the kind SentriZK's enterprise messaging server can adopt. It also highlights gaps SentriZK aims to close: its ECDH lacks authentication and MITM protection (which SentriZK addresses with zero-knowledge-proof authentication instead of fragile manual ceremonies), and it has no on-device threat detection (SentriZK's second pillar).",
+  "ieee_reference": "M. J. P. Perkasa, H. M. Ramdan, A. J. Maliki, and Somantri, \"Implementation of secure end-to-end encrypted chat application using Diffie-Hellman key exchange and AES-256 in a microservice architecture,\" Eng. Proc., vol. 107, no. 1, art. 98, 2025, doi: 10.3390/engproc2025107098."
+}

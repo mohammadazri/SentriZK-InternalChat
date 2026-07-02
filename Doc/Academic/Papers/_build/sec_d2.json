@@ -1,0 +1,78 @@
+{
+  "section_title": "ZERO-KNOWLEDGE AUTHENTICATION AND PRIVACY",
+  "blocks": [
+    {
+      "type": "body",
+      "text": "Conventional authentication mechanisms require users to disclose sensitive credentials such as passwords or biometric factors, exposing them to data breaches, identity theft, and the single points of failure inherent in centralized verification [P6], [P7]. This reliance on secret transmission is precisely the weakness that the manual fingerprint-verification ceremonies of contemporary E2EE messengers attempt, and frequently fail, to compensate for. As introduced earlier, a ZKP offers a fundamentally different paradigm: it confirms possession of a secret without ever transmitting it, leaking nothing to the verifier beyond the validity of the claim [P6]. This section deepens that foundation, reviewing the theory of ZKPs, their lightweight realization for resource-constrained devices, and their application to decentralized identity management, thereby establishing the evidentiary basis for SentriZK's first pillar: non-interactive zk-SNARK (Groth16) authentication that replaces error-prone disclosure-based login."
+    },
+    {
+      "type": "subheading",
+      "text": "A. Foundations of Zero-Knowledge Proofs"
+    },
+    {
+      "type": "body",
+      "text": "Bhattacharya et al. provide a comparative analysis of ZKP theory that grounds the design rationale for privacy-preserving authentication [P6]. They distinguish interactive proofs, which demand multiple rounds of message exchange between prover and verifier, from non-interactive proofs, which collapse this exchange into a single message and thereby reduce both prover and verifier burden [P6]. Within the non-interactive class, the authors contrast two dominant constructions. zk-SNARKs (succinct non-interactive arguments of knowledge) produce small proofs that are fast to verify but depend on a trusted setup phase to generate their public parameters; zk-STARKs eliminate this trusted setup and add quantum resistance, but at the cost of substantially larger proof sizes [P6]. This trade-off between succinctness and setup assumptions is central to any deployment decision, because the trusted-setup requirement of zk-SNARKs concentrates trust at parameter-generation time, whereas the larger proofs of zk-STARKs impose bandwidth and storage costs that are unattractive for mobile clients."
+    },
+    {
+      "type": "body",
+      "text": "Beyond the SNARK-versus-STARK distinction, the same review argues that ZKP-based authentication is superior to traditional password-based methods across privacy preservation, computational efficiency, and scalability, since the prover never discloses the underlying secret to the verifier [P6]. The authors survey real-world ZKP applications spanning blockchain, zero-trust architecture, cloud computing, and private payments, demonstrating practical versatility beyond cryptocurrency, and they identify the principal deployment obstacles as computational complexity, the need for specialized cryptographic expertise, and the difficulty of integrating ZKP into existing infrastructure [P6]. Their forward-looking recommendations, including protocol optimization for resource-constrained and real-time use, user-friendly frameworks, and alignment with privacy regulations such as GDPR, frame the engineering concerns most relevant to a mobile-first deployment [P6]. For SentriZK, this analysis reinforces the choice of non-interactive, succinct zk-SNARKs over interactive or STARK-based alternatives, while flagging trusted setup and computational cost as the design risks that the architecture must manage."
+    },
+    {
+      "type": "subheading",
+      "text": "B. Lightweight Zero-Knowledge Authentication for Constrained Devices"
+    },
+    {
+      "type": "body",
+      "text": "Chen et al. survey zero-knowledge authentication for the Internet of Things, a domain whose resource constraints closely parallel those of mobile messaging clients [P7]. The survey observes that traditional IoT authentication transmits sensitive factors such as passwords, PINs, and biometrics and depends on PKI/CA-based trust, which leaks user privacy, relies on costly centralized third parties, and is too heavy for constrained devices [P7]. Against this backdrop, the authors establish that ZKP natively provides anonymity and man-in-the-middle resistance while also defending against forgery, replay, password attacks, and tracking, leaking no secret to the verifier [P7]. Critically for low-power deployment, the survey reports that ZKP incurs lower computational and communication overhead than symmetric-key distribution and PKI, and that non-interactive ZKP, realized via the Fiat-Shamir heuristic, removes the heavy multi-round exchange of interactive ZKP that would otherwise be prohibitive at scale [P7]."
+    },
+    {
+      "type": "body",
+      "text": "The survey consolidates quantitative efficiency evidence from primary works that is directly pertinent to energy- and compute-bounded settings. Multi-graph schemes (M-ZAS) are reported as approximately three times more efficient than GMW-based ZKP and seven times more efficient than traditional authentication mechanisms; TinyZKP is cited as 1.9 and 1.4 times faster than ECDSA-based TinyECC and WM-ECC with 48% and 28% lower energy cost respectively; BANZKP is reported as roughly seventeen times more efficient in running time than TinyZKP with 94.11% less energy; and LiteZKP is cited as reducing the energy consumption and latency of IoT edge platforms by more than 55% [P7]. The authors further tabulate recent ZKP constructions by communication complexity and security assumption, highlighting lattice-based ZKP as an effective post-quantum direction [P7]. These figures, drawn from surveyed primary works rather than original experiments, collectively validate that non-interactive, lightweight zero-knowledge authentication can meet the strict energy and computation budgets of constrained hardware, motivating SentriZK's adoption of NIZK/zk-SNARK (Groth16) authentication for on-device, mobile-first operation in place of password transmission and manual verification ceremonies [P7]."
+    },
+    {
+      "type": "subheading",
+      "text": "C. ZKP-Based Identity Management"
+    },
+    {
+      "type": "body",
+      "text": "Luong and Park present the closest published analogue to SentriZK's authentication pillar: a privacy-preserving identity management system that combines a public blockchain with zk-SNARK to deliver password-less, secret-less anonymous authentication [P8]. Their work addresses a residual privacy gap in prior blockchain identity systems, which still rely on a trusted identity provider that knows the mapping between a user's pseudonym and their primary identity attribute, creating a single point of privacy failure under a malicious or colluding provider [P8]. The proposed system hides the primary identity attribute even from the identity provider by splitting it into encrypted Shamir Secret Sharing shares distributed across validators, so that opening a malicious user's identity requires the cooperation of k of n validators (with k=6, n=10 in the simulation) tied to blockchain consensus [P8]. A per-proof nonce identifier recorded by the verifier prevents certificate-reuse and collusion attacks, and hash-based commitments enable selective disclosure of minor identity attributes, a feature absent from compared prior work [P8]. Security for unforgeability, anonymity, and traceability is argued through game-based proofs under standard cryptographic assumptions [P8]."
+    },
+    {
+      "type": "body",
+      "text": "The implementation, evaluated off-chain with ZoKrates (PGHR13/Pinocchio scheme over ALT-BN128/Baby Jubjub curves) and on-chain on the Ropsten testnet, also quantifies the cost that any mobile adaptation must confront [P8]. The zk-SNARK proving key for the authentication circuit reaches 192 MB, user proof generation takes roughly 37 seconds, and the authors note that resource-constrained devices with under 4 GB of RAM cannot run the scheme, particularly for larger validator counts [P8]. On-chain gas costs are likewise heavy: authentication consumes approximately 1.85 million gas and a full identity-opening operation approximately 5.77 million gas, against the 21,000-gas cost of a standard token transfer, making naive deployment expensive [P8]. For SentriZK, this study supplies both motivation and caution. It demonstrates that the Pinocchio/Groth16 zk-SNARK family can deliver anonymous, identity-hiding authentication on a real cryptographic stack, directly supporting the goal of replacing fragile manual ceremonies; yet its large keys, multi-second proving times, and gas-cost bottleneck are explicit warnings that SentriZK's mobile-first architecture must favor lighter proving and zk-SNARK-friendly circuits, and that an enterprise deployment should avoid on-chain settlement for routine authentication while preserving the selective-disclosure and traceability balance the paper exemplifies [P8]."
+    },
+    {
+      "type": "body",
+      "text": "Taken together, the three Domain 2 sources establish a coherent rationale for SentriZK's authentication pillar. They confirm that zero-knowledge proofs eliminate the disclosure-based risk of password authentication [P6], that non-interactive and lightweight ZKP can satisfy the energy and computation constraints characteristic of mobile devices [P7], and that zk-SNARK-based identity management can achieve privacy-preserving authentication on a deployed stack while exposing the cost bottlenecks that a mobile design must overcome [P8]. Table II summarizes and contrasts these approaches."
+    }
+  ],
+  "tables": [
+    {
+      "caption": "TABLE II. COMPARISON OF ZERO-KNOWLEDGE AUTHENTICATION APPROACHES",
+      "columns": ["Study", "Approach", "Strength", "Limitation", "Relevance to SentriZK"],
+      "rows": [
+        [
+          "Bhattacharya et al. [P6]",
+          "Literature review and comparative analysis of ZKP theory, contrasting zk-SNARK and zk-STARK for privacy-preserving authentication.",
+          "Clear synthesis of interactive vs. non-interactive proofs and the trusted-setup, proof-size, and quantum-resistance trade-offs; frames ZKP auth as superior to passwords in privacy, efficiency, and scalability.",
+          "Purely conceptual with no empirical evaluation, benchmarks, or mobile/on-device considerations; efficiency and scalability claims are qualitative.",
+          "Justifies SentriZK's choice of succinct, non-interactive zk-SNARKs (Groth16) over STARK-based or interactive alternatives and flags trusted setup and compute cost as design risks."
+        ],
+        [
+          "Chen et al. [P7]",
+          "Survey of zero-knowledge authentication for IoT, covering interactive/non-interactive ZKP, Fiat-Shamir NIZK, and constructions classified by network and security property.",
+          "Establishes that ZKP provides native anonymity and MITM resistance with lower overhead than PKI; consolidates energy/efficiency figures (e.g., LiteZKP >55% lower energy and latency; BANZKP 94.11% less energy) showing feasibility on constrained devices.",
+          "All efficiency and energy numbers are second-hand from cited primary works; focused on IoT/embedded scenarios, so mapping to a smartphone messenger requires adaptation; limited treatment of Groth16 in the authentication context.",
+          "Supports lightweight, non-interactive ZKP authentication suited to SentriZK's mobile, on-device, energy-bounded deployment in place of password transmission and manual ceremonies."
+        ],
+        [
+          "Luong and Park [P8]",
+          "Blockchain-based privacy-preserving identity management using zk-SNARK (Pinocchio/PGHR13), Shamir Secret Sharing, ElGamal, and EdDSA, with selective disclosure and threshold identity-opening.",
+          "Delivers password-less, identity-hiding anonymous authentication on a real ZoKrates/Solidity stack; removes the trusted identity provider as a single point of privacy failure; adds collusion-resistant per-proof nonces and selective disclosure with game-based security proofs.",
+          "Heavy zk-SNARK cost (192 MB proving key, ~37 s proof generation, infeasible under 4 GB RAM) and high on-chain gas (auth ~1.85M; full open ~5.77M) limit mobile applicability; requires trusted setup; collusion of k+ validators undetectable.",
+          "Closest published analogue to SentriZK's authentication pillar; demonstrates the Groth16 family can authenticate without revealing identity, while its cost figures warn SentriZK toward lighter proving, zk-SNARK-friendly circuits, and avoidance of on-chain settlement for routine login."
+        ]
+      ]
+    }
+  ]
+}

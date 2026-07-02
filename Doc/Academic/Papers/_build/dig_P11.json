@@ -1,0 +1,46 @@
+{
+  "paper_id": "P11",
+  "authors": "G. D. Bispo, C. A. B. de Andrade, G. M. Saiki, R. V. Borges, A. L. M. Serrano, G. P. Rocha Filho, and V. P. Goncalves",
+  "title": "PHILDER: Lightweight Framework for Intelligent Phishing Detection on Resource-Limited Devices",
+  "venue": "IEEE Access",
+  "year": "2025",
+  "domain": 3,
+  "one_line": "A lightweight BERT-variant (TinyBERT with undersampling), PHILDER, detects email phishing from text alone while optimizing for accuracy AND computational efficiency on resource-constrained devices.",
+  "problem": "Deep-learning phishing detectors are accurate but too heavy (high compute, memory, latency, energy) for resource-constrained devices such as IoT, mobile phones, and embedded systems. There is a gap in email-based deep-learning phishing detection that is evaluated by computational-efficiency metrics rather than accuracy alone.",
+  "methods": "BERT-variant text classification of email bodies. Dataset: 501 confirmed phishing emails from PhishTank plus 2,501 legitimate (ham) emails from the SpamAssassin Public Corpus (3,002 total). Preprocessing: SMTP header removal, URL/email placeholder replacement, lowercasing/special-char removal, stopword removal. Class-imbalance handling via undersampling (502 ham vs 501 phishing) and SMOTE oversampling (2,501 vs 2,501, using TF-IDF vectors). Five lightweight BERT variants trained and compared (ALBERT, DistilBERT, MobileBERT, MiniLM, TinyBERT), each under original/undersampling/oversampling settings, 70/30 train/test split via Hugging Face. Standard metrics (accuracy, precision, recall, F1) plus three composite computational-efficiency metrics: TES (accuracy/training time), IES (accuracy/testing time), and RTDE (accuracy/detection time per sample). An ablation study evaluated the contribution of pretrained weights and undersampling.",
+  "key_findings": [
+    "PHILDER = TinyBERT with undersampling was selected as the final model for the best overall balance of accuracy and computational cost.",
+    "PHILDER achieved the highest training efficiency (TES) and the highest inference efficiency (IES) among all evaluated models; on RTDE, original TinyBERT was highest with PHILDER following closely.",
+    "Oversampling (SMOTE) was discarded: although it generally gave the best raw accuracy/precision/recall/F1, it incurred the highest training, testing, and per-sample detection costs, risked overfitting, and did not consistently outperform on robustness.",
+    "TinyBERT undersampling had the fastest testing time (2.57 s) and the best per-sample detection time among compared (12.9811 ms / reported also as 12.9811 s) variants.",
+    "ALBERT, DistilBERT, and MobileBERT reached accuracy close to the best models but at much higher computational cost, making them impractical for constrained environments.",
+    "Ablation: removing pretrained weights degraded all metrics; removing undersampling reduced F1-score (poorer recall), validating both design choices.",
+    "PHILDER (99.27% accuracy) is reported to surpass a prior NLP email-phishing result (Alhogail and Alsabih, 98.20%)."
+  ],
+  "metrics": [
+    "PHILDER accuracy: 99.27%",
+    "PHILDER per-sample latency: 12.9811 ms (reported as 12.9811 s in detection-time table)",
+    "TinyBERT undersampling testing time: 2.57 s",
+    "Dataset: 3,002 emails (501 PhishTank phishing + 2,501 SpamAssassin ham); undersampled to 502 ham / 501 phishing; SMOTE to 2,501 / 2,501",
+    "DistilBERT undersampling recall: 1.0000 (flagged as possible overfit)",
+    "Accuracy range across models: 0.9804-0.9973",
+    "Training time range: 70.84 s - 702.01 s (originals); longest overall ALBERT oversampling 958.35 s",
+    "DistilBERT retains ~97% of BERT-base performance at ~60% parameters (cited)",
+    "Train/test split: 70% / 30%"
+  ],
+  "strengths": [
+    "Introduces composite efficiency metrics (TES, IES, RTDE) that jointly evaluate accuracy and computational cost, directly relevant to on-device deployment.",
+    "Uses only email body text, eliminating manual feature engineering and metadata/URL dependence.",
+    "Systematic comparison of five lightweight BERT variants across three data-balancing strategies, plus an ablation study and multi-run statistical analysis.",
+    "Uses real, community-recognized public datasets (PhishTank + SpamAssassin) and addresses class imbalance explicitly."
+  ],
+  "weaknesses": [
+    "Dataset is small (3,002 emails) and English-only; undersampling discards most legitimate data, and generalization to other languages/domains is untested.",
+    "Inconsistent reporting of per-sample detection time units (ms vs s) across text and tables, reducing clarity.",
+    "Models are not actually deployed/benchmarked on real edge or mobile hardware; efficiency is inferred from training/test-server timings rather than on-device measurement.",
+    "No quantization/TFLite conversion or memory-footprint measurement reported despite the resource-limited-device framing.",
+    "Limited threat scope (email phishing only); no adversarial robustness evaluation."
+  ],
+  "relevance": "PHILDER directly supports SentriZK's pillar (2) on-device lightweight AI threat detection: it shows that compressed Transformer variants (TinyBERT) can detect phishing/smishing-style social-engineering text accurately while meeting strict compute/latency budgets, validating SentriZK's plan to run phishing detection locally (e.g., via TensorFlow Lite) instead of in the cloud. Its TES/IES/RTDE efficiency framing and class-balancing study are useful design guidance for SentriZK's mobile-first, privacy-preserving on-device detection.",
+  "ieee_reference": "G. D. Bispo, C. A. B. de Andrade, G. M. Saiki, R. V. Borges, A. L. M. Serrano, G. P. Rocha Filho, and V. P. Goncalves, \"PHILDER: Lightweight framework for intelligent phishing detection on resource-limited devices,\" IEEE Access, vol. 13, pp. 131967-131979, 2025, doi: 10.1109/ACCESS.2025.3592541."
+}

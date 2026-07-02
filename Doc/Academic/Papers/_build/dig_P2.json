@@ -1,0 +1,39 @@
+{
+  "paper_id": "P2",
+  "authors": "Kannan Srinivasan, Guman Singh Chauhan, Mustafa Almahdi",
+  "title": "Insider Threat Detection and Secure Data Transfer Leveraging Bidirectional LSTM with Grouped Orthogonal Initialization and Swish Activation",
+  "venue": "International Journal of Digital Innovation and Discoveries",
+  "year": "2025",
+  "domain": 1,
+  "one_line": "Proposes a BiLSTM model enhanced with Grouped Orthogonal Initialization and Swish activation for insider threat detection, paired with homomorphic encryption and federated learning for secure data transfer.",
+  "problem": "Insider threats are hard to detect because insiders hold legitimate access credentials, and enterprises also need to keep sensitive data secure while in transit. Conventional LSTM-based detectors suffer from vanishing/exploding gradients and dead neurons, limiting accuracy and stability for this temporal, high-stakes security task.",
+  "methods": "A Bidirectional LSTM processes sequential data (access control records, network logs) in forward and backward directions. Grouped Orthogonal Initialization (GOI) initializes weight matrices orthogonally (W1^T W1 = I, W2^T W2 = I) to stabilize training and mitigate gradient problems. The Swish activation function f(x) = x*sigma(x) replaces ReLU to improve gradient flow and avoid dead neurons. Secure data transfer is provided via homomorphic encryption (allowing computation on encrypted data without decryption) and federated learning (only model updates, not raw data, are transmitted). The paper presents formulas but is largely conceptual/proposal-oriented; it states no specific dataset, training setup, or baseline implementation details.",
+  "key_findings": [
+    "Combining BiLSTM with GOI and Swish activation is claimed to improve detection accuracy and training stability over conventional LSTM approaches.",
+    "The reported model achieves 95% accuracy, 92% precision, 90% recall, 91% F1-score, and 94% AUC-ROC.",
+    "Homomorphic encryption is proposed to keep sensitive data confidential during transit by enabling computation on encrypted data without decryption.",
+    "Federated learning is proposed to enhance privacy by transmitting only model updates rather than raw data.",
+    "In a comparison table the proposed model (95% accuracy, 92% reliability, 90% traceability, 85% model complexity) outperforms Optimized XGBoost (Data Adjusting strategy) and a LightGBM body-language approach, at the cost of slightly higher model complexity."
+  ],
+  "metrics": [
+    "Accuracy: 95%",
+    "Precision: 92%",
+    "Recall: 90%",
+    "F1-Score: 91%",
+    "AUC-ROC: 94%",
+    "Comparison (proposed): Reliability 92%, Traceability 90%, Model Complexity 85%"
+  ],
+  "strengths": [
+    "Directly targets insider threat detection, the core threat model relevant to enterprise messaging security.",
+    "Combines threat detection with privacy-preserving data transfer (homomorphic encryption + federated learning), aligning detection and confidentiality goals.",
+    "Uses architectural refinements (GOI for gradient stability, Swish for gradient flow) with stated motivation, and benchmarks against XGBoost and LightGBM baselines."
+  ],
+  "weaknesses": [
+    "No dataset is actually named or analyzed; the data availability statement says no datasets were generated or analyzed, undermining the reported metrics' reproducibility and credibility.",
+    "Reported numbers are internally inconsistent (e.g. abstract/Table 1 list 95% accuracy while the Results text states 91% accuracy), suggesting the metrics may be illustrative rather than empirically validated.",
+    "Largely conceptual: lacks experimental protocol, hyperparameters, ablation studies, and any latency/resource-cost analysis, so on-device feasibility is unaddressed.",
+    "Homomorphic encryption is described only at the level of an RSA-style formula, with no analysis of its computational overhead or practicality."
+  ],
+  "relevance": "This paper directly supports SentriZK's on-device AI threat-detection pillar by demonstrating a BiLSTM architecture for insider/anomaly threat detection over sequential logs, the same model family SentriZK plans to adapt via TensorFlow Lite. Its pairing of detection with privacy-preserving transfer (homomorphic encryption, federated learning) echoes SentriZK's unifying goal of confidentiality plus intelligent threat detection, though SentriZK favors lightweight on-device inference and E2EE (DH + AES-256) rather than homomorphic encryption.",
+  "ieee_reference": "K. Srinivasan, G. S. Chauhan, and M. Almahdi, \"Insider threat detection and secure data transfer leveraging bidirectional LSTM with grouped orthogonal initialization and swish activation,\" International Journal of Digital Innovation and Discoveries, pp. 15-21, 2025."
+}

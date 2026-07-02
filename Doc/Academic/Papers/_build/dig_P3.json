@@ -1,0 +1,34 @@
+{
+  "paper_id": "P3",
+  "authors": "Fatima Rashed Alzaabi and Abid Mehmood",
+  "title": "A Review of Recent Advances, Challenges, and Opportunities in Malicious Insider Threat Detection Using Machine Learning Methods",
+  "venue": "IEEE Access",
+  "year": "2024",
+  "domain": 1,
+  "one_line": "A comprehensive survey of machine-learning, deep-learning, and NLP-based methods for detecting malicious insider threats, with emphasis on behavioral/temporal modeling, the CMU CERT dataset, and open challenges including privacy preservation.",
+  "problem": "Malicious insider threats (data theft, sabotage, fraud, espionage by privileged users) cause damage far exceeding external attacks (cited as ~20x, ~$4.5M average per breach, ~35% of 2023 breaches) yet are hard to detect because malicious actors blend in with legitimate authorized activity. Classical rule/signature-based methods fail against novel and subtle insider behavior, motivating a systematic review of learning-based detection approaches and their limitations.",
+  "methods": "Literature survey organized around four facets: (1) categories of insider threats (malicious, accidental, fraudulent, privileged vs non-privileged, duration-based); (2) detection approaches (behavior-based/UBA, rule-based, anomaly detection, signature-based, heuristic-based); (3) data sources and datasets (CMU CERT, TWOS, Sentiment140, RUU); (4) learning-based techniques. Reviews supervised (logistic regression, decision tree, random forest, SVM, XGBoost/AdaBoost/LightGBM ensembles), unsupervised (k-means, DBSCAN, Isolation Forest, LOF, OCSVM, PCA, COPOD, autoencoders/VAE), semi-supervised (label propagation/spreading, self-training), and deep-learning models (RNN/LSTM, BiLSTM, CNN, GNN/GCN, attention, Siamese networks, BERT-based ITDBERT, GAN/CGAN/CWGAN-GP for data augmentation). Also reviews evaluation metrics and discusses challenges and future trends.",
+  "key_findings": [
+    "Deep learning and NLP-based methods (especially RNN/LSTM, BiLSTM, attention, and pre-trained language models such as BERT) outperform classical ML for capturing temporal and semantic patterns in user behavior, but suffer from black-box interpretability problems.",
+    "The CMU CERT dataset is the dominant labeled benchmark; class imbalance (rare insider instances) is a recurring problem, often addressed with SMOTE, GAN/CGAN synthetic data generation, or one-class/anomaly methods.",
+    "Temporal/sequence modeling (time-series user action graphs, LSTM sequences, percentile-based temporal representations) is identified as a key direction; the survey advocates more sophisticated time-series-based techniques.",
+    "Privacy preservation is a major open challenge: the paper highlights privacy-enhancing techniques (federated learning via PySyft/TensorFlow Privacy, differential privacy, homomorphic encryption via Microsoft SEAL), data anonymization/pseudonymization, and endpoint detection to detect threats without compromising employee privacy.",
+    "Encrypted-channel data exfiltration is a noted challenge: SSL/TLS encryption defeats deep packet inspection, requiring privacy-preserving and behavioral/metadata-based detection rather than payload inspection.",
+    "Future trends: enhanced behavioral analytics, UEBA with graph analytics, insider-tailored EDR, multimodal threat fusion, and continuous/adaptive learning."
+  ],
+  "metrics": [],
+  "strengths": [
+    "Broad, well-organized taxonomy covering threat categories, detection approaches, datasets, learning techniques, and evaluation metrics in one survey.",
+    "Comparative tables of ML/DL methods, datasets, and performance metrics give a useful map of the recent (2019-2024) insider-threat detection literature.",
+    "Explicit treatment of privacy-preserving detection (federated learning, differential privacy, homomorphic encryption, anonymization) and on-endpoint analysis, relevant to privacy-conscious systems.",
+    "Identifies concrete open problems (class imbalance, interpretability, encrypted exfiltration, false positives, real-time/low-latency detection) and forward-looking directions."
+  ],
+  "weaknesses": [
+    "It is a survey, so it reports no original experimental results; quantitative metrics live only in summary tables of cited works and are not synthesized into a head-to-head benchmark in the prose.",
+    "Heavy reliance on the CERT synthetic dataset across surveyed works limits external/real-world validity, a limitation the survey notes but cannot resolve.",
+    "Coverage is descriptive; it does not provide reproducible evaluation or standardized comparison protocol across the reviewed methods.",
+    "Mobile/on-device deployment constraints (model size, latency, battery) are not specifically examined; focus is enterprise/cloud-server settings."
+  ],
+  "relevance": "Directly motivates SentriZK pillar (2), on-device lightweight AI threat detection: it validates BiLSTM/LSTM and deep-learning sequence models on the CERT dataset as effective for insider/anomaly detection, and explicitly champions privacy-preserving detection (federated learning, differential privacy, endpoint/on-device analysis) that aligns with SentriZK's goal of running detection locally via TensorFlow Lite to avoid cloud privacy leakage. It also frames the encrypted-channel exfiltration and false-positive/latency challenges SentriZK must address while combining E2EE transport with intelligent threat detection.",
+  "ieee_reference": "F. R. Alzaabi and A. Mehmood, \"A review of recent advances, challenges, and opportunities in malicious insider threat detection using machine learning methods,\" IEEE Access, vol. 12, pp. 30907-30927, 2024, doi: 10.1109/ACCESS.2024.3369906."
+}

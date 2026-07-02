@@ -1,0 +1,42 @@
+{
+  "paper_id": "P12",
+  "authors": "Abdul Karim, Mobeen Shahroz, Khabib Mustofa, Samir Brahim Belhaouari, S. Ramana Kumar Joga",
+  "title": "Phishing Detection System through Hybrid Machine Learning Based on URL",
+  "venue": "IEEE Access",
+  "year": "2023",
+  "domain": 3,
+  "one_line": "A URL-based phishing detection study that benchmarks classical ML classifiers and proposes a hybrid LSD ensemble (LR+SVC+DT) with canopy feature selection, achieving 98.12% accuracy on an 11,054-record Kaggle dataset.",
+  "problem": "Phishing remains one of the most damaging cybercrimes, and existing list-based and many ML-based detection systems are limited by small datasets, third-party dependencies, and an inability to detect novel/zero-day phishing URLs. The paper seeks a more accurate, dataset-driven URL classification approach to distinguish phishing from legitimate websites.",
+  "methods": "Uses a Kaggle benchmark phishing dataset of 11,054 records with 33 (32 URL) attributes from 11,000+ websites, split 70/30 train/test after null-value removal. Applies classical ML models (Decision Tree, Linear Regression, Random Forest, Naive Bayes, Gradient Boosting Machine, SVC/SVM, KNN) and a proposed hybrid LSD ensemble combining Logistic/Linear Regression + SVC + Decision Tree using soft and hard voting. The proposed approach adds canopy-based feature selection, k-fold cross-validation, and Grid Search hyperparameter optimization. Evaluation uses accuracy, precision, recall, specificity, F1-score, plus execution time, throughput, and latency.",
+  "key_findings": [
+    "The proposed approach (LSD hybrid with canopy feature selection, cross-fold validation and grid search) achieved the highest reported accuracy of 98.12%, precision 97.31%, recall 96.33%, specificity 96.55%, and F1-score 95.89%.",
+    "Among standalone models, Random Forest performed best (accuracy 96.77%, precision 96.73%, recall 97.51%, F1-score 97.12% at max_depth 30); ensemble/tree-based models outperformed linear and probabilistic ones.",
+    "The plain hybrid voting model (LR+SVC+DT) reached 95.23% accuracy with soft voting and 94.09% with hard voting, below Random Forest but above most single models.",
+    "Linear Regression (58.83%) and SVM (71.8%) performed poorly on accuracy despite high precision, while Gradient Boosting reached 70.34% and KNN peaked at 63.12%.",
+    "The proposed approach also reported the best efficiency: lowest execution time (370.98), highest throughput (50.86), and lowest latency (0.0412) among the compared models."
+  ],
+  "metrics": [
+    "Dataset: 11,054 records, 33 attributes (32 URL features), from 11,000+ websites (Kaggle), 70/30 train/test split",
+    "Proposed approach: accuracy 98.12%, precision 97.31%, recall 96.33%, specificity 96.55%, F1-score 95.89%",
+    "Random Forest (best standalone): accuracy 96.77%, precision 96.73%, recall 97.51%, specificity 95.83%, F1-score 97.12% (max_depth 30)",
+    "Decision Tree: accuracy 95.41%, F1-score 95.91% (max_depth 30)",
+    "Hybrid LR+SVC+DT soft voting: accuracy 95.23%, F1-score 95.77%; hard voting: accuracy 94.09%, F1-score 94.79%",
+    "Naive Bayes: accuracy 88.39%, F1-score 88.96%; SVM: accuracy 71.8%; Gradient Boosting: accuracy 70.34%; KNN: accuracy 63.12%; Linear Regression: accuracy 58.83%",
+    "Proposed approach efficiency: execution time 370.98, throughput 50.86, latency 0.0412"
+  ],
+  "strengths": [
+    "Comprehensive comparative benchmark of many classical ML classifiers under consistent evaluation metrics (accuracy, precision, recall, specificity, F1).",
+    "Uses a relatively large public benchmark dataset (11,054 URLs) rather than the tiny datasets criticized in many prior works.",
+    "Combines feature selection (canopy), cross-validation, and grid search hyperparameter tuning, and reports efficiency metrics (execution time, throughput, latency) in addition to accuracy.",
+    "URL-feature-only approach avoids dependence on third-party services and page content, supporting fast, lightweight detection."
+  ],
+  "weaknesses": [
+    "Internal inconsistency in reported results: the proposed LSD hybrid achieves 95.23% in one table but the 98.12% headline figure is conflated with Random Forest in the discussion, making the true best model ambiguous.",
+    "No deep learning or transformer baselines are implemented; comparisons to such methods are only via cited literature.",
+    "Detection relies on a fixed set of pre-extracted URL vector features; generalization to evolving/novel phishing patterns and non-English or live-traffic settings is not empirically tested.",
+    "The paper is poorly edited (typos, mismatched feature counts of 32 vs 33), reducing reproducibility clarity.",
+    "No on-device/mobile deployment evaluation; efficiency metrics are reported without hardware context or units."
+  ],
+  "relevance": "SentriZK plans on-device, lightweight AI threat detection including phishing/smishing detection running locally via TensorFlow Lite. This paper demonstrates that URL-only feature-based ML/ensemble classifiers can achieve high phishing-detection accuracy with low latency and no third-party dependency, which aligns with SentriZK's need for fast, privacy-preserving on-device URL screening within encrypted messages. Its feature-selection and lightweight classical-model approach offers a candidate baseline for a compact, low-latency phishing detector suitable for mobile.",
+  "ieee_reference": "A. Karim, M. Shahroz, K. Mustofa, S. B. Belhaouari, and S. R. K. Joga, \"Phishing detection system through hybrid machine learning based on URL,\" IEEE Access, 2023, doi: 10.1109/ACCESS.2023.3252366."
+}

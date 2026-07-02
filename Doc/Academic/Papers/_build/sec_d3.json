@@ -1,0 +1,81 @@
+{
+  "section_title": "ON-DEVICE AI FOR ANOMALY AND PHISHING DETECTION",
+  "blocks": [
+    {
+      "type": "body",
+      "text": "Whereas the preceding domain secured the trust layer through zero-knowledge authentication, this domain addresses what happens once a message has been authenticated and decrypted at the endpoint. SentriZK's second pillar embeds intelligent threat detection directly on the user's device, screening message content and user-behaviour signals for anomalies and social-engineering attacks without exporting data to the cloud. Realising this pillar requires models that are simultaneously accurate and lightweight enough for mobile inference via TensorFlow Lite. The following review synthesises Domain 3 evidence on anomaly detection, lightweight on-device phishing and smishing detection, and hybrid machine-learning approaches to URL-based phishing, establishing both the feasibility of and the constraints on privacy-preserving, mobile-first detection."
+    },
+    {
+      "type": "subheading",
+      "text": "A. Anomaly Detection: Machine vs Deep Learning"
+    },
+    {
+      "type": "body",
+      "text": "Anomaly detection identifies data instances or events that deviate from expected behaviour, a task complicated by the scarcity of anomalous samples, the lack of ground-truth labels, environmental variability, and noisy, high-dimensional data [P9]. A systematic review of machine-learning (ML) and deep-learning (DL) anomaly-detection techniques covering 2019-2021 categorises anomalies into point, contextual, and collective types and contrasts classical ML methods (k-nearest neighbours, support vector machines, decision trees, random forests, swarm intelligence) with DL methods (convolutional neural networks, LSTM networks, autoencoders, generative adversarial networks, and attention networks) [P9]. The review concludes that deep learning has driven major advances over classical statistical and ML methods, particularly for high-dimensional, temporal, and spatial data, while each technique carries clear trade-offs: random forests and AdaBoost are computationally expensive and noise-sensitive, one-class SVM underfits with noisy data or when features exceed training samples, and unsupervised methods such as hierarchical temporal memory yield lower accuracy [P9]."
+    },
+    {
+      "type": "body",
+      "text": "Across the surveyed works, reported accuracies are high but heterogeneous in their datasets and settings, and therefore not directly comparable: examples include a neural-network detector reaching 0.990 accuracy on the DS2OS dataset, an LSTM encoder-decoder reaching 0.978 on real-world data, and an AD-IoT model attaining 99.34% classification accuracy on UNSW-NB15 [P9]. Of particular relevance to SentriZK, the review highlights the work of Khokhlov et al., which demonstrates LSTM-based anomaly detection of complex threats on mobile and Android devices within monitored data streams, while noting that LSTM requires significant time and bandwidth [P9]. The survey identifies open challenges that directly shape SentriZK's design space: the nature of the input dataset, data-stream and limited-memory detection, noise and data complexity, the unknown nature of anomalies (lack of labels), the time-complexity-versus-accuracy trade-off, and the absence of standardised benchmark datasets [P9]. Its future directions, including richer datasets, detection using low-cost sensors and small datasets, and global benchmark datasets, reinforce the case for efficient, low-resource models suitable for on-device deployment [P9]. These findings ground SentriZK's intent to adapt deep-learning sequence models for anomaly and insider-threat detection while explicitly engineering for the memory, latency, and labelling constraints inherent to a mobile platform."
+    },
+    {
+      "type": "subheading",
+      "text": "B. Lightweight On-Device Phishing and Smishing Detection"
+    },
+    {
+      "type": "body",
+      "text": "Beyond behavioural anomaly detection, SentriZK must screen incoming message text for phishing and smishing content. Smishing attacks on mobile and Android devices are rising sharply, and traditional spam-detection techniques struggle to distinguish legitimate from malicious messages because of the contextual, deceptive nature of these attacks [P10]. A compact transformer-based approach addresses this by extracting contextual embeddings with TinyBERT, a lightweight BERT variant, and tuning the deep-learning model's hyperparameters with the Aquila Optimization metaheuristic, which balances exploration and exploitation to minimise validation loss [P10]. Trained on the Kaggle SMS Spam Collection dataset of 5,574 English messages and deliberately limited to five epochs to remain lightweight for Android, the Aquila-tuned TinyBERT model achieved 96.81% accuracy, 96.76% precision, 96.81% recall, and a 96.71% F1-score, outperforming GRU, LSTM, and RNN baselines (around 85.98%) and performing on par with SVM (96.61%) [P10]. The principal weakness is a modest spam recall of 82% in the per-class classification report, meaning a notable fraction of smishing messages can be missed, and no on-device latency, memory, or inference-time measurements are reported despite the lightweight Android framing [P10]. This study nevertheless validates SentriZK's plan to run message-threat classification locally with a compact transformer to avoid cloud latency and privacy leakage."
+    },
+    {
+      "type": "body",
+      "text": "Complementing the smishing case, the PHILDER framework targets the gap in deep-learning phishing detection that is evaluated by computational-efficiency metrics rather than accuracy alone, motivated by the observation that accurate DL phishing detectors are typically too heavy in compute, memory, latency, and energy for resource-constrained devices such as mobile phones and embedded systems [P11]. PHILDER compares five lightweight BERT variants (ALBERT, DistilBERT, MobileBERT, MiniLM, and TinyBERT) on a corpus of 3,002 emails (501 PhishTank phishing plus 2,501 SpamAssassin legitimate messages) under original, undersampling, and SMOTE oversampling settings, and introduces three composite efficiency metrics: training efficiency (TES), inference efficiency (IES), and real-time detection efficiency (RTDE) [P11]. The selected configuration, TinyBERT with undersampling, offered the best overall balance of accuracy and computational cost, achieving 99.27% accuracy, the highest TES and IES among all models, the fastest testing time (2.57 s), and a per-sample detection latency of 12.9811 ms, while heavier variants such as ALBERT, DistilBERT, and MobileBERT reached near-best accuracy only at much higher computational cost [P11]. SMOTE oversampling, although yielding the best raw accuracy, was discarded for its highest training and per-sample cost and overfitting risk [P11]. The dataset is small and English-only and the models were not actually deployed or benchmarked on real edge hardware, with no quantisation or TensorFlow Lite conversion measured [P11]. Even so, the TES/IES/RTDE framing and class-balancing study furnish concrete design guidance for SentriZK's mobile-first, privacy-preserving detection, confirming that compressed transformers can meet strict latency and battery budgets while detecting social-engineering text."
+    },
+    {
+      "type": "subheading",
+      "text": "C. Hybrid Machine Learning for URL Phishing"
+    },
+    {
+      "type": "body",
+      "text": "Because phishing attempts within enterprise messages frequently arrive as embedded links, SentriZK also benefits from fast, content-independent URL screening. A hybrid machine-learning approach trained on a Kaggle benchmark of 11,054 records with 32 URL features from more than 11,000 websites addresses the limitations of list-based and small-dataset detectors, which cannot identify novel or zero-day phishing URLs [P12]. The proposed LSD ensemble combines Logistic/Linear Regression, an SVC, and a Decision Tree via voting, augmented with canopy-based feature selection, k-fold cross-validation, and grid-search hyperparameter optimisation [P12]. The proposed approach reported the highest accuracy of 98.12%, with 97.31% precision, 96.33% recall, 96.55% specificity, and a 95.89% F1-score, alongside the best efficiency among compared models (lowest execution time, highest throughput, and lowest latency) [P12]. Among standalone models, Random Forest performed best (96.77% accuracy, 97.12% F1-score), while the plain hybrid voting model reached 95.23% accuracy with soft voting [P12]. The authors note an internal inconsistency in which the 98.12% headline figure is conflated with Random Forest, leaving the true best model somewhat ambiguous, and no deep-learning baselines or on-device deployment are evaluated [P12]. Nonetheless, the result that URL-feature-only classifiers can reach high accuracy with low latency and without third-party dependencies aligns with SentriZK's need for fast, privacy-preserving on-device URL screening within encrypted messages, offering a candidate lightweight baseline for a compact mobile phishing detector."
+    },
+    {
+      "type": "body",
+      "text": "Taken together, the Domain 3 evidence establishes that the building blocks of SentriZK's on-device detection pillar are individually feasible: deep-learning sequence models handle high-dimensional, temporal anomaly data [P9]; compact transformers achieve high-accuracy smishing and phishing detection under tight resource budgets [P10], [P11]; and lightweight ensembles deliver low-latency URL screening [P12]. The recurring limitations across these works, namely the absence of measured on-device latency, memory, and model-size figures and the reliance on small or single-language datasets, define the engineering agenda SentriZK must address to translate these laboratory results into a deployed, privacy-preserving, mobile-first system."
+    }
+  ],
+  "tables": [
+    {
+      "caption": "TABLE III. SUMMARY OF ON-DEVICE AI DETECTION STUDIES",
+      "columns": ["Study", "Task", "Model/Method", "Reported Performance", "Limitation"],
+      "rows": [
+        [
+          "[P9]",
+          "Anomaly detection (systematic review, 2019-2021)",
+          "Survey of ML (k-NN, SVM, decision tree, random forest) and DL (CNN, LSTM/autoencoder, GAN, attention) methods",
+          "Cited works' accuracies, e.g., NN 0.990 (DS2OS); LSTM encoder-decoder 0.978; AD-IoT 99.34% (UNSW-NB15)",
+          "Review only; metrics from heterogeneous datasets are not directly comparable; little depth on privacy-preserving or on-device detection"
+        ],
+        [
+          "[P10]",
+          "Smishing (SMS phishing) detection on Android",
+          "TinyBERT contextual embeddings + Aquila Optimization hyperparameter tuning (5 epochs)",
+          "Accuracy 96.81%, precision 96.76%, recall 96.81%, F1 96.71% (Kaggle SMS Spam Collection, 5,574 messages)",
+          "Spam recall modest (82%); no on-device latency, memory, or model-size measurements; single English dataset"
+        ],
+        [
+          "[P11]",
+          "Email phishing detection for resource-limited devices",
+          "PHILDER: TinyBERT with undersampling (compared against ALBERT, DistilBERT, MobileBERT, MiniLM); TES/IES/RTDE efficiency metrics",
+          "Accuracy 99.27%; highest TES and IES; testing time 2.57 s; per-sample latency 12.9811 ms (3,002 emails)",
+          "Small English-only dataset; models not deployed on real edge hardware; no quantisation/TensorFlow Lite or memory-footprint measurement"
+        ],
+        [
+          "[P12]",
+          "URL-based phishing detection",
+          "Hybrid LSD ensemble (Logistic/Linear Regression + SVC + Decision Tree) with canopy feature selection, cross-validation, grid search",
+          "Proposed approach: accuracy 98.12%, precision 97.31%, recall 96.33%, specificity 96.55%, F1 95.89% (11,054 URLs, 32 features)",
+          "Internal inconsistency (98.12% conflated with Random Forest); no DL baselines; no on-device/mobile deployment evaluation"
+        ]
+      ]
+    }
+  ]
+}

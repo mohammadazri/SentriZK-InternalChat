@@ -1,0 +1,96 @@
+{
+  "section_title": "SECURE MESSAGING AND INSIDER THREATS",
+  "blocks": [
+    {
+      "type": "body",
+      "text": "Secure enterprise messaging must simultaneously guarantee message confidentiality in transit, authenticate communicating parties without exposing them to active interception, and detect malicious behaviour originating from legitimate, authorised users. The literature in this domain therefore spans three complementary concerns: the cryptographic transport and authentication mechanisms of E2EE messengers [P1], [P5]; deep-learning approaches to insider-threat detection over behavioural logs [P2], [P3]; and structured threat modelling that enumerates the attack surface of messaging platforms [P4]. This section reviews each concern and identifies the gaps that motivate SentriZK's unified design."
+    },
+    {
+      "type": "subheading",
+      "text": "A. End-to-End Encryption and Authentication Ceremonies"
+    },
+    {
+      "type": "body",
+      "text": "End-to-end encryption is the established foundation for confidential messaging, and recent implementations demonstrate that well-vetted primitives can guarantee that no intermediary, including the server, can read message content. Perkasa et al. [P5] implement a secure chat application that derives an identical shared secret on each client using Diffie-Hellman and Elliptic Curve Diffie-Hellman (ECDH) key exchange via the Web Crypto API, without ever transmitting private keys, and then encrypts messages with AES-256 in CBC mode before transmission. In their system, messages are encrypted on the client and stored encrypted in PostgreSQL, so only the sender and recipient holding the identical shared key can decrypt them, achieving end-to-end confidentiality even against a compromised server [P5]. The backend is organised as a microservice architecture (an NGINX API gateway, an authentication service issuing JSON Web Tokens, a WebSocket service for real-time routing, a horizontally scalable chat service, a PostgreSQL store, and a RabbitMQ broker), giving practical scalability and reduced single points of failure [P5]. These primitives, Diffie-Hellman key exchange plus AES-256 over a modular enterprise backend, directly inform SentriZK's encrypted-transport pillar."
+    },
+    {
+      "type": "body",
+      "text": "However, confidentiality alone does not guarantee that the party at the other end of the channel is genuine. Perkasa et al. acknowledge that their ECDH exchange lacks an authentication mechanism, leaving man-in-the-middle (MitM) resistance dependent on out-of-band trust, and that authentication via phone number plus SMS code with server-stored credentials is susceptible to interception and is not privacy-preserving [P5]. This authentication weakness is precisely the gap systematised by Alatawi and Saxena [P1]. In a systematisation-of-knowledge study of nineteen popular E2EE applications, evaluated through both documentation review and hands-on testing on four devices, they find that every application implements only opportunistic E2EE, which defends against a passive MitM but remains vulnerable to an active MitM that mounts key-substitution attacks via a malicious or coerced key-distribution server [P1]. Defeating an active MitM requires users to manually verify key fingerprints through an authentication ceremony, yet this ceremony is optional in every application studied, and applications rely on users to find, understand, and complete it [P1]."
+    },
+    {
+      "type": "body",
+      "text": "The SoK further shows that these manual ceremonies are broken in practice. Fingerprint representations vary widely (QR code, numeric, hexadecimal or Base32 alphanumeric, graphical, and short authentication strings), and manual comparison renders nearly all ceremonies vulnerable to human error, with cited user studies finding that users frequently fail to authenticate even when instructed [P1]. Group authentication is almost universally pairwise rather than group-based, making ceremonies impractical as group size grows, and only seven of the surveyed applications support any in-app out-of-band fingerprint exchange [P1]. Several applications do not even enable E2EE by default, risking user confusion and exposure of sensitive data [P1]. The authors recommend making E2EE default, treating the ceremony as a primary task, and pursuing automated or semi-automated ceremonies [P1]. Taken together, [P5] supplies the encrypted-transport foundation while [P1] establishes that error-prone manual authentication is the dominant residual weakness, motivating an authentication mechanism that removes human intervention from the trust-establishment step."
+    },
+    {
+      "type": "subheading",
+      "text": "B. Insider Threat Detection with Deep Learning"
+    },
+    {
+      "type": "body",
+      "text": "Even when transport and authentication are sound, enterprise messaging remains exposed to insiders who hold legitimate access credentials. Insider threats are difficult to detect because malicious actors blend in with authorised activity, and Alzaabi and Mehmood [P3] note that such threats can cause damage far exceeding external attacks, citing figures of roughly twenty times the impact, an average of about USD 4.5 million per breach, and roughly thirty-five percent of 2023 breaches. Their review of machine-learning and deep-learning detection methods finds that deep learning and natural-language-based models, especially recurrent and LSTM networks, BiLSTM, attention mechanisms, and pre-trained language models, outperform classical machine learning at capturing temporal and semantic patterns in user behaviour, although they suffer from black-box interpretability problems [P3]. The review identifies the CMU CERT dataset as the dominant labelled benchmark and highlights class imbalance (rare insider instances) as a recurring problem addressed via oversampling such as SMOTE, GAN-based synthetic data, or one-class and anomaly methods [P3]. It also advocates more sophisticated temporal and sequence modelling and frames privacy preservation, through federated learning, differential privacy, homomorphic encryption, and on-endpoint analysis, as a major open challenge, alongside encrypted-channel exfiltration that defeats deep packet inspection [P3]."
+    },
+    {
+      "type": "body",
+      "text": "Srinivasan et al. [P2] instantiate this deep-learning direction with a concrete architecture. They process sequential data such as access-control records and network logs with a BiLSTM in forward and backward directions, applying Grouped Orthogonal Initialization to stabilise training and mitigate vanishing and exploding gradients, and replacing ReLU with the Swish activation function to improve gradient flow and avoid dead neurons [P2]. The reported model achieves 95% accuracy, 92% precision, 90% recall, a 91% F1-score, and a 94% AUC-ROC, and is claimed to outperform Optimized XGBoost and a LightGBM baseline at the cost of slightly higher model complexity [P2]. The work also pairs detection with privacy-preserving data transfer, proposing homomorphic encryption to compute on encrypted data and federated learning to transmit only model updates rather than raw data [P2]. These results should be read with caution: the paper is largely conceptual, names no dataset, and reports internally inconsistent figures (a 95% headline accuracy versus 91% in the results text), and it provides no latency or resource-cost analysis, so on-device feasibility is unaddressed [P2]. Nonetheless, [P2] and [P3] jointly validate BiLSTM-style sequence models over behavioural logs as the appropriate model family for insider-threat detection, while their shared emphasis on privacy-preserving and on-endpoint deployment motivates SentriZK's choice to run lightweight detection locally rather than in the cloud."
+    },
+    {
+      "type": "subheading",
+      "text": "C. Threat Modeling for Secure Messaging"
+    },
+    {
+      "type": "body",
+      "text": "A structured understanding of the attack surface is needed to position confidentiality, authentication, and detection coherently. Michael [P4] argues that many enterprise messaging platforms lack systematic threat modelling, leaving them exposed to data leakage, unauthorised access, phishing and impersonation, and insider threats, and proposes a six-step process: asset identification, attack-surface analysis, threat enumeration, vulnerability assessment, risk analysis via a likelihood-and-impact matrix, and mitigation [P4]. Threats are categorised using STRIDE (spoofing, tampering, repudiation, information disclosure, denial of service, and elevation of privilege), with enumeration drawing on PASTA and MITRE ATT&CK and tooling such as the Microsoft Threat Modeling Tool and OWASP Threat Dragon [P4]. Case studies reveal recurring vulnerability patterns of insufficient access-control enforcement and incomplete encryption coverage, and the analysis finds that high-priority threats are frequently associated with human factors such as insider misuse and with integration points such as APIs and third-party services [P4]."
+    },
+    {
+      "type": "body",
+      "text": "Michael groups mitigations into technical controls (E2EE, multi-factor authentication, hardened APIs, and secure endpoints), administrative controls (policies, awareness training, and incident response), and continuous monitoring (logging, anomaly detection, and alerting), and the future-work direction explicitly calls for integrating AI-driven anomaly detection with threat modelling and embedding automated threat modelling in DevSecOps pipelines [P4]. The study reports no quantitative metrics, and its validation relies on simulations and case studies that may not replicate real operational environments [P4]. As a design-stage backbone, however, [P4] enumerates the precise attack vectors SentriZK targets, namely spoofing and unauthorised access, information disclosure through metadata and endpoint exposure, and insider misuse, and its mitigation taxonomy maps directly onto SentriZK's three pillars: encrypted transport, strong privacy-preserving authentication, and intelligent on-device threat detection."
+    },
+    {
+      "type": "body",
+      "text": "In synthesis, the Domain 1 literature establishes that strong E2EE primitives are well understood [P5] but that the human-dependent authentication ceremony remains the dominant exploitable weakness [P1]; that deep sequence models such as BiLSTM are effective for insider-threat detection yet must contend with class imbalance, interpretability, and the absence of on-device resource analysis [P2], [P3]; and that systematic threat modelling frames these as a unified attack surface in which authentication, encryption, and behavioural monitoring must coexist [P4]. SentriZK addresses these gaps by replacing fragile manual ceremonies with non-interactive zero-knowledge authentication, adapting BiLSTM-style detection for lightweight on-device inference, and retaining Diffie-Hellman and AES-256 transport, thereby consolidating the otherwise fragmented mitigations identified across [P1], [P2], [P3], [P4], and [P5]."
+    }
+  ],
+  "tables": [
+    {
+      "caption": "TABLE I. SUMMARY OF SECURE MESSAGING AND INSIDER THREAT STUDIES",
+      "columns": ["Study", "Focus", "Method", "Key Result", "Limitation"],
+      "rows": [
+        [
+          "[P1]",
+          "E2EE apps and authentication ceremonies in secure messaging",
+          "Systematization of knowledge over 19 popular E2EE apps; documentation review plus hands-on testing on 4 devices",
+          "All apps use only opportunistic E2EE (vulnerable to active MitM); manual authentication ceremonies are optional and routinely fail due to human error; only 7 apps support in-app out-of-band fingerprint exchange",
+          "No new user study or measurements; group testing limited to size 3; largely descriptive snapshot as of late 2022"
+        ],
+        [
+          "[P2]",
+          "Insider-threat detection and privacy-preserving data transfer",
+          "BiLSTM with Grouped Orthogonal Initialization and Swish activation; proposed homomorphic encryption and federated learning",
+          "Reports 95% accuracy, 92% precision, 90% recall, 91% F1, 94% AUC-ROC; claims to outperform XGBoost and LightGBM baselines",
+          "No dataset named; internally inconsistent metrics (95% vs 91% accuracy); no latency or on-device cost analysis"
+        ],
+        [
+          "[P3]",
+          "Machine- and deep-learning methods for malicious insider-threat detection",
+          "Literature survey of supervised, unsupervised, semi-supervised, and deep-learning techniques; datasets, metrics, and challenges",
+          "Deep models (LSTM, BiLSTM, attention, BERT) capture temporal and semantic patterns best; CMU CERT is dominant benchmark; class imbalance and privacy preservation are key open challenges",
+          "No original experiments; heavy reliance on synthetic CERT data; mobile/on-device constraints not specifically examined"
+        ],
+        [
+          "[P4]",
+          "Threat modelling for enterprise secure messaging applications",
+          "Mixed-method six-step process using STRIDE, PASTA, and MITRE ATT&CK; case studies and attack simulations",
+          "Categorizes threats via STRIDE; finds high-priority risks in insider misuse and API/third-party integration; recommends fusing AI-driven anomaly detection with threat modelling",
+          "No quantitative results; validation via simulations and case studies that may not replicate real environments; light cryptographic depth"
+        ],
+        [
+          "[P5]",
+          "E2EE chat using Diffie-Hellman/ECDH and AES-256 in a microservice architecture",
+          "ECDH key exchange via Web Crypto API; AES-256-CBC client-side encryption; microservice backend; functional testing and AES benchmark",
+          "Server only sees public keys; messages stored encrypted in PostgreSQL, decryptable only by holders of the shared key; scalable, modular backend",
+          "ECDH lacks authentication (out-of-band MitM dependence); AES-CBC without authenticated encryption; SMS-based login; benchmark results only as a figure"
+        ]
+      ]
+    }
+  ]
+}

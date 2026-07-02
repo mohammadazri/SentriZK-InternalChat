@@ -1,0 +1,34 @@
+{
+  "section_title": "REVIEW METHODOLOGY",
+  "blocks": [
+    {
+      "type": "body",
+      "text": "This review adopts a structured, narrative synthesis approach rather than a statistical meta-analysis. The objective is to consolidate recent peer-reviewed evidence across the technical foundations that motivate SentriZK and to extract, from that evidence, the unresolved gaps that justify its proposed unification of privacy-preserving authentication, on-device threat detection, and E2EE transport. Because the included works employ heterogeneous datasets, evaluation settings, and reporting conventions, their reported metrics are not directly comparable; consequently the analysis is qualitative and interpretive, and no pooled effect sizes or aggregate statistics are computed. All quantitative figures discussed elsewhere in this paper are attributed to their originating source rather than combined."
+    },
+    {
+      "type": "subheading",
+      "text": "A. Scoping Into Three Domains"
+    },
+    {
+      "type": "body",
+      "text": "The literature was scoped into three thematic domains that mirror the three pillars of the proposed architecture. Domain 1 covers secure messaging, E2EE transport, and the threat landscape that includes insider misuse, addressing how confidentiality and authentication are delivered and where today's secure messengers remain vulnerable [P1], [P4], [P5]. Domain 2 covers zero-knowledge authentication and privacy, examining how ZKPs and non-interactive zk-SNARK constructions can verify a user's legitimacy without transmitting passwords, secrets, or identity attributes [P6], [P7], [P8]. Domain 3 covers on-device, lightweight artificial-intelligence (AI) anomaly, insider-threat, and phishing/smishing detection, focusing on deep-learning models suitable for resource-constrained mobile deployment [P2], [P3], [P9], [P10], [P11], [P12]. This three-domain partition provides the organising structure for the review and for the per-domain comparison tables presented in the following sections."
+    },
+    {
+      "type": "subheading",
+      "text": "B. Source Selection and Characterisation"
+    },
+    {
+      "type": "body",
+      "text": "Twelve primary sources were selected as the evidence base, drawn from recent publications spanning approximately 2022 to 2025 to capture the current state of the art. The set deliberately mixes complementary publication types: systematisation-of-knowledge and survey papers that map a field's breadth [P1], [P3], [P6], [P7], [P9]; implemented or design-oriented systems that demonstrate concrete primitives and architectures [P5], [P8]; and applied model-development studies reporting empirical detection performance [P2], [P10], [P11], [P12]. Each source was characterised along four consistent dimensions: the problem it addresses, the method it employs, its key findings (including any reported metrics), and its limitations. This uniform characterisation allowed strengths and weaknesses to be weighed on comparable terms, and it surfaced recurring caveats, such as reliance on synthetic benchmarks like the CMU CERT dataset, internally inconsistent or unreproducible metrics, and the frequent absence of true on-device latency, memory, or model-size measurements despite lightweight or mobile claims [P2], [P3], [P10], [P11]."
+    },
+    {
+      "type": "subheading",
+      "text": "C. Comparison Framework and Gap Extraction"
+    },
+    {
+      "type": "body",
+      "text": "Within each domain, sources were compared using a framework tailored to that domain's salient design criteria. For secure messaging, the criteria included the E2EE protocol and primitives used, whether protection is default or opt-in, resistance to active man-in-the-middle attacks, and the availability and usability of any authentication ceremony [P1], [P5]. For zero-knowledge authentication, sources were compared on proof type (interactive versus non-interactive), trusted-setup requirements, anonymity and man-in-the-middle resistance, and computational or storage overhead relevant to mobile constraints [P6], [P7], [P8]. For on-device detection, the comparison considered model family, target threat, dataset, reported accuracy, and stated efficiency or resource characteristics [P2], [P9], [P10], [P11], [P12]. From these comparisons, gaps were extracted by identifying problems consistently raised but left unsolved: the reliance on optional, human-error-prone manual verification ceremonies that fail against active attackers [P1], [P4]; the lack of authentication and resulting man-in-the-middle exposure in key-exchange-based E2EE implementations [P5]; the heavy proving cost and large key sizes that challenge mobile zk-SNARK deployment [P8]; and the unverified feasibility of running deep-learning detectors locally under tight compute, latency, and privacy budgets [P3], [P10], [P11]. These extracted gaps form the direct motivation for the SentriZK proposal."
+    }
+  ],
+  "tables": []
+}
